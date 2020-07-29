@@ -22,11 +22,11 @@ def Execute(ct,l):
   #l= ct.sim_local
 
   actions={
-    'grab'         : lambda a: ct.Run('mysim.act.grab', a),
-    'move_to_rcv'  : lambda a: ct.Run('mysim.act.move_to_rcv', a),
-    'move_to_pour' : lambda a: ct.Run('mysim.act.move_to_pour', a),
+    'grab'         : lambda a: ct.Run('tsim2.act.grab', a),
+    'move_to_rcv'  : lambda a: ct.Run('tsim2.act.move_to_rcv', a),
+    'move_to_pour' : lambda a: ct.Run('tsim2.act.move_to_pour', a),
     'std_pour'     : lambda a: ct.Run('mysim.act.std_pour', a),
-    'shake_A'      : lambda a: ct.Run('mysim.act.shake_A', a),
+    'shake_A'      : lambda a: ct.Run('mysim.act.shake_A_5s', a),
     }
 
   #NOTE: Do not include 'da_trg' in obs_keys0 since 'da_trg' should be kept during some node transitions.
@@ -112,7 +112,7 @@ def Execute(ct,l):
       InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',)))
       #TEST: Heuristic init guess
       #l.xs.n2a['skill']= SSA([1])
-      res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
+      # res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
       l.idb.n2a= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2a',xs=l.xs.n2a)
       l.xs.prev= l.xs.n2a
       l.idb.prev= l.idb.n2a
@@ -225,15 +225,16 @@ def Execute(ct,l):
         l.xs.n4sar= l.dpl.Forward('Rdamount',l.xs.prev)
         l.idb.n4sar= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sar',xs=l.xs.n4sar)
 
-    # Conditions to break the try-and-error loop
-    if l.IsPoured():
-      break
-    if l.IsTimeout() or l.IsEmpty():  # or l.IsSpilled()
-      break
-    if not IsSuccess(l.exec_status):
-      break
+    # # Conditions to break the try-and-error loop
+    # if l.IsPoured():
+    #   break
+    # if l.IsTimeout() or l.IsEmpty():  # or l.IsSpilled()
+    #   break
+    # if not IsSuccess(l.exec_status):
+    #   break
 
-    repeated= True
+    # repeated= True
+    break
 
 def Run(ct,*args):
   l = args[0]

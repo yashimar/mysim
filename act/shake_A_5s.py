@@ -11,7 +11,7 @@ def GenSMShakeA(ct,l,sim):
   #sm.EventCallback= ct.SMCallback
 
   sm.l.max_theta= 0.9*math.pi
-  charge_time = 3
+  charge_time = 5
 
   def Shake(count):
     spd= sm.l.shake_spd

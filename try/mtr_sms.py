@@ -9,7 +9,7 @@ def ConfigCallback(ct,l,sim):
   m_setup= ct.Load('tsim2.setup')
   l.amount_trg= l._amount_trg
   l.spilled_stop= l._spilled_stop
-  l.config.RcvPos= [0.6, l.config.RcvPos[1], l.config.RcvPos[2]] + l.add_RcvPos
+  l.config.RcvPos= [0.6, l.config.RcvPos[1], l.config.RcvPos[2]]
   CPrint(3,'l.config.RcvPos=',l.config.RcvPos) #l.config.ContactBounce= 0.1
   for key,value in l.opt_conf['config'].iteritems():
     setattr(l.config, key, value)
@@ -24,15 +24,12 @@ def Run(ct,*args):
   skill = args[0]   #("std_pour","shake_A","choose")
   mtr = args[1] if len(args)>=2 else None
   sms = args[2] if len(args)>=3 else None
-  n_episode = args[3] if len(args)>=4 else 5
+  n_episode = args[3] if len(args)>=4 else 10
   
-  target_dir_name = "try_dpl_merged_data3_early/plus_viscous"
-  model_dir_name = "only_learning3_early_pv"
-  # root_logdir = "/tmp/"
+  target_dir_name = "mtr_sms/{dir_name}"
+  model_dir_name = "mtr_sms/{path to model}"
   root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  # root_modeldir = root_dir
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  # root_modeldir = "/tmp/"
   model_dir = root_modeldir + model_dir_name +"/models/"
   base_logdir = root_logdir + target_dir_name + "/"
 
@@ -68,10 +65,9 @@ def Run(ct,*args):
   l= TContainer(debug=True)
   l._amount_trg= 0.3
   l._spilled_stop= 10
-  l.add_RcvPos= [0,0,0]
   l._RcvSize= [0.3, 0.4, 0.2]
-  l._mtr_type = "natto"      #('bounce','nobounce','natto','ketchup')
-  l._SrcSize2H= 0.02   #(0.02,0.09)
+  # l._mtr_type = "natto"      #('bounce','nobounce','natto','ketchup')
+  # l._SrcSize2H= 0.02   #(0.02,0.09)
 
   if mtr!=None: mtr_list = [mtr]
   else: mtr_list = ["bounce","nobounce","natto","ketchup"]
@@ -85,7 +81,7 @@ def Run(ct,*args):
       l._mtr_type = mtr
       l._SrcSize2H = sms
 
-      ct.Run("mysim.try_dpl_main",
+      ct.Run("mysim.try.onetime",
               l, 
               ConfigCallback,
               logdir, 

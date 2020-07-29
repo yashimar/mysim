@@ -25,10 +25,13 @@ def LoadActions(database, i_episode=0, i_node=0):
   return {key:(value[0] if len(value)==1 else value) for key,value in zip(act_keys,actions)}
 
 def Run(ct,*args):
+  target_dir = '/tmp/test_replay/choose/nobounce_002'
+  i_episode = 2
+  i_node = 0
   l= TContainer(debug=True)
   l.opt_conf= {}
-  # l.opt_conf['config']= LoadYAML('/tmp/dpl03/config_log.yaml')[0]
-  l.opt_conf['actions']= LoadActions('/tmp/dpl01/database.yaml')
+  l.opt_conf['config']= LoadYAML(target_dir+"/config_log.yaml")[i_episode]
+  l.opt_conf['actions']= LoadActions(target_dir+'/database.yaml',i_episode,i_node)
   l.config_log= []
   l.config_callback= TestConfigCallback
   ct.Run('tsim2.setup', l)
@@ -51,12 +54,12 @@ def Run(ct,*args):
     XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
 
     if l.opt_conf['actions']['skill']==0:
-      ct.Run('tsim2.act.std_pour', l.opt_conf['actions'])
+      ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
     else:
-      ct.Run('tsim2.act.shake_A', l.opt_conf['actions'])
+      ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
     XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
-    SaveYAML(XS, '/tmp/tsim2log/%s.dat'%TimeStr('short2'))
+    SaveYAML(XS, '/tmp/test_replay_log/%s.dat'%TimeStr('short2'))
 
   finally:
     sim.StopPubSub(ct,l)

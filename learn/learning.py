@@ -59,9 +59,9 @@ def Run(ct,*args):
     }
   nn_options_base = {
     # "gpu": 0, 
-    "batch_size": 128,           #default 10
-    "num_max_update": 1,     #default 5000
-    'num_check_stop': 200,       #default 50
+    "batch_size": 10,           #default 10
+    "num_max_update": 1000000,     #default 5000
+    'num_check_stop': 50,       #default 50
     'loss_stddev_stop': 1e-3,  #default 1e-3
     'AdaDelta_rho': 0.9,        #default 0.9
     'train_log_file': '{base}train/nn_log-{name}{code}.dat', 
@@ -72,14 +72,11 @@ def Run(ct,*args):
     "Fmvtorcv": nn_options_base, 
     "Fmvtopour2": nn_options_base, 
     "Fflowc_tip10": merge_dicts(nn_options_base, 
-                  {"num_max_update":1, 
-                    "loss_stddev_stop":1e-3}), 
+                  {}), 
     "Fflowc_shakeA10": merge_dicts(nn_options_base, 
-                      {"num_max_update":1, 
-                      "loss_stddev_stop":1e-3}), 
+                      {}), 
     "Famount4": merge_dicts(nn_options_base, 
-                  {"num_max_update":1, 
-                    "loss_stddev_stop":1e-3})
+                  {})
   }
   # dynamics_list = ['Fgrasp','Fmvtorcv_rcvmv','Fmvtorcv','Fmvtopour2']
   # dynamics_list = ['Fflowc_tip10','Fflowc_shakeA10','Famount4']
@@ -87,7 +84,7 @@ def Run(ct,*args):
                     'Fflowc_tip10','Fflowc_shakeA10','Famount4']
 
   ct.Run(
-    "mysim.only_learning_main", 
+    "mysim.learn.learning_main", 
     logdir, 
     opt_conf, 
     nn_options, 
