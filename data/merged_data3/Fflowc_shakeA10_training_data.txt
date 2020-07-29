@@ -1,0 +1,29 @@
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl01/models/
+Get sample size: 47
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_shake_A11311/models/
+Get sample size: 105
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_shake_A11312/models/
+Get sample size: 115
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_shake_A11313/models/
+Get sample size: 106
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_shake_A11314/models/
+Get sample size: 103
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_shake_A11315/models/
+Get sample size: 111
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_choose_skill11311/models/
+Get sample size: 115
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_choose_skill11312/models/
+Get sample size: 108
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_choose_skill11313/models/
+Get sample size: 89
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_choose_skill11314/models/
+Get sample size: 80
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl2_choose_skill11315/models/
+Get sample size: 110
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl3_shake_A11311/models/
+Get sample size: 250
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl3_choose_skill11313/models/
+Get sample size: 154
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/learn_dynamics_dpl3/models/
+Get sample size: 141
+Total sample size: 1634
