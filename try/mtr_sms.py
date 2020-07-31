@@ -26,12 +26,12 @@ def Run(ct,*args):
   sms = args[2] if len(args)>=3 else None
   n_episode = args[3] if len(args)>=4 else 10
   
-  target_dir_name = "mtr_sms/{dir_name}"
-  model_dir_name = "mtr_sms/{path to model}"
+  target_logdir_name = "mtr_sms/infer/additional_more"
+  model_dir_name = "mtr_sms/learn/additional_more"
   root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   model_dir = root_modeldir + model_dir_name +"/models/"
-  base_logdir = root_logdir + target_dir_name + "/"
+  base_logdir = root_logdir + target_logdir_name + "/"
 
   reward_func = [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   TLocalQuad(3,lambda y:- 100.0*max(0.0,y[1]-y[0])**2 
@@ -69,7 +69,9 @@ def Run(ct,*args):
   # l._mtr_type = "natto"      #('bounce','nobounce','natto','ketchup')
   # l._SrcSize2H= 0.02   #(0.02,0.09)
 
-  if mtr!=None: mtr_list = [mtr]
+  if mtr=="bounce_list": mtr_list = ["bounce","nobounce"]
+  elif mtr=="viscous_list": mtr_list = ["natto","ketchup"]
+  elif mtr!=None: mtr_list = [mtr]
   else: mtr_list = ["bounce","nobounce","natto","ketchup"]
   if sms!=None: sms_list = [sms]
   else: sms_list = [0.02,0.055,0.09]

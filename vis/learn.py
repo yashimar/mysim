@@ -13,21 +13,43 @@ def Run(ct,*args):
                     "Fflowc_tip10","Fflowc_shakeA10","Famount4"]
   code_list = ["mean","err"]
 
-  fig = plt.figure(figsize=(20,6))
-  fig.suptitle(target_dir)
+  fig = plt.figure(figsize=(20,12))
+  fig.suptitle("target: "+target_dir+
+                "\nEMA(0.4) average loss caluculated for each check stop (blue) &" +
+                "\nstandard deviation of EMA(0.4) average loss (orange)")
   for i, dynamics in enumerate(dynamics_list):
     for j, code in enumerate(code_list):
       log_path = root_dir + target_dir + "/models/train/" \
                   + "nn_log-"+dynamics+code+".dat"
       data = np.loadtxt(log_path, comments='!')
-
-      ax = fig.add_subplot(2,len(dynamics_list),i+1+j*len(dynamics_list))
-      plt.subplots_adjust(wspace=0.5, hspace=0.6)
-      ax.set_title(dynamics+code)
-      if y_max!=None: ax.set_ylim(0,y_max)
-      else: ax.set_ylim(0,0.01)
-      ax.set_xlabel("epochs")
-      if j==0: ax.set_ylabel("loss maf (alpha=0.4)")
-      else: ax.set_ylabel("loss")
-      ax.plot(data[:,0].flatten(),data[:,2].flatten())
+      for k, stat in enumerate(["mean","sdv"]):
+        ax = fig.add_subplot(4,len(dynamics_list),i+1+(2*j+k)*len(dynamics_list))
+        ax.tick_params(axis='x', labelsize=8)
+        ax.tick_params(axis='y', labelsize=8)
+        plt.subplots_adjust(wspace=0.7, hspace=0.6)
+        ax.set_title(dynamics+" "+code+" model "+stat,fontsize=8)
+        if stat=="mean":
+          # if y_max!=None: ax.set_ylim(0,y_max)
+          # elif dynamics+code=="Fgraspmean": ax.set_ylim(0,0.005)
+          # elif dynamics+code=="Fgrasperr": ax.set_ylim(0,0.005)
+          # elif dynamics+code=="Fmvtorcv_rcvmvmean": ax.set_ylim(0,0.005)
+          # elif dynamics+code=="Fmvtorcv_rcvmverr": ax.set_ylim(0,0.005)
+          # elif dynamics+code=="Fmvtorcvmean": ax.set_ylim(0,0.02)
+          # elif dynamics+code=="Fmvtorcverr": ax.set_ylim(0,0.005)
+          # elif dynamics+code=="Fmvtopour2mean": ax.set_ylim(0,0.02)
+          # elif dynamics+code=="Fmvtopour2err": ax.set_ylim(0,0.005)
+          # elif dynamics+code=="Fflowc_tip10mean": ax.set_ylim(0,0.02)
+          # elif dynamics+code=="Fflowc_tip10err": ax.set_ylim(0,0.02)
+          # elif dynamics+code=="Fflowc_shakeA10mean": ax.set_ylim(0,0.02)
+          # elif dynamics+code=="Fflowc_shakeA10err": ax.set_ylim(0,0.02)
+          # elif dynamics+code=="Famount4mean": ax.set_ylim(0,0.1)
+          # elif dynamics+code=="Famount4err": ax.set_ylim(0,0.02)
+          # else: ax.set_ylim(0,0.01)
+          ax.set_ylabel("EMA loss average",fontsize=8)
+          ax.plot(data[:,0].flatten(),data[:,2].flatten())
+        elif stat=="sdv": 
+          # ax.set_ylim(0,0.01)
+          ax.set_ylabel("EMA loss sdv",fontsize=8)
+          ax.plot(data[:,0].flatten(),data[:,3].flatten(),c="orange")
+        ax.set_xlabel("epochs",fontsize=8)
   plt.show()
