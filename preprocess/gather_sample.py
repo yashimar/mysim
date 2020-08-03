@@ -25,8 +25,8 @@ def Execute(ct,l):
     'grab'         : lambda a: ct.Run('tsim2.act.grab', a),
     'move_to_rcv'  : lambda a: ct.Run('tsim2.act.move_to_rcv', a),
     'move_to_pour' : lambda a: ct.Run('tsim2.act.move_to_pour', a),
-    'std_pour'     : lambda a: ct.Run('tsim2.act.std_pour', a),
-    'shake_A'      : lambda a: ct.Run('tsim2.act.shake_A', a),
+    'std_pour'     : lambda a: ct.Run('mysim.act.std_pour', a),
+    'shake_A'      : lambda a: ct.Run('mysim.act.shake_A_5s', a),
     # 'shake_B'      : lambda a: ct.Run('mysim.act.shake_B', a),
     }
 
@@ -321,34 +321,26 @@ def Run(ct,*args):
   l.config_callback= ConfigCallback
   #l.m_sm= ct.Load('tsim.sm4')
   #Setup for experiments:
-  l.logdir = "/tmp/gather_sample4/"
-  # l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/learn_dynamics_dpl3/'
+  # l.logdir = "/tmp/gather_sample4/"
+  l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'  \
+            + "random_sampled/mtr_sms/sample4" + "/"
   opt_conf={
-    'mtr_smsz': 'random',  #'fixed', 'fxvs1', 'random', 'viscous'
-    'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
-    "model_dir": "", 
-    #'model_dir': ct.DataBaseDir()+'models/tsim/v_exp1/',  #'',  Other than flow, amount
-    # 'model_dir': "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/gather_sample/sms_mtr/",  #'',  Pre-trained w "fixed" (for dplD14)
-    # "model_dir": "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl01/models/", 
-    # "model_dir": "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/learn_dynamics_dpl3/models/", 
-    #'model_dir': ct.DataBaseDir()+'models/tsim/v_exp5/',  #'',  Pre-trained w "fixed" and "fxvs1" (for dplD14)
-    #'model_dir': ct.DataBaseDir()+'models/tsim/v_exp6/',  #'',  Pre-trained w "fixed","fxvs1","random" (for dplD14)
-    'model_dir_persistent': False,
+    # 'mtr_smsz': 'random',  #'fixed', 'fxvs1', 'random', 'viscous'
+    # 'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
+    # "model_dir": "", 
+    # 'model_dir_persistent': False,
     }
 
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 30,
+    'num_episodes': 100,
     'num_log_interval': 1,
     'rcv_size': 'static',  #'static', 'random'
-    'mtr_smsz': 'viscous',  #'fixed', 'fxvs1', 'random', 'viscous'
+    'mtr_smsz': 'random',  #'fixed', 'fxvs1', 'random', 'viscous'
     'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
-    # 'model_dir': ct.DataBaseDir()+'models/tsim/v2/',  #'',
-    # 'model_dir_persistent': True,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
+    "model_dir": "", 
     'db_src': '',
-    #'db_src': '/tmp/dpl/database.yaml',
-    # "db_src": "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl01/database.yaml",
     'config': {},  #Config of the simulator
     'dpl_options': {
       'opt_log_name': None,  #Not save optimization log.

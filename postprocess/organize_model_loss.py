@@ -8,10 +8,12 @@ def Help():
 def Run(ct,*args):
   target_dir_list = [
     "mtr_sms/learn/basic", 
-    "mtr_sms/learn/additional_early",
-    "mtr_sms/learn/additional_more", 
-    "mtr_sms/learn/normal_early", 
-    "mtr_sms/learn/normal_more"
+    # "mtr_sms/learn/additional_early",
+    # "mtr_sms/learn/additional_more", 
+    "mtr_sms/learn/additional2_early",
+    "mtr_sms/learn/additional2_more",
+    # "mtr_sms/learn/normal_early", 
+    # "mtr_sms/learn/normal_more"
   ]
   root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   dynamics_list = ["Fgrasp","Fmvtorcv_rcvmv","Fmvtorcv","Fmvtopour2",
@@ -51,5 +53,5 @@ def Run(ct,*args):
 
   df_model_loss.set_index(["dynamics"], inplace=True)
 
-  save_path = root_path+"mtr_sms/learn/organize_model_loss.csv"
+  save_path = root_path+"mtr_sms/learn/model_loss_organized.csv"
   df_model_loss.to_csv(save_path)

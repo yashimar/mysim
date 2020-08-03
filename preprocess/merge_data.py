@@ -59,30 +59,35 @@ def Execute(l):
     CPrint(3,"DataY shape:",DataY.shape)
 
 def Run(ct,*args):
-  log_dirname = "merged_data3"
+  log_dirname = "mtr_sms/merged_data"
   root_logpath = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/data/'
   root_modeldir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
   data_dir_list = [
-    "dpl01", 
-    "dpl2_std_pour11311", 
-    "dpl2_std_pour11312", 
-    "dpl2_std_pour11313", 
-    "dpl2_std_pour11314", 
-    "dpl2_std_pour11315", 
-    "dpl2_shake_A11311", 
-    "dpl2_shake_A11312", 
-    "dpl2_shake_A11313", 
-    "dpl2_shake_A11314", 
-    "dpl2_shake_A11315", 
-    "dpl2_choose_skill11311", 
-    "dpl2_choose_skill11312", 
-    "dpl2_choose_skill11313", 
-    "dpl2_choose_skill11314", 
-    "dpl2_choose_skill11315", 
-    "dpl3_std_pour11312", 
-    "dpl3_shake_A11311", 
-    "dpl3_choose_skill11313", 
-    "learn_dynamics_dpl3", 
+    # "dpl01", 
+    # "dpl2_std_pour11311", 
+    # "dpl2_std_pour11312", 
+    # "dpl2_std_pour11313", 
+    # "dpl2_std_pour11314", 
+    # "dpl2_std_pour11315", 
+    # "dpl2_shake_A11311", 
+    # "dpl2_shake_A11312", 
+    # "dpl2_shake_A11313", 
+    # "dpl2_shake_A11314", 
+    # "dpl2_shake_A11315", 
+    # "dpl2_choose_skill11311", 
+    # "dpl2_choose_skill11312", 
+    # "dpl2_choose_skill11313", 
+    # "dpl2_choose_skill11314", 
+    # "dpl2_choose_skill11315", 
+    # "dpl3_std_pour11312", 
+    # "dpl3_shake_A11311", 
+    # "dpl3_choose_skill11313", 
+    # "learn_dynamics_dpl3", 
+    "mtr_sms/learn/basic", 
+    "random_sampled/mtr_sms/sample1", 
+    "random_sampled/mtr_sms/sample2",
+    "random_sampled/mtr_sms/sample3",
+    "random_sampled/mtr_sms/sample4",
   ]
   data_dir_list = map(lambda x: root_modeldir+x+"/models/", data_dir_list)
 

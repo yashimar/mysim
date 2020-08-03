@@ -439,8 +439,17 @@ def Run(ct,*args):
     mm= TModelManager(domain.SpaceDefs, domain.Models)
     mm.Load({'options':mm_options})
     if l.opt_conf['model_dir'] not in ('',None):
-      if os.path.exists(l.opt_conf['model_dir']+'model_mngr.yaml'):
-        mm.Load(LoadYAML(l.opt_conf['model_dir']+'model_mngr.yaml'), l.opt_conf['model_dir'])
+      if os.path.exists(l.opt_conf['model_dir']["main"]+'model_mngr.yaml'):
+        CPrint(3,"Load Options:",l.opt_conf['model_dir']["main"]+'model_mngr.yaml')
+        mm.Load(LoadYAML(l.opt_conf['model_dir']["main"]+'model_mngr.yaml'))
+        mm.CreateModels()
+        for key in mm.Learning:
+          In,Out,F= mm.Models[key]
+          prefix,path= mm.GetFilePrefixPath(l.opt_conf['model_dir'][key],key)
+          if os.path.exists(path):
+            F.Load(LoadYAML(path), prefix)
+            CPrint(3,"Find dynamics model:",key)
+            Print(path)
       if l.opt_conf['model_dir_persistent']:
         mm.Options['base_dir']= l.opt_conf['model_dir']
       else:

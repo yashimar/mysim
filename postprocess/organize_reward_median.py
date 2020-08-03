@@ -29,15 +29,15 @@ def Run(ct,*args):
   ])
   df_reward_organize = pd.DataFrame(columns=[
     "skill","mtr","sms","case",
-    "mean reward","mean estimation",
-    "mean abs difference","mean abs difference(%)",
+    "median reward","median estimation",
+    "median abs difference","median abs difference(%)",
     "iqr reward", "iqr estimation",
     "trials"
   ])
   df_reward_organize_macro = pd.DataFrame(columns=[
     "skill","mtr","case",
-    "total mean reward","total mean estimation",
-    "total mean abs difference","total mean abs difference(%)",
+    "total median reward","total median estimation",
+    "total median abs difference","total median abs difference(%)",
     "total iqr reward", "total iqr estimation"
   ])
   for target_dir in target_dir_list:
@@ -79,10 +79,10 @@ def Run(ct,*args):
             }, ignore_index=True)
           
           trials = data[-1][0]+1
-          mean_reward = np.mean(reward_list)
-          mean_estimation = np.mean(estimation_list)
-          mean_abs_difference = np.mean(abs_difference_list)
-          mean_abs_difference_p = mean_abs_difference/abs(mean_estimation)*100
+          median_reward = np.percentile(reward_list,[50]).item()
+          median_estimation = np.percentile(estimation_list,[50]).item()
+          median_abs_difference = np.percentile(abs_difference_list,[50]).item()
+          median_abs_difference_p = median_abs_difference/abs(median_estimation)*100
           iqr_reward = iqr(reward_list)
           iqr_estimation = iqr(estimation_list)
           df_reward_organize = df_reward_organize.append({
@@ -91,10 +91,10 @@ def Run(ct,*args):
             "mtr": mtr, 
             "sms": sms, 
             "trials": trials, 
-            "mean reward": mean_reward, 
-            "mean estimation": mean_estimation, 
-            "mean abs difference": mean_abs_difference, 
-            "mean abs difference(%)": mean_abs_difference_p, 
+            "median reward": median_reward, 
+            "median estimation": median_estimation, 
+            "median abs difference": median_abs_difference, 
+            "median abs difference(%)": median_abs_difference_p, 
             "iqr reward": iqr_reward, 
             "iqr estimation": iqr_estimation
           }, ignore_index=True)
@@ -121,20 +121,20 @@ def Run(ct,*args):
                                   total_non_viscous_abs_difference_list,
                                   total_viscous_abs_difference_list]
       for mtr,reward_list,estimation_list,abs_difference_list in zip(macro_mtr_list,macro_reward_list,macro_estimation_list,macro_abs_difference_list):
-        total_mean_reward = np.mean(reward_list)
-        total_mean_estimation = np.mean(estimation_list)
-        total_mean_abs_difference = np.mean(abs_difference_list)
-        total_mean_abs_difference_p = total_mean_abs_difference/abs(total_mean_estimation)*100
+        total_median_reward = np.percentile(reward_list,[50]).item()
+        total_median_estimation = np.percentile(estimation_list,[50]).item()
+        total_median_abs_difference = np.percentile(abs_difference_list,[50]).item()
+        total_median_abs_difference_p = total_median_abs_difference/abs(total_median_estimation)*100
         total_iqr_reward = iqr(reward_list)
         total_iqr_estimation = iqr(estimation_list)
         df_reward_organize_macro = df_reward_organize_macro.append({
           "case": case,
           "mtr": mtr, 
           "skill": skill,  
-          "total mean reward": total_mean_reward, 
-          "total mean estimation": total_mean_estimation, 
-          "total mean abs difference": total_mean_abs_difference, 
-          "total mean abs difference(%)": total_mean_abs_difference_p, 
+          "total median reward": total_median_reward, 
+          "total median estimation": total_median_estimation, 
+          "total median abs difference": total_median_abs_difference, 
+          "total median abs difference(%)": total_median_abs_difference_p, 
           "total iqr reward": total_iqr_reward, 
           "total iqr estimation": total_iqr_estimation
         }, ignore_index=True)

@@ -1,0 +1,11 @@
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/mtr_sms/learn/basic/models/
+Get sample size: 100
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/random_sampled/mtr_sms/sample1/models/
+Get sample size: 100
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/random_sampled/mtr_sms/sample2/models/
+Get sample size: 100
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/random_sampled/mtr_sms/sample3/models/
+Get sample size: 100
+Read dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/random_sampled/mtr_sms/sample4/models/
+Get sample size: 100
+Total sample size: 500

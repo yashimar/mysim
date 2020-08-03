@@ -1,6 +1,7 @@
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
+from collections import defaultdict
 
 def Help():
   pass
@@ -26,11 +27,32 @@ def Run(ct,*args):
   sms = args[2] if len(args)>=3 else None
   n_episode = args[3] if len(args)>=4 else 10
   
-  target_logdir_name = "mtr_sms/infer/additional_more"
-  model_dir_name = "mtr_sms/learn/additional_more"
+  # target_logdir_name = "mtr_sms/test"
+  target_logdir_name = "mtr_sms/infer/additional2_more"
+  model_dir_name_main_dynamics = "mtr_sms/learn/additional2_more"
   root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
+  # root_logdir = "/tmp/"
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  model_dir = root_modeldir + model_dir_name +"/models/"
+  model_dir = defaultdict()
+  model_dir.update({
+    "main": model_dir_name_main_dynamics, 
+    # "Fgrasp": "mtr_sms/learn/basic", 
+    # "Fmvtorcv_rcvmv": "mtr_sms/learn/basic", 
+    # "Fmvtorcv": "mtr_sms/learn/basic", 
+    # "Fmvtopour2": "mtr_sms/learn/basic", 
+    # "Fflowc_tip10": "mtr_sms/learn/basic", 
+    # "Fflowc_shakeA10": "mtr_sms/learn/basic", 
+    # "Famount4": "mtr_sms/learn/basic", 
+  })
+  dynamics_list = ['Fgrasp','Fmvtorcv_rcvmv','Fmvtorcv','Fmvtopour2',
+                    'Fflowc_tip10','Fflowc_shakeA10','Famount4']
+  for dynamics in dynamics_list:
+    if dynamics not in model_dir.keys():
+      model_dir[dynamics] = model_dir_name_main_dynamics
+    model_dir[dynamics] = root_modeldir + model_dir[dynamics] + "/models/"
+  model_dir["main"] = root_modeldir + model_dir["main"] + "/models/"
+
+  # model_dir = root_modeldir + model_dir_name +"/models/"
   base_logdir = root_logdir + target_logdir_name + "/"
 
   reward_func = [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
@@ -60,6 +82,11 @@ def Run(ct,*args):
     'config': {},  #Config of the simulator
     'dpl_options': {
       'opt_log_name': None,  #Not save optimization log.
+      "ddp_sol":{
+          'max_total_iter': 2000, #default 2000 
+          "grad_max_iter": 50,  #default 50
+          'gd_alpha': 0.03 #default 0.03
+        }, 
       },
   }
   l= TContainer(debug=True)
@@ -75,6 +102,15 @@ def Run(ct,*args):
   else: mtr_list = ["bounce","nobounce","natto","ketchup"]
   if sms!=None: sms_list = [sms]
   else: sms_list = [0.02,0.055,0.09]
+
+  for mtr in mtr_list:
+    for sms in sms_list:
+      set_name = mtr+"_"+str(sms).replace(".","")
+      logdir = base_logdir + skill + "/" + set_name + "/"
+      if not os.path.exists(logdir):
+        os.makedirs(logdir)
+      print 'Copying',PycToPy(__file__),'to',PycToPy(logdir+os.path.basename(__file__))
+      CopyFile(PycToPy(__file__),PycToPy(logdir+os.path.basename(__file__)))
 
   for mtr in mtr_list:
     for sms in sms_list:
@@ -102,3 +138,5 @@ def Run(ct,*args):
   #             opt_conf, 
   #             False
   #             )
+
+  

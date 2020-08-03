@@ -18,20 +18,15 @@ def TestConfigCallback(ct,l,sim):
 
 def LoadActions(database, i_episode=0, i_node=0):
   xs= LoadYAML(database)['Entry'][i_episode]['Seq'][i_node]['XS']
-  # act_keys= (
-  #   'gh_ratio','p_pour_trg0','p_pour_trg',
-  #   'dtheta1','dtheta2','shake_spd','shake_axis2','skill',)
   act_keys= (
     'gh_ratio','p_pour_trg0','p_pour_trg',
-    'dtheta1','dtheta2')
+    'dtheta1','dtheta2','shake_spd','shake_axis2','skill',)
   actions= [ToList(np.array(xs[key]['X']).ravel()) for key in act_keys]
   return {key:(value[0] if len(value)==1 else value) for key,value in zip(act_keys,actions)}
 
 def Run(ct,*args):
-  root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  name = "mtr_sms/infer/additional_early/std_pour/bounce_009"
-  target_dir = root_path + name
-  i_episode = 5
+  target_dir = '/tmp/test_replay/choose/nobounce_002'
+  i_episode = 2
   i_node = 0
   l= TContainer(debug=True)
   l.opt_conf= {}
@@ -58,11 +53,10 @@ def Run(ct,*args):
     ct.Run('tsim2.act.move_to_pour', l.opt_conf['actions'])
     XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
 
-    ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
-    # if l.opt_conf['actions']['skill']==0:
-    #   ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
-    # else:
-    #   ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
+    if l.opt_conf['actions']['skill']==0:
+      ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
+    else:
+      ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
     XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
     SaveYAML(XS, '/tmp/test_replay_log/%s.dat'%TimeStr('short2'))

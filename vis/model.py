@@ -18,7 +18,7 @@ def Run(ct, *args):
   dynamics_list = ["Fgrasp","Fmvtorcv_rcvmv","Fmvtorcv","Fmvtopour2",
                     "Fflowc_tip10","Fflowc_shakeA10","Famount4"]
   fig = plt.figure(figsize=(5*len(dynamics_list),5))
-  fig.suptitle(log_name, fontsize=15)
+  fig.suptitle(log_name, fontsize=12)
   for count, dynamics in enumerate(dynamics_list):
     mean_list = []
     err_list = []
@@ -40,14 +40,23 @@ def Run(ct, *args):
     model_logs[dynamics+"_err"] = err_list
 
     ax = fig.add_subplot(2,len(dynamics_list),count+1)
+    plt.subplots_adjust(wspace=0.7, hspace=0.6)
     ax.set_ylim(1e-5,0.01)
-    ax.set_title(dynamics)
-    if count==0: ax.set_ylabel("mean")
+    ax.set_title(dynamics+" mean model",fontsize=9)
+    ax.set_xlabel("episode",fontsize=9)
+    ax.set_ylabel("ema loss",fontsize=9)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
     ax.plot(mean_list)
 
     ax = fig.add_subplot(2,len(dynamics_list),count+len(dynamics_list)+1)
+    plt.subplots_adjust(wspace=0.7, hspace=0.6)
     ax.set_ylim(1e-5,0.003)
-    if count==0: ax.set_ylabel("err")
+    ax.set_title(dynamics+" error model",fontsize=9)
+    ax.set_xlabel("episode",fontsize=9)
+    ax.set_ylabel("ema loss",fontsize=9)
+    ax.tick_params(axis='x', labelsize=8)
+    ax.tick_params(axis='y', labelsize=8)
     ax.plot(err_list)
 
   plt.plot()
