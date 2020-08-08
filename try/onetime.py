@@ -244,6 +244,7 @@ def Run(ct,*args):
   l.ask_restart = args[4]
   l.reward_func = args[5]
   l.pour_skills = args[6]
+  l.count = args[7]
 
   l.skill_pour = l.opt_conf["skill_pour"]
   l.interactive= l.opt_conf['interactive']
@@ -412,7 +413,10 @@ def Run(ct,*args):
     #'''
     #Analyze l.dpl.DB.Entry:
     ptree= l.dpl.GetPTree('n0', {})
-    fp= open(l.logdir+'dpl_est.dat','w')
+    if l.count==0:
+      fp= open(l.logdir+'dpl_est.dat','w')
+    else:
+      fp= open(l.logdir+'dpl_est.dat','a')
     for i,eps in enumerate(l.dpl.DB.Entry):
       n0_0= eps.Find(('n0',0))[0]
       if n0_0 is None or eps.R is None:
@@ -477,8 +481,16 @@ def Run(ct,*args):
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
   count= 0
-  if l.restarting:
-    fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
+  # if l.restarting:
+  #   fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
+  # else:
+  #   fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
+  #   if len(l.dpl.DB.Entry)>0:
+  #     for i in range(len(l.dpl.DB.Entry)):
+  #       fp.write(l.dpl.DB.DumpOneYAML(i))
+  #     fp.flush()
+  if l.count!=0 and os.path.exists(l.logdir+'dpl_log.dat'):
+        fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
   else:
     fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
     if len(l.dpl.DB.Entry)>0:
@@ -488,6 +500,11 @@ def Run(ct,*args):
   while True:
     for i in range(l.num_log_interval):
       CPrint(2,'========== Start %4i =========='%count)
+      ###
+      # l.dpl.MM.Init()
+      # l.dpl.Init()
+      # l.dpl.database = TGraphEpisodeDB()
+      ###
       EpisodicCallback(l,count)
       l.dpl.NewEpisode()
       l.user_viz= []

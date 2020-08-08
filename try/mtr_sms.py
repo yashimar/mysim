@@ -25,13 +25,13 @@ def Run(ct,*args):
   skill = args[0]   #("std_pour","shake_A","choose")
   mtr = args[1] if len(args)>=2 else None
   sms = args[2] if len(args)>=3 else None
-  n_episode = args[3] if len(args)>=4 else 10
+  n_episode = args[3] if len(args)>=4 else 20
   
   # target_logdir_name = "mtr_sms/test"
-  target_logdir_name = "mtr_sms/infer/additional2_more"
+  target_logdir_name = "mtr_sms/infer/additional2_more_debug"
   model_dir_name_main_dynamics = "mtr_sms/learn/additional2_more"
-  root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  # root_logdir = "/tmp/"
+  # root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
+  root_logdir = "/tmp/"
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   model_dir = defaultdict()
   model_dir.update({
@@ -72,7 +72,7 @@ def Run(ct,*args):
     "skill_pour": skill, 
     'interactive': False,
     'not_learn': True,
-    'num_episodes': n_episode,
+    'num_episodes': 1,
     'num_log_interval': 1,
     'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
     'model_dir': model_dir,  #'',
@@ -119,15 +119,17 @@ def Run(ct,*args):
       l._mtr_type = mtr
       l._SrcSize2H = sms
 
-      ct.Run("mysim.try.onetime",
-              l, 
-              ConfigCallback,
-              logdir, 
-              opt_conf, 
-              False, 
-              reward_func, 
-              pour_skills
-              )
+      for count in range(n_episode):
+        ct.Run("mysim.try.onetime",
+                l, 
+                ConfigCallback,
+                logdir, 
+                opt_conf, 
+                False, 
+                reward_func, 
+                pour_skills,
+                count
+                )
 
   # set_name = l._mtr_type+"_"+str(l._SrcSize2H).replace(".","")
   # logdir = base_logdir + skill + "/" + set_name + "/"
