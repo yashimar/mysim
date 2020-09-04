@@ -1,0 +1,20 @@
+{% comment %} SaveRcvStatePath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/rcv_logs/replay_example_rep2.txt {% endcomment %}
+{% comment %} SaveControlTargetPath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/ctrtrg/replay_example.txt {% endcomment %}
+ReadControlTargetPath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/ctrtrg/replay_example.txt
+ContactSoftCFM 1e-1
+ContactSoftERP 0.2
+MaxContacts 2
+TimeStep 0.025
+Gravity -1.0
+RcvPartsWeight 100
+BallNum 100
+SrcSize2H 0.08
+{% comment %} MaxStepNum 1000 {% endcomment %}
+{% comment %} UseSubFlag true {% endcomment %}
+TimeShowFlag false
+--- ---
+ViscosityParam1 0.0
+ViscosityMaxDist 0.1
+ContactBounce 0.7
+ContactBounceVel 0.2
+GripperHeight 0.356664308662

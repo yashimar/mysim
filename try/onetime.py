@@ -51,6 +51,116 @@ def Execute(ct,l):
     #l.xs.n0['shake_spd']= SSA([0.8])
     #l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     #l.xs.n0['skill']= SSA([1])
+    # In,Out,Fp= l.dpl.d.Models["Fgrasp"]
+    # x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, l.xs.n0, In)
+    
+    # xs = l.xs.n0
+    # xs["dtheta1"] = SSA([0.01])
+    # xs["dtheta2"] = SSA([0.005])
+    # xs["gh_ratio"] = SSA([0.8317029201599735])
+    # xs["p_pour_trg"] =  SSA(Vec([0.353291480306939,0.596595076648352]))
+    # ptree= l.dpl.GetPTree("n0", xs, max_visits=3)
+    # actions_in_xs= [key for key in ptree.Actions if key in xs]
+    # selections_in_xs= [key for key in ptree.Selections if key in xs]
+    # actions_to_plan= [key for key in ptree.Actions if key not in actions_in_xs]
+    # selections_to_plan= [key for key in ptree.Selections if key not in selections_in_xs]
+    # ptree_set= l.dpl.GetDDPSol().InitGuess(ptree, actions=actions_to_plan, selections=selections_to_plan)
+    # if len(actions_in_xs)>0:
+    #   for ptree2 in ptree_set:
+    #     a_noise= l.dpl.ActionNoise(actions_in_xs,var=l.dpl.Options['grad_act_noise'])
+    #     actions= {key:TSSA(ConstrainN(l.dpl.d.SpaceDefs[key].Bounds, xs[key].X + a_noise[key].X)) for key in actions_in_xs}
+    #     PartialCopyXSSA(actions, ptree2.StartNode.XS)
+    # ptree = ptree_set[0]
+    # value = l.dpl.Value(ptree)
+    # print(value)
+    # stop
+
+    # dynamics_list = ['Fgrasp','Fmvtorcv','Fmvtopour2',
+    #                 'Fflowc_tip10',
+    #                 # 'Fflowc_shakeA10',
+    #                 'Famount4']
+    # for dynamics in dynamics_list:
+    #   Print("----",dynamics,"----")
+    #   In,Out,Fp= l.dpl.d.Models[dynamics]
+    #   for key in In:
+    #     print(key)
+    #     print(xs[key])
+    #   x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, xs, In)
+    #   pred= Fp.Predict(x_in, cov_in, with_var=True, with_grad=True)
+    #   Print("pred:",pred.Y.ravel())
+    #   Print("dims_in:",dims_in)
+    #   dim_old = 0
+    #   for i,key in enumerate(Out):
+    #     print(key)
+    #     xs[key] = SSA(pred.Y[dim_old:dim_old+dims_in[i]])
+    #     dim_old = dims_in[i]
+    # hoge
+
+    # graph= l.dpl.d.Graph
+    # queue= [ptree.Start]
+    # while len(queue)>0:
+    #   n_curr= queue.pop(0)
+    #   tnode= ptree.Tree[n_curr]
+    #   gnode= graph[n_curr.A]
+    #   key_Fp= gnode.Fp
+    #   with_grad=True
+    #   if key_Fp is not None:
+    #     if with_grad:  tnode.P,tnode.dFp= l.dpl.ForwardP(key_Fp, tnode.XS, with_grad=True)
+    #     else:          tnode.P= l.dpl.ForwardP(key_Fp, tnode.XS, with_grad=False)
+    #   tnode.dFd= [None]*len(tnode.Next)
+    #   #Done.  Prepare for the next:
+    #   for b,n_next in enumerate(tnode.Next):
+    #     if n_next is not None:
+    #       # print(n_next)
+    #       queue.append(n_next)
+    #       #Doing something with current to next edge:
+    #       tnode_nx= ptree.Tree[n_next]
+    #       #Compute next XSSA:
+    #       key_Fd= gnode.Fd[b]
+    #       # print(key_Fd)
+    #       if key_Fd is not None:
+    #         # In,Out,Fp= l.dpl.d.Models[key_Fd]
+    #         # x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, tnode.XS, In)
+    #         # print(x_in,cov_in,dims_in)
+    #         if with_grad:  tnode_nx.XS,tnode.dFd[b]= l.dpl.Forward(key_Fd, tnode.XS, with_grad=True)
+    #         else:          tnode_nx.XS= l.dpl.Forward(key_Fd, tnode.XS, with_grad=False)
+    #         try:
+    #           Print("----",key_Fd,"-----")
+    #           In,Out,Fp= l.dpl.d.Models[key_Fd]
+    #           x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, tnode.XS, In)
+    #           CPrint(1,"cov_in:",cov_in)
+    #           Print("x_in:",x_in)
+    #           pred= Fp.Predict(x_in, cov_in, with_var=True, with_grad=True)
+    #           Print("pred:",pred.Y.ravel())
+    #         except:
+    #           pass
+    #       #Done.
+    #     else:  #i.e. n_next is None
+    #       #In this case, we force the probability zero
+    #       tnode.P[b]= 0.0
+    #       if with_grad:
+    #         for key_x,dFp in tnode.dFp.iteritems():
+    #           dFp[:,b]= 0.0
+    #   ptree.FlagFwd= 2 if with_grad else 1
+    #   ptree.FlagBwd= 0
+    # hoge
+
+    # l.dpl.ForwardTree(ptree,with_grad=True)
+    # for n_curr in ptree.Terminal:
+    #   tnode= ptree.Tree[n_curr]
+    #   print(tnode.XS["a_trg"].Cov)
+    #   if REWARD_KEY in tnode.XS:
+    #     tnode.J= tnode.XS[REWARD_KEY].X[0,0]
+    #     if l.dpl.Options['f_reward_ucb']!=0.0:
+    #       tnode.J+= l.dpl.Options['f_reward_ucb'] * tnode.XS[REWARD_KEY].Cov[0,0]
+    #     tnode.dJ= {REWARD_KEY:1.0}
+    #   else:
+    #     tnode.J= 0.0
+    #     tnode.dJ= {REWARD_KEY:0.0}
+    # print(ptree.Terminal)
+    # # print(l.dpl.Value(ptree_set[0]))
+    # hoge
+
     res= l.dpl.Plan('n0', l.xs.n0, l.interactive)
     l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
     l.xs.prev= l.xs.n0
@@ -402,6 +512,10 @@ def Run(ct,*args):
       else:         l.dpl.d.Models['Rdamount']= Rdamount_default
 
   def LogDPL(l):
+    if l.count==0: mode="w"
+    else: mode="a"
+    def SaveYAML(d, file_name, except_cnv=lambda y:y, interactive=False):
+      OpenW(file_name,mode=mode,interactive=interactive).write(yamldump(ToStdType(d,except_cnv), Dumper=YDumper))
     SaveYAML(l.dpl.MM.Save(l.dpl.MM.Options['base_dir']), l.dpl.MM.Options['base_dir']+'model_mngr.yaml')
     SaveYAML(l.dpl.DB.Save(), l.logdir+'database.yaml')
     SaveYAML(l.dpl.Save(), l.logdir+'dpl.yaml')

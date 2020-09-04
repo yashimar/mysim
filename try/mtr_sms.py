@@ -25,13 +25,13 @@ def Run(ct,*args):
   skill = args[0]   #("std_pour","shake_A","choose")
   mtr = args[1] if len(args)>=2 else None
   sms = args[2] if len(args)>=3 else None
-  n_episode = args[3] if len(args)>=4 else 20
+  n_episode = args[3] if len(args)>=4 else 10
   
   # target_logdir_name = "mtr_sms/test"
-  target_logdir_name = "mtr_sms/infer/additional2_more_debug"
-  model_dir_name_main_dynamics = "mtr_sms/learn/additional2_more"
-  # root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  root_logdir = "/tmp/"
+  target_logdir_name = "mtr_sms/infer/basic2"
+  model_dir_name_main_dynamics = "mtr_sms/learn/basic2"
+  root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
+  # root_logdir = "/tmp/"
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   model_dir = defaultdict()
   model_dir.update({

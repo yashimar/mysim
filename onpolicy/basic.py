@@ -318,7 +318,7 @@ def Run(ct,*args):
   #Setup for experiments:
   # l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/dpl3_choose_skill{}/'.format(os.environ["ROS_MASTER_URI"].split(":")[-1])
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "mtr_sms/basic/"
+            + "mtr_sms/learn/basic2/"
   opt_conf={
     # 'mtr_smsz': 'random',  #'fixed', 'fxvs1', 'random', 'viscous'
     # 'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
@@ -333,7 +333,7 @@ def Run(ct,*args):
     'num_log_interval': 3,
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'random',  #'fixed', 'fxvs1', 'random', 'viscous'
-    'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
+    'rwd_schedule': "early_tip",  #None, 'early_tip', 'early_shakeA'
     'model_dir': "",  #'',
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
     'db_src': '',

@@ -24,6 +24,11 @@ def autolabel(rects,ax,x_values_std):
                   textcoords="offset points",
                   ha='center', va='bottom',fontsize=6)
 
+class AttrDict(dict):
+  def __init__(self, *args, **kwargs):
+    super(AttrDict, self).__init__(*args, **kwargs)
+    self.__dict__ = self
+
 def Execute(l):
   node_io = {
     "Fgrasp": [0,1], 
@@ -51,6 +56,13 @@ def Execute(l):
                 + "skill params l2 norm average of {}episodes each dynamics mean model".format(len(episode_list)), 
                 fontsize=10)  
   
+  episode_pred_list = defaultdict()
+  for episode in episode_list:
+    episode_pred_list[episode] = defaultdict()
+  out_dims = defaultdict()
+  for dynamics in dynamics_list:
+    out_dims[dynamics] = defaultdict()
+
   for di,dynamics in enumerate(dynamics_list):
     CPrint(2,"======== ",dynamics,"========")
     var_i = l.dpl.MM.Models[dynamics][0]
@@ -64,7 +76,7 @@ def Execute(l):
     var_list = defaultdict()
     for var in var_o:
       diff_var_list[var] = []
-      var_list[var] = {"true":[],"pred":[]}
+      var_list[var] = {"key":[],"true":[],"pred":[]}
 
     for idx,episode in enumerate(episode_list):
       CPrint(2,"----- episode:",str(episode),"-----")
@@ -78,12 +90,17 @@ def Execute(l):
       y = [y for i in range(len(var_o)) for y in xs_o[var_o[i]]["X"]]
       
       model = l.dpl.MM.Models[dynamics][2]
-      pred = model.Predict(x,x_var=0.0,with_var=True,with_grad=True)
+      pred = model.Predict(x,x_var=None,with_var=True,with_grad=True)
+      episode_pred_list[episode][dynamics] = pred.Y.ravel()
       CPrint(3,"Pred mean:",pred.Y.ravel())
       # pred2 = model.Predict(x,with_var=True)
       # CPrint(3,"Pred var:",pred.Var)
       # CPrint(3,pred.Y.ravel()==pred2.Y.ravel())
       CPrint(3,"True:",sum(y,[]))
+      if episode==0 and dynamics=="Famount4":
+        print(x)
+        # CPrint(3,"real estimate rdamount:",data[-1]["XS"][".r"]["X"][0][0])
+        # CPrint(3,"calc estimate rdamount:",-100*max(0.3-pred.Y.ravel()[0],0)**2-max(pred.Y.ravel()[0]-0.3,0)**2-max(pred.Y.ravel()[1],0)**2)
       diff = np.linalg.norm(sum(y,[])-pred.Y.ravel(), ord=2)
       # CPrint(3,"diff:",diff)
       diff_list.append(diff)
@@ -100,24 +117,33 @@ def Execute(l):
         var_list[var]["pred"].append(np.linalg.norm(pred_var_component,ord=2))
         old_dim = dim
         dims.append(dim)
+        out_dims[dynamics][var] = dim
 
-    x_values = [np.mean(diff_list)]
-    x_values_std = [np.std(diff_list)]
-    x_values2 = {"true":[],"pred":[]}
-    x_values2_std = {"true":[],"pred":[]}
+    x_values ={"keys":[],"values":[np.mean(diff_list)]} 
+    # x_values = [np.mean(diff_list)]
+    x_values_std = {"keys":[],"values":[np.std(diff_list)]}
+    # x_values_std = [np.std(diff_list)]
+    x_values2 = {"keys":[],"true":[],"pred":[]}
+    x_values2_std = {"keys":[],"true":[],"pred":[]}
     for var in var_o:
-      x_values.append(np.mean(diff_var_list[var]))
-      x_values_std.append(np.std(diff_var_list[var]))
+      x_values["keys"].append(var)
+      x_values["values"].append(np.mean(diff_var_list[var]))
+      x_values_std["keys"].append(var)
+      x_values_std["values"].append(np.std(diff_var_list[var]))
+      x_values2["keys"].append(var)
       x_values2["true"].append(np.mean(var_list[var]["true"]))
       x_values2["pred"].append(np.mean(var_list[var]["pred"]))
+      x_values2_std["keys"].append(var)
       x_values2_std["true"].append(np.std(var_list[var]["true"]))
       x_values2_std["pred"].append(np.std(var_list[var]["pred"]))
       
+    # try: print(var_list["da_total"]["true"])
+    # except: pass
     ax = fig1.add_subplot(len(dynamics_list),1,1+di)
     rect = ax.barh(
-        ["all variables"]+diff_var_list.keys(),
-        x_values,
-        xerr=x_values_std, 
+        ["all variables"]+x_values["keys"],
+        x_values["values"],
+        xerr=x_values_std["values"], 
         color=["orange"]+["pink"]*len(diff_var_list)
         )
     ax_title=" | params(dims): "
@@ -131,12 +157,14 @@ def Execute(l):
     ax.tick_params("y",labelsize=7)
     ax.tick_params("x",labelsize=6)
     fig1.subplots_adjust(hspace=0.6)
-    autolabel(rect,ax,x_values_std)
+    autolabel(rect,ax,x_values_std["values"])
 
     ax = fig2.add_subplot(len(dynamics_list),1,1+di)
     x_ticks = [com for t,p in zip(x_values2["true"],x_values2["pred"]) for com in [t,p]]
     x_ticks_err = [com for t,p in zip(x_values2_std["true"],x_values2_std["pred"]) for com in [t,p]]
-    y_ticks = [com+"_"+case for com in var_list.keys() for case in ["true","pred"]]
+    y_ticks = [com+"_"+case for com in x_values2["keys"] for case in ["true","pred"]]
+    # print(var_list)
+    # print(var_list.keys())
     rect = ax.barh(
         y_ticks,
         x_ticks,
@@ -154,21 +182,56 @@ def Execute(l):
 
   fig1.subplots_adjust(left=0.105,right=0.92,bottom=0.05,top=0.90+0.02)
   # fig1.show()
-  fig1.savefig("/home/yashima/Pictures/mtr_sms/model_validation/mean_model_loss/"+l.target_skill+"_"+l.target_mtr_sms+"_"+l.target_type+".png")
+  if not l.show:plt.close()
+  if l.save: fig1.savefig("/home/yashima/Pictures/mtr_sms/model_validation/mean_model_loss/"+l.target_skill+"_"+l.target_mtr_sms+"_"+l.target_type+".png")
 
   fig2.subplots_adjust(left=0.105,right=0.92,bottom=0.05,top=0.90+0.02)
   # fig2.show()
-  fig2.savefig("/home/yashima/Pictures/mtr_sms/model_validation/skill_params/"+l.target_skill+"_"+l.target_mtr_sms+"_"+l.target_type+".png")  
+  if not l.show:plt.close()
+  if l.save: fig2.savefig("/home/yashima/Pictures/mtr_sms/model_validation/skill_params/"+l.target_skill+"_"+l.target_mtr_sms+"_"+l.target_type+".png")  
+
+
+  episode = 5
+  data = database[episode]["Seq"][0]["XS"]
+  for dynamics in dynamics_list:
+    Print("----",dynamics,"----")
+    In,Out,model = l.dpl.MM.Models[dynamics]
+    Print("In:",In)
+    for key in In:
+      Print(" ",key,":",data[key]["X"])
+    x_in = [data[key]["X"][i] for key in In for i in range(len(data[key]["X"]))]
+    dims = DimsXSSA(l.dpl.d.SpaceDefs,In)
+    D = sum(dims)
+    cov_e= np.zeros((D,D))
+    i= 0
+    for key,dim in zip(In,dims):
+      i2= i+dim
+      cov_k, cov_k_is_zero= RegularizeCov(data[key]["Cov"], dim)
+      if not cov_k_is_zero:  cov_e[i:i2,i:i2]= cov_k
+      i= i2
+    pred = model.Predict(x_in,x_var=cov_e,with_var=True,with_grad=True)
+    CPrint(3,"Pred:",pred.Y.ravel())
+    Print("Out:",Out)
+    dim_old = 0
+    for key in Out:
+      dim = out_dims[dynamics][key]
+      data[key] = {"X": pred.Y[dim_old:dim_old+dim], "Cov":np.diag(np.diag(pred.Var)[dim_old:dim_old+dim])}
+      dim_old += dim
+      Print(" ",key,":",data[key]["X"])  
+  CPrint(2,"rdamount:",-100*max(0.3-pred.Y.ravel()[0],0)**2-max(pred.Y.ravel()[0]-0.3,0)**2-max(pred.Y.ravel()[1],0)**2)
+  
 
 def Run(ct,*args):
   l= TContainer(debug=True)
+  l.show = False
+  l.save = False
   l.target_type = args[0]
   l.target_skill = args[1]
   l.target_mtr_sms = args[2]
   target_dir = "mtr_sms/infer/"+l.target_type+"/"+l.target_skill+"/"+l.target_mtr_sms
   base_modeldir = "mtr_sms/learn/"+l.target_type
   l.episode_list = np.arange(0,10)
-  dynamics_list = ['Fgrasp','Fmvtorcv_rcvmv','Fmvtorcv','Fmvtopour2',
+  dynamics_list = ['Fgrasp','Fmvtorcv','Fmvtorcv_rcvmv','Fmvtopour2',
                     'Fflowc_tip10',
                     # 'Fflowc_shakeA10',
                     'Famount4']
@@ -279,6 +342,24 @@ def Run(ct,*args):
     'P1': [[],[PROB_KEY], TLocalLinear(0,1,lambda x:[1.0],lambda x:[0.0])],
     'P2':  [[],[PROB_KEY], TLocalLinear(0,2,lambda x:[1.0]*2,lambda x:[0.0]*2)],
     'Pskill': [['skill'],[PROB_KEY], TLocalLinear(0,2,lambda s:Delta1(2,s[0]),lambda s:[0.0]*2)],
+    }
+  domain.Graph={
+      'n0': TDynNode(None,'P1',('Fgrasp','n1')),
+      'n1': TDynNode('n0','P2',('Fmvtorcv','n2a'),('Fmvtorcv_rcvmv','n1rcvmv')),
+      'n1rcvmv': TDynNode('n1','P1',('Rrcvmv','n1rcvmvr')),
+      'n1rcvmvr': TDynNode('n1rcvmv'),
+      'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
+      'n2b': TDynNode('n2a','P2',('Fnone','n2c'),('Rmvtopour','n2br')),
+      'n2br': TDynNode('n2b'),
+      'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa')),
+      #Tipping:
+      'n3ti': TDynNode('n2c','P1',('Famount4','n4ti')),
+      'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
+      'n4tir': TDynNode('n4ti'),
+      #Shaking-A:
+      'n3sa': TDynNode('n2c','P1',('Famount4','n4sa')),
+      'n4sa': TDynNode('n3sa','P1',('Rdamount','n4sar')),
+      'n4sar': TDynNode('n4sa'),
     }
 
   # def LogDPL(l):

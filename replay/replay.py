@@ -2,11 +2,26 @@
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
+from matplotlib import pyplot as plt
 def Help():
   return '''Test of using actions for ODE grasping and pouring simulation (ver.2.1).
     Replaying an episode to check the simulation consistency.
     Based on tsim2.test_act
   Usage: tsim2.test_replay'''
+
+# def StatObserveXSSA(l,xs_prev,keys,time_step=0.01,n_roop=100):
+#   hist = None
+#   for i in range(n_roop):
+#     time.sleep(time_step)
+#     if i==0: 
+#       hist = ObserveXSSA(l,xs_prev,keys)
+#     else: 
+#       obs = ObserveXSSA(l,xs_prev,keys)
+#       for key in hist.keys():
+#         hist[key].X = np.matrix((np.array(hist[key].X)+np.array(obs[key].X)).tolist())
+#   for key in hist.keys(): 
+#     hist[key].X = np.matrix((np.array(hist[key].X)/float(n_roop)).tolist())
+#   return hist
 
 def TestConfigCallback(ct,l,sim):
   for key,value in l.opt_conf['config'].iteritems():
@@ -31,51 +46,154 @@ def LoadActions(database, i_episode=0, i_node=0):
   return {key:(value[0] if len(value)==1 else value) for key,value in zip(act_keys,actions)}
 
 def Run(ct,*args):
-  root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
-  # root_path = "/tmp/"
-  name = "mtr_sms/infer/additional2_more/shake_A/bounce_009"
-  target_dir = root_path + name
-  i_episode = 7
+  log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/" \
+            + "replay_log/"
+  target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
+              + "mtr_sms/infer/additional2_more/shake_A/bounce_009/"
+  i_episode_list = [7]
   i_node = 0
-  n_roop = 5
+  n_roop = 1
 
-  for roop in range(n_roop):
-    l= TContainer(debug=True)
-    l.opt_conf= {}
-    l.opt_conf['config']= LoadYAML(target_dir+"/config_log.yaml")[i_episode]
-    l.opt_conf['actions']= LoadActions(target_dir+'/database.yaml',i_episode,i_node)
-    l.config_log= []
-    l.config_callback= TestConfigCallback
-    ct.Run('tsim2.setup', l)
-    sim= ct.sim
-    l= ct.sim_local
+  for i_episode in i_episode_list:
+    for roop in range(n_roop):
+      l= TContainer(debug=True)
+      l.opt_conf= {}
+      l.opt_conf['config']= LoadYAML(target_dir+"config_log.yaml")[i_episode]
+      l.opt_conf['actions']= LoadActions(target_dir+'database.yaml',i_episode,i_node)
+      l.config_log= []
+      l.config_callback= TestConfigCallback
+      # ct.Run('mysim.setup.setup2', l)
 
-    obs_keys0= ('ps_rcv','p_pour','p_pour_z','lp_pour','a_trg','size_srcmouth','material2')
-    obs_keys_after_grab= obs_keys0+('gh_abs',)
-    obs_keys_before_flow= obs_keys_after_grab+('a_pour','a_spill2','a_total')
-    obs_keys_after_flow= obs_keys_before_flow+('lp_flow2','lpp_flow','flow_var','da_pour','da_spill2','da_total')
-    XS= []
+      Sresume_Fsetup2 = ct.Run('mysim.setup.setup2', l)
+      start = time.time()
 
-    try:
-      XS.append(ObserveXSSA(l,None,obs_keys0+('da_trg',)))
-      ct.Run('tsim2.act.grab', l.opt_conf['actions'])
-      XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_grab))
-      ct.Run('tsim2.act.move_to_rcv', l.opt_conf['actions'])
-      XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_grab+('dps_rcv','v_rcv','da_trg')))
-      ct.Run('tsim2.act.move_to_pour', l.opt_conf['actions'])
-      XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
+      sim= ct.sim
+      l= ct.sim_local
 
-      # ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
-      ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
-      # if l.opt_conf['actions']['skill']==0:
-      #   ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
-      # else:
-      #   ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
-      XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
+      obs_keys0= ('ps_rcv','p_pour','p_pour_z','lp_pour','a_trg','size_srcmouth','material2')
+      obs_keys_after_grab= obs_keys0+('gh_abs',)
+      obs_keys_before_flow= obs_keys_after_grab+('a_pour','a_spill2','a_total')
+      obs_keys_after_flow= obs_keys_before_flow+('lp_flow2','lpp_flow','flow_var','da_pour','da_spill2','da_total')
+      XS= []
 
-      SaveYAML(XS,root_path+'replay_log/'+name+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))
+      try:
+        # print(ObserveXSSA(l,None,obs_keys0+('da_trg',))["p_pour_z"].X)
+        # hoge
+        # hist = []
+        # for i in range(100):
+        #   time.sleep(0.01)
+        #   # CPrint(2,ct.sim_local.sensors.x_rcv.position.x)
+        #   hist.append(ct.sim_local.sensors.x_rcv.position.x)
+        # XS_stat = StatObserveXSSA(l,None,obs_keys0+('da_trg',),0.01,100)
+        # XS.append(XS_stat)
+        # plt.title("node: 0")
+        # plt.plot(hist)
+        Sresume_Sobs0 = time.time()-start+Sresume_Fsetup2
+        CPrint(2,"Start resume to Start observe state0:",Sresume_Sobs0)
+        obs = ObserveXSSA(l,None,obs_keys0+('da_trg',))
+        Sobs0_Fobs0 = time.time()-start+Sresume_Fsetup2-Sresume_Sobs0
+        CPrint(2,"Start observe state0 to Finish observe state0:",Sobs0_Fobs0)
+        Sresume_Fobs0 = Sresume_Sobs0+Sobs0_Fobs0
+        CPrint(2,"Start resume to Finish observe state0:",Sresume_Fobs0)
+        XS.append(obs)
+        obs.update({"Sresume_Fobs0":{"X":[[Sresume_Fobs0]]},
+                    "Sobs0_Fobs0":{"X":[[Sobs0_Fobs0]]}, 
+                    "Sresume_Sobs0":{"X":[[Sresume_Sobs0]]}})
+        
+        s1_start = time.time()
+        ct.Run('mysim.act.grab2', l.opt_conf['actions'])
+        Sstate1_Sobs1 = time.time()-s1_start
+        CPrint(2,"Start state1 to Start observe state1:",Sstate1_Sobs1)
+        # # hist = []
+        # # for i in range(100):
+        # #   time.sleep(0.01)
+        # #   # CPrint(2,ct.sim_local.sensors.x_rcv.position.x)
+        # #   hist.append(ct.sim_local.sensors.x_rcv.position.x)
+        # # XS_stat = StatObserveXSSA(l,XS[-1],obs_keys_after_grab,0.01,100)
+        # # XS.append(XS_stat)
+        # # plt.title("node: 1")
+        # # plt.plot(hist)
+        obs = ObserveXSSA(l,XS[-1],obs_keys_after_grab)
+        Sobs1_Fobs1 = time.time()-s1_start-Sstate1_Sobs1
+        CPrint(2,"Start observe state1 to Finish observe state1:",Sobs1_Fobs1)
+        Sresume_Fobs1 = Sresume_Fobs0+Sstate1_Sobs1+Sobs1_Fobs1
+        CPrint(2,"Start resume to Finish observe state1:",Sresume_Fobs1)
+        XS.append(obs)
+        obs.update({"Sstate1_Sobs1":{"X":[[Sstate1_Sobs1]]},
+                    "Sobs1_Fobs1":{"X":[[Sobs1_Fobs1]]},
+                    "Sresume_Fobs1":{"X":[[Sresume_Fobs1]]}})
 
-    finally:
-      sim.StopPubSub(ct,l)
-      l.sensor_callback= None
-      ct.srvp.ode_pause()
+        s2_start = time.time()
+        ct.Run('mysim.act.move_to_rcv2', l.opt_conf['actions'])
+        Sstate2_Sobs2 = time.time()-s2_start
+        CPrint(2,"Start state2 to Start observe state2:",Sstate2_Sobs2)
+        # # hist = []
+        # # for i in range(100):
+        # #   time.sleep(0.01)
+        # #   # CPrint(2,ct.sim_local.sensors.x_rcv.position.x)
+        # #   hist.append(ct.sim_local.sensors.x_rcv.position.x)
+        # # XS_stat = StatObserveXSSA(l,XS[-1],obs_keys_after_grab+('dps_rcv','v_rcv','da_trg'),0.01,100)
+        # # XS.append(XS_stat)
+        # # plt.title("node: 2")
+        # # plt.plot(hist)
+        obs = ObserveXSSA(l,XS[-1],obs_keys_after_grab+('dps_rcv','v_rcv','da_trg'))
+        Sobs2_Fobs2 = time.time()-s2_start-Sstate2_Sobs2
+        CPrint(2,"Start observe state2 to Finish observe state2:",Sobs2_Fobs2)
+        Sresume_Fobs2 = Sresume_Fobs1+Sstate2_Sobs2+Sobs2_Fobs2
+        CPrint(2,"Start resume to Finish observe state2:",Sresume_Fobs2)
+        XS.append(obs)
+        obs.update({"Sstate2_Sobs2":{"X":[[Sstate2_Sobs2]]},
+                    "Sobs2_Fobs2":{"X":[[Sobs2_Fobs2]]},
+                    "Sresume_Fobs2":{"X":[[Sresume_Fobs2]]}})
+        
+        s3_start = time.time()
+        ct.Run('mysim.act.move_to_pour2', l.opt_conf['actions'])
+        Sstate3_Sobs3 = time.time()-s3_start
+        CPrint(2,"Start state3 to Start observe state3:",Sstate3_Sobs3)
+        # # hist = []
+        # # for i in range(100):
+        # #   time.sleep(0.01)
+        # #   # CPrint(2,ct.sim_local.sensors.x_rcv.position.x)
+        # #   hist.append(ct.sim_local.sensors.x_rcv.position.x)
+        # # XS_stat = StatObserveXSSA(l,XS[-1],obs_keys_before_flow,0.01,100)
+        # # XS.append(XS_stat)
+        # # plt.title("node: 3")
+        # # plt.plot(hist)
+        obs = ObserveXSSA(l,XS[-1],obs_keys_before_flow)
+        Sobs3_Fobs3 = time.time()-s3_start-Sstate3_Sobs3
+        CPrint(2,"Start observe state3 to Finish observe state3:",Sobs3_Fobs3)
+        Sresume_Fobs3 = Sresume_Fobs2+Sstate3_Sobs3+Sobs3_Fobs3
+        CPrint(2,"Start resume to Finish observe state3:",Sresume_Fobs3)
+        XS.append(obs)
+        obs.update({"Sstate3_Sobs3":{"X":[[Sstate3_Sobs3]]},
+                    "Sobs3_Fobs3":{"X":[[Sobs3_Fobs3]]},
+                    "Sresume_Fobs3":{"X":[[Sresume_Fobs3]]}})
+
+        s4_start = time.time()
+        ct.Run('mysim.act.shake_A_5s2', l.opt_conf['actions'])
+        Sstate4_Sobs4 = time.time()-s4_start
+        CPrint(2,"Start state4 to Start observe state4:",Sstate4_Sobs4)
+        obs = ObserveXSSA(l,XS[-1],obs_keys_after_flow)
+        Sobs4_Fobs4 = time.time()-s4_start-Sstate4_Sobs4
+        CPrint(2,"Start observe state4 to Finish observe state4:",Sobs4_Fobs4)
+        Sresume_Fobs4 = Sresume_Fobs3+Sstate4_Sobs4+Sobs4_Fobs4
+        CPrint(2,"Start resume to Finish observe state4:",Sresume_Fobs4)
+        XS.append(obs)
+        obs.update({"Sstate4_Sobs4":{"X":[[Sstate4_Sobs4]]},
+                    "Sobs4_Fobs4":{"X":[[Sobs4_Fobs4]]},
+                    "Sresume_Fobs4":{"X":[[Sresume_Fobs4]]}})
+
+        # ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
+        # ct.Run('mysim.act.shake_A_5s2', l.opt_conf['actions'])
+        # # if l.opt_conf['actions']['skill']==0:
+        # #   ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
+        # # else:
+        # #   ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
+        # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
+
+        # SaveYAML(XS,log_dir+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))
+
+      finally:
+        sim.StopPubSub(ct,l)
+        l.sensor_callback= None
+        ct.srvp.ode_pause()

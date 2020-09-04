@@ -10,10 +10,11 @@ def merge_dicts(a, b):
 
 def Run(ct,*args):
   do_update = True
-  target_logdir = 'mtr_sms/learn/additional2_more'
-  base_modeldir = "mtr_sms/learn/additional2_early"
-  # root_logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
-  root_logdir = "/tmp/"
+  target_logdir = 'mtr_sms/learn/additional3_early'
+  # target_logdir = "test_batch_loss_log"
+  base_modeldir = "mtr_sms/learn/basic2"
+  root_logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
+  # root_logdir = "/tmp/"
   logdir= root_logdir + target_logdir+"/"
   # root_modeldir = root_dir
   root_modeldir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
@@ -44,7 +45,7 @@ def Run(ct,*args):
     # "gather_sample/viscous3",
     # "gather_sample/viscous4",
 
-    "mtr_sms/learn/basic", 
+    "mtr_sms/learn/basic2",
 
     "random_sampled/mtr_sms/sample1", 
     "random_sampled/mtr_sms/sample2",
@@ -68,40 +69,42 @@ def Run(ct,*args):
   nn_options_base = {
     # "gpu": 0, 
     "batch_size": 10,           #default 10
-    "num_max_update": 3000000,     #default 5000
-    # 'num_check_stop': 50,       #default 50
-    'loss_stddev_stop': 1e-4,  #default 1e-3
+    "num_max_update": 100000,     #default 5000
+    'num_check_stop': 50,       #default 50
+    'loss_stddev_stop': 1e-3,  #default 1e-3
     'AdaDelta_rho': 0.9,        #default 0.9
     'train_log_file': '{base}train/nn_log-{name}{code}.dat', 
+    "train_batch_loss_log_file": '{base}train/nn_batch_loss_log-{name}{code}.dat',
   }
   nn_options = {
     "Fgrasp": merge_dicts(nn_options_base,{
-      'num_check_stop': 50
+      # 'num_check_stop': 250
       }), 
     "Fmvtorcv_rcvmv": merge_dicts(nn_options_base, {
-      'num_check_stop': 50
+      # 'num_check_stop': 250
       }), 
     "Fmvtorcv": merge_dicts(nn_options_base, {
-      'num_check_stop': 50
+      # 'num_check_stop': 250
       }), 
     "Fmvtopour2": merge_dicts(nn_options_base, {
-      'num_check_stop': 86
+      # 'num_check_stop': 500
       }), 
     "Fflowc_tip10": merge_dicts(nn_options_base, {
-      'num_check_stop': 36
+      # 'num_check_stop': 300
       }), 
     "Fflowc_shakeA10": merge_dicts(nn_options_base, {
-      'num_check_stop': 50
+      # 'num_check_stop': 300
       }), 
     "Famount4": merge_dicts(nn_options_base, {
-      'num_check_stop': 86, 
-      "loss_stddev_stop": 3e-4
+      # 'num_check_stop': 50, 
+      # "loss_stddev_stop": 1e-3, 
       })
   }
   # dynamics_list = ['Fgrasp','Fmvtorcv_rcvmv','Fmvtorcv','Fmvtopour2']
   # dynamics_list = ['Fflowc_tip10','Fflowc_shakeA10','Famount4']
   dynamics_list = ['Fgrasp','Fmvtorcv_rcvmv','Fmvtorcv','Fmvtopour2',
                     'Fflowc_tip10','Fflowc_shakeA10','Famount4']
+  # dynamics_list = ["Famount4"]
 
   print 'Copying',PycToPy(__file__),'to',PycToPy(logdir+os.path.basename(__file__))
   CopyFile(PycToPy(__file__),PycToPy(logdir+os.path.basename(__file__)))
