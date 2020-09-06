@@ -19,7 +19,7 @@ def Run(ct,*args):
   sim_local= args[0] if len(args)>0 else None
 
   #sim= ct.sim if 'sim' in ct.__dict__ else ct.Load('tsim.core1')
-  sim= ct.Load('tsim.core1')
+  sim= ct.Load('mysim.core.core_sv')
   #l= ct.sim_local if 'sim_local' in ct.__dict__ else TContainer(debug=True)
   l= sim_local if sim_local is not None else TContainer(debug=True)
   ct.sim= sim
@@ -45,7 +45,6 @@ def Run(ct,*args):
   l.IsSpilledEmpty= lambda: l.IsSpilled() or l.IsEmpty()
 
   ct.srvp.ode_resume()
-  start = time.time()
   # ct.srvp.ode_pause()
   # CPrint(1,ct.sim_local)
   # time.sleep(0.5)
@@ -86,7 +85,5 @@ def Run(ct,*args):
   l.flow_controlling= False
   l.sensor_callback= lambda:ApplyFilter(ct,l,sim)  #Activate filter
 
+  sim.GetSensor(ct,l)
   l.start_time= l.sensors.time
-
-  end = time.time()
-  return end-start  

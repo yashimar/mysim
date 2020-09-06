@@ -34,7 +34,7 @@ def LoadActions(database, i_episode=0, i_node=0):
 
 def Run(ct,*args):
   log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/" \
-            + "replay_log/"
+            + "replay/use_sv/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
               + "mtr_sms/infer/additional2_more/shake_A/bounce_009/"
   i_episode_list = [7]
@@ -51,8 +51,7 @@ def Run(ct,*args):
       l.config_callback= TestConfigCallback
       # ct.Run('mysim.setup.setup2', l)
 
-      Sresume_Fsetup2 = ct.Run('mysim.setup.setup2', l)
-      start = time.time()
+      ct.Run('mysim.setup.setup_sv', l)
 
       sim= ct.sim
       l= ct.sim_local
@@ -64,18 +63,23 @@ def Run(ct,*args):
       XS= []
 
       try:
+        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,None,obs_keys0+('da_trg',)))
         
-        ct.Run('mysim.act.grab2', l.opt_conf['actions'])
+        ct.Run('mysim.act.grab_sv', l.opt_conf['actions'])
+        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_grab))
 
-        ct.Run('mysim.act.move_to_rcv2', l.opt_conf['actions'])
+        ct.Run('mysim.act.move_to_rcv_sv', l.opt_conf['actions'])
+        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_grab+('dps_rcv','v_rcv','da_trg')))
         
-        ct.Run('mysim.act.move_to_pour2', l.opt_conf['actions'])
+        ct.Run('mysim.act.move_to_pour_sv', l.opt_conf['actions'])
+        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
 
-        ct.Run('mysim.act.shake_A_5s2', l.opt_conf['actions'])
+        ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
+        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         # ct.Run('mysim.act.std_pour', l.opt_conf['actions'])

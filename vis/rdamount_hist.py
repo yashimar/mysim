@@ -11,14 +11,14 @@ def Help():
 
 def Run(ct,*args):
   i_episode = 7
-  i_node_list = [0,1,2,3,4]
+  i_node_list = [0,1]
   # validation_keys = ["a_total"]
   validation_keys = None
   # log_name = args[0]
   # root_logpath = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/replay_log/" \
   #               + "mtr_sms/infer/"+log_name+"/"
   root_logpath = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/" \
-                + "debug/replay/full/"
+                + "debug/replay/use_sv/"
   data_list_dict = defaultdict()
 
   da_pour_list = []
@@ -65,9 +65,9 @@ def Run(ct,*args):
         #     print(j)
 
   # plt.hist(data_list_dict[3]["Sresume_Fobs3"][0])
-  fig = plt.figure()
-  fig.add_subplot(1,2,1).hist(data_list_dict[3]["Sresume_Fobs3"][0])
-  fig.add_subplot(1,2,2).hist(data_list_dict[4]["Sresume_Fobs4"][0])
+  # fig = plt.figure()
+  # fig.add_subplot(1,2,1).hist(data_list_dict[3]["Sresume_Fobs3"][0])
+  # fig.add_subplot(1,2,2).hist(data_list_dict[4]["Sresume_Fobs4"][0])
   # print(Counter(data_list_dict[1]["lp_pour"][0]))
 
   # df = pd.DataFrame(columns=["node","key","component","uniques","value_range"])
