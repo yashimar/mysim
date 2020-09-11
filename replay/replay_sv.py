@@ -36,8 +36,9 @@ def Run(ct,*args):
   log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/" \
             + "replay/use_sv/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "mtr_sms/infer/additional2_more/shake_A/bounce_009/"
-  i_episode_list = [7]
+              + "mtr_sms_sv/test/shake_A/nobounce_002/"
+              # + "mtr_sms/infer/additional2_more/shake_A/bounce_009/" 
+  i_episode_list = [0,1]
   i_node = 0
   n_roop = 1
 
@@ -63,26 +64,23 @@ def Run(ct,*args):
       XS= []
 
       try:
-        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,None,obs_keys0+('da_trg',)))
         
         ct.Run('mysim.act.grab_sv', l.opt_conf['actions'])
-        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_grab))
 
         ct.Run('mysim.act.move_to_rcv_sv', l.opt_conf['actions'])
-        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_grab+('dps_rcv','v_rcv','da_trg')))
         
         ct.Run('mysim.act.move_to_pour_sv', l.opt_conf['actions'])
-        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
 
         ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
-        # sim.GetSensor(ct,l)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
-        # ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
+        # ct.Run('mysim.act.std_pour_sv', l.opt_conf['actions'])
+        # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
+
         # ct.Run('mysim.act.shake_A_5s2', l.opt_conf['actions'])
         # # if l.opt_conf['actions']['skill']==0:
         # #   ct.Run('mysim.act.std_pour', l.opt_conf['actions'])
@@ -90,7 +88,7 @@ def Run(ct,*args):
         # #   ct.Run('mysim.act.shake_A_5s', l.opt_conf['actions'])
         # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
-        # SaveYAML(XS,log_dir+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))
+        SaveYAML(XS,log_dir+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))
 
       finally:
         sim.StopPubSub(ct,l)

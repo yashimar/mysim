@@ -64,10 +64,7 @@ def GetConfig(ct):
   return ct.srvp.ode_get_config().config
 
 def GetSensor(ct,l):
-  a = ct.srvp
-  b = a.ode_get_sensor()
-  l.sensors = b.sensor
-  # l.sensors = ct.srvp.ode_get_sensor().sensor
+  l.sensors = ct.srvp.ode_get_sensor().sensor
   if l.sensor_callback!=None:
     l.sensor_callback()
 
@@ -86,18 +83,8 @@ def SimMove(ct,l,dt,p_pour,theta):
 
   tc0 = l.sensors.time
   while l.sensors.time-tc0<dt:
-    CPrint(3,"Called")
-    # start = time.time()
-    res = ct.srvp.ode_process_sim(p_pour_msg, theta_msg).success  #process step
-    # try:
-      # GetSensor(ct,l)
-    # except rospy.ServiceException, e:
-    #   # CPrint(4,"Service did not process request:",str(e))
-    #   pass
+    ct.srvp.ode_process_sim(p_pour_msg, theta_msg).success  #process step
     GetSensor(ct,l)
-    # l.sensors.time += l.config.TimeStep
-    # time.sleep(0.01)
-      # Print("time:",time.time()-start)
 
 def SimSleep(ct,l,dt):
   GetSensor(ct,l)

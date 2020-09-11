@@ -64,12 +64,13 @@ def GenSMShakeA(ct,l,sim):
   sm['to_max'].Actions[-1]= spilled_action
   sm['to_max'].NewAction()
   sm['to_max'].Actions[-1]= timeout_action
+  ###
+  # sm['to_max'].NewAction()
+  # sm['to_max'].Actions[-1].Condition = lambda: (sm.l.sensors.src_colliding==True or sm.l.sensors.gripper_colliding==True)
+  # sm['to_max'].Actions[-1].Actions = lambda: (sim.MoveToTrgPPour(ct,sm.l,sm.l.p_pour_trg0,spd=0.06), sim.GetSensor(ct,sm.l))
+  # sm['to_max'].Actions[-1].NextState = ORIGIN_STATE
+  ###
   sm['to_max'].NewAction()
-  ###
-  sm['to_max'].Actions[-1].Condition = lambda: (sm.l.sensors.src_colliding==True or sm.l.sensors.gripper_colliding==True)
-  sm['to_max'].Actions[-1].Actions = lambda: (sim.MoveToTrgPPour(ct,sm.l,sm.l.p_pour_trg0,spd=0.06), sim.GetSensor(ct,sm.l))
-  sm['to_max'].Actions[-1].NextState = ORIGIN_STATE
-  ###
   sm['to_max'].Actions[-1].Condition= lambda: sm.l.sensors.theta>sm.l.max_theta
   sm['to_max'].Actions[-1].NextState= 'shake'
   sm['to_max'].ElseAction.Condition= lambda: True
@@ -77,19 +78,20 @@ def GenSMShakeA(ct,l,sim):
   sm['to_max'].ElseAction.NextState= ORIGIN_STATE
 
   sm.NewState('shake')
-  sm['shake'].EntryAction= lambda: (sm.l.ChargeTimer(charge_time), sim.GetSensor(ct,sm.l))
+  sm['shake'].EntryAction= lambda: (sim.GetSensor(ct,sm.l), sm.l.ChargeTimer(charge_time))
   sm['shake'].NewAction()
   sm['shake'].Actions[-1]= poured_action
   sm['shake'].NewAction()
   sm['shake'].Actions[-1]= spilled_action
   sm['shake'].NewAction()
   sm['shake'].Actions[-1]= timeout_action
-  sm['shake'].NewAction()
   ###
+  # sm['shake'].NewAction()
   # sm['shake'].Actions[-1].Condition = lambda: (sm.l.sensors.src_colliding==True or sm.l.sensors.gripper_colliding==True)
   # sm['shake'].Actions[-1].Actions = lambda: (sim.MoveToTrgPPour(ct,sm.l,sm.l.p_pour_trg0,spd=0.06), sim.GetSensor(ct,sm.l))
   # sm['shake'].Actions[-1].NextState = ORIGIN_STATE
   ###
+  sm['shake'].NewAction()
   sm['shake'].Actions[-1].Condition= lambda: sm.l.sensors.num_flow>0
   sm['shake'].Actions[-1].Action= lambda: ( sm.l.ChargeTimer(charge_time), sm.l.Shake(2), sim.GetSensor(ct,sm.l))
   sm['shake'].Actions[-1].NextState= ORIGIN_STATE

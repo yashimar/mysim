@@ -11,7 +11,7 @@ def Help():
 
 def Run(ct,*args):
   i_episode = 7
-  i_node_list = [0,1]
+  i_node_list = [0,1,2,3,4]
   # validation_keys = ["a_total"]
   validation_keys = None
   # log_name = args[0]

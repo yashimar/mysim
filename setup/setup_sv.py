@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from core_tool import *
-SmartImportReload('tsim.sm4')
-from tsim.sm4 import (
+SmartImportReload('mysim.sm.mysm')
+from mysim.sm.mysm import (
   SetMaterial,
   ResetFilter, ApplyFilter,
   )

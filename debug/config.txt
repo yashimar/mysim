@@ -1,5 +1,6 @@
-{% comment %} SaveRcvStatePath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/rcv_logs/replay_example_rep2.txt {% endcomment %}
-{% comment %} SaveControlTargetPath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/ctrtrg/replay_example.txt {% endcomment %}
+{% comment %} SaveStatePath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/state_logs/use_sv1.txt {% endcomment %}
+{% comment %} SaveRcvStatePath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/rcv_logs/setup_param_mc10_erp3.txt {% endcomment %}
+{% comment %} SaveControlTargetPath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/ctrtrg/use_sv1.txt {% endcomment %}
 {% comment %} ReadControlTargetPath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/ctrtrg/replay_example.txt {% endcomment %}
 ContactSoftCFM 1e-1
 ContactSoftERP 0.2
@@ -9,7 +10,7 @@ Gravity -1.0
 RcvPartsWeight 100
 BallNum 100
 SrcSize2H 0.08
-{% comment %} MaxStepNum 1000 {% endcomment %}
+{% comment %} MaxStepNum 5000 {% endcomment %}
 {% comment %} UseSubFlag true {% endcomment %}
 TimeShowFlag false
 --- ---
