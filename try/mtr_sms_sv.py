@@ -27,9 +27,11 @@ def Run(ct,*args):
   sms = args[2] if len(args)>=3 else None
   n_episode = args[3] if len(args)>=4 else 1
   
-  target_logdir_name = "mtr_sms_sv/test"
-  # target_logdir_name = "mtr_sms_sv/infer/basic"
-  model_dir_name_main_dynamics = "mtr_sms/learn/basic"
+  target_logdir_name = "mtr_sms_sv/infer"
+  suff = "not_use_db"
+  model_dir_name_main_dynamics = "mtr_sms_sv/learn/shake_A/random/0055/normal"
+  # db_src = root_modeldir+ "mtr_sms_sv/learn/shake_A/random/0055/normal +"/database.yaml"" 
+  db_src = ""
   root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   # root_logdir = "/tmp/"
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
@@ -72,18 +74,17 @@ def Run(ct,*args):
     "skill_pour": skill, 
     'interactive': False,
     'not_learn': True,
-    'num_episodes': 5,
+    'num_episodes': n_episode,
     'num_log_interval': 1,
     'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
     'model_dir': model_dir,  #'',
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
-    'db_src': '',
-    #'db_src': '/tmp/dpl/database.yaml',
+    'db_src': db_src,
     'config': {},  #Config of the simulator
     'dpl_options': {
       'opt_log_name': None,  #Not save optimization log.
       "ddp_sol":{
-          'db_init_ratio': 0, #default 0.5
+          'db_init_ratio': 0.0, #default 0.5
           'prob_update_best': 0.4, #default 0.4
           'prob_update_rand': 0.3, #default 0.3
           'max_total_iter': 2000, #default 2000 
@@ -101,15 +102,16 @@ def Run(ct,*args):
 
   if mtr=="bounce_list": mtr_list = ["bounce","nobounce"]
   elif mtr=="viscous_list": mtr_list = ["natto","ketchup"]
+  elif mtr=="all": mtr_list = ["bounce","nobounce","natto","ketchup"]
   elif mtr!=None: mtr_list = [mtr]
-  else: mtr_list = ["bounce","nobounce","natto","ketchup"]
+  # else: mtr_list = ["bounce","nobounce","natto","ketchup"]
   if sms!=None: sms_list = [sms]
   else: sms_list = [0.02,0.055,0.09]
 
   for mtr in mtr_list:
     for sms in sms_list:
-      set_name = mtr+"_"+str(sms).replace(".","")
-      logdir = base_logdir + skill + "/" + set_name + "/"
+      set_name = mtr+"/"+str(sms).replace(".","")
+      logdir = base_logdir + skill + "/" + set_name + "/" + suff +"/"
       if not os.path.exists(logdir):
         os.makedirs(logdir)
       print 'Copying',PycToPy(__file__),'to',PycToPy(logdir+os.path.basename(__file__))
@@ -117,12 +119,12 @@ def Run(ct,*args):
 
   for mtr in mtr_list:
     for sms in sms_list:
-      set_name = mtr+"_"+str(sms).replace(".","")
-      logdir = base_logdir + skill + "/" + set_name + "/"
+      set_name = mtr+"/"+str(sms).replace(".","")
+      logdir = base_logdir + skill + "/" + set_name + "/" + suff +"/"
       l._mtr_type = mtr
       l._SrcSize2H = sms
 
-      for count in range(n_episode):
+      for count in range(1):
         ct.Run("mysim.try.onetime_sv",
                 l, 
                 ConfigCallback,

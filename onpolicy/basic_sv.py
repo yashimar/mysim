@@ -2,6 +2,7 @@
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
+import joblib
 def Help():
   return '''Dynamic Planning/Learning for grasping and pouring in ODE simulation
     using DPL version 4 (DNN, Bifurcation).
@@ -52,6 +53,9 @@ def Execute(ct,l):
     #l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     #l.xs.n0['skill']= SSA([1])
     res= l.dpl.Plan('n0', l.xs.n0, l.interactive)
+    l.node_best_tree.append(res.PTree)
+    # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
+    # CPrint(2,"start node XS:",res.XS)
     l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
     l.xs.prev= l.xs.n0
     l.idb.prev= l.idb.n0
@@ -113,6 +117,9 @@ def Execute(ct,l):
       #TEST: Heuristic init guess
       #l.xs.n2a['skill']= SSA([1])
       res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
+      l.node_best_tree.append(res.PTree)
+      # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
+      # CPrint(2,"start node XS:",res.XS)
       l.idb.n2a= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2a',xs=l.xs.n2a)
       l.xs.prev= l.xs.n2a
       l.idb.prev= l.idb.n2a
@@ -315,11 +322,11 @@ def Run(ct,*args):
        'da_trg','size_srcmouth','material2',
        'dtheta1','shake_spd','shake_axis2'],
       ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
-    'Fflowc_shakeB10': [  #Flow control with shake_B.
-      ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
-       'da_trg','size_srcmouth','material2',
-       'dtheta1','shake_spd_B','shake_range'],
-      ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
+    # 'Fflowc_shakeB10': [  #Flow control with shake_B.
+    #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
+    #    'da_trg','size_srcmouth','material2',
+    #    'dtheta1','shake_spd_B','shake_range'],
+    #   ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
     'Famount4': [  #Amount model common for tip and shake.
       ['lp_pour',  #Removed 'gh_abs','p_pour_trg0','p_pour_trg'
        'da_trg','material2',  #Removed 'size_srcmouth'
@@ -395,31 +402,50 @@ def Run(ct,*args):
     elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
 
-  def LogDPL(l):
+  def LogDPL(l, count):
     SaveYAML(l.dpl.MM.Save(l.dpl.MM.Options['base_dir']), l.dpl.MM.Options['base_dir']+'model_mngr.yaml')
     SaveYAML(l.dpl.DB.Save(), l.logdir+'database.yaml')
     SaveYAML(l.dpl.Save(), l.logdir+'dpl.yaml')
 
     config= {key: getattr(l.config,key) for key in l.config.__slots__}
-    l.config_log.append(config)
-    SaveYAML(l.config_log, l.logdir+'config_log.yaml', interactive=False)
+    l.config_log = [config]
+    # l.config_log.append(config)
+    # SaveYAML(l.config_log, l.logdir+'config_log.yaml', interactive=False)
+    if l.restarting==True or count>1: w_mode = "a"
+    else: w_mode = "w"
+    OpenW(l.logdir+'config_log.yaml',mode=w_mode,interactive=False).write(yamldump(ToStdType(l.config_log,lambda y:y), Dumper=YDumper))
 
-    #'''
-    #Analyze l.dpl.DB.Entry:
-    ptree= l.dpl.GetPTree('n0', {})
-    fp= open(l.logdir+'dpl_est.dat','w')
-    for i,eps in enumerate(l.dpl.DB.Entry):
-      n0_0= eps.Find(('n0',0))[0]
-      if n0_0 is None or eps.R is None:
-        CPrint(4, 'l.dpl.DB has a broken entry')
-        continue
-      ptree.StartNode.XS= n0_0.XS
-      ptree.ResetFlags()
-      values= [eps.R, l.dpl.Value(ptree)]
-      fp.write('%i %s\n' % (i, ' '.join(map(str,values))))
+    fp = open(l.logdir+'dpl_est.dat',w_mode)
+    values = [l.dpl.DB.Entry[-1].R] + [l.dpl.Value(tree) for tree in l.node_best_tree]
+    idx = 0 if w_mode=="w" else len(l.dpl.DB.Entry)-1
+    fp.write('%i %s\n' % (idx, ' '.join(map(str,values))))
     fp.close()
-    CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
-    #'''
+    if w_mode=="a": CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
+    else: CPrint(1,'Added:',l.logdir+'dpl_est.dat')
+
+    if not os.path.exists(l.logdir+"best_est_trees"): 
+      os.mkdir(l.logdir+"best_est_trees")
+    for i,tree in enumerate(l.node_best_tree):
+      if i==0: joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.dpl.DB.Entry)-1)+"_n0.jb")
+      else: joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.dpl.DB.Entry)-1)+"_n2a_"+str(i)+".jb")
+    
+    # #'''
+    # #Analyze l.dpl.DB.Entry:
+    # ptree= l.dpl.GetPTree('n0', {})
+    # fp= open(l.logdir+'dpl_est.dat','w')
+    # for i,eps in enumerate(l.dpl.DB.Entry):
+    #   n0_0= eps.Find(('n0',0))[0]
+    #   if n0_0 is None or eps.R is None:
+    #     CPrint(4, 'l.dpl.DB has a broken entry')
+    #     continue
+    #   ptree.StartNode.XS= n0_0.XS
+    #   ptree.ResetFlags()
+    #   values= [eps.R, l.dpl.Value(ptree)]
+    #   fp.write('%i %s\n' % (i, ' '.join(map(str,values))))
+    # fp.close()
+    # CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
+    # #'''
+
 
   # if l.interactive and 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
   if 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
@@ -471,12 +497,15 @@ def Run(ct,*args):
       for i in range(len(l.dpl.DB.Entry)):
         fp.write(l.dpl.DB.DumpOneYAML(i))
       fp.flush()
+  
   while True:
     for i in range(l.num_log_interval):
       CPrint(2,'========== Start %4i =========='%count)
       EpisodicCallback(l,count)
+      CPrint(3,"learning data size:",len(l.dpl.MM.Models["Fgrasp"][2].DataX))
       l.dpl.NewEpisode()
       l.user_viz= []
+      l.node_best_tree = []
       #l.sm_logfp= OpenW(l.logdir+'sm/sm_log%04i.dat'%count,'w')
       try:
         Execute(ct,l)
@@ -494,12 +523,63 @@ def Run(ct,*args):
       count+= 1
       if count>=l.num_episodes:  break
     #ct.Run('tsim2.dplD20log',l)
-    LogDPL(l)
+    LogDPL(l, count)
     if count>=l.num_episodes:  break
     if l.interactive:
       print 'Continue?'
       if not AskYesNo():  break
   fp.close()
+
+  ## for dpl_est debug!
+  # tree = joblib.load("/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/mtr_sms_sv/learn/shake_A/random/0055/normal/best_est_trees/ep203_n0.jb")
+  # Print(l.dpl.Value(tree))
+  # ct.Run('mysim.setup.setup_sv', l)
+  # ptree= l.dpl.GetPTree('n0', {})
+  # for i,eps in enumerate(l.dpl.DB.Entry):
+  #   if i==199:
+  #     n0_0= eps.Find(('n0',0))[0]
+  #     if n0_0 is None or eps.R is None:
+  #       CPrint(4, 'l.dpl.DB has a broken entry')
+  #       continue
+  #     ptree.StartNode.XS= n0_0.XS
+  #     ptree.ResetFlags()
+  #     # Print(ptree.Tree.keys())
+  #     # Print(ptree.Tree[ptree.Start].XS)
+  #     # ptree = l.dpl.ForwardTree(ptree, with_grad=True)
+  #     for key in ptree.Tree.keys():
+  #       Print(key,"J:",ptree.Tree[key].XS)
+  #     l.dpl.BackwardTree(ptree)
+  #     print("-"*20)
+  #     for key in ptree.Tree.keys():
+  #       Print(key,"J:",ptree.Tree[key].XS)
+  #       # Print(key,"J:",ptree.Tree[key].XS)
+  #     # Print(ptree.Start)
+  #     # Print(ptree.Tree[ptree.Start].dFd)
+  #     # values= [eps.R, l.dpl.Value(ptree)]
+  # # Print("estimate147 before add ep:", values[1])
+
+  # ct.Run('mysim.setup.setup_sv', l)
+  # l.dpl.NewEpisode()
+  # l.user_viz= []
+  # Execute(ct,l)
+
+  # ptree= l.dpl.GetPTree('n0', {})
+  # for i,eps in enumerate(l.dpl.DB.Entry):
+  #   if i==147:
+  #     n0_0= eps.Find(('n0',0))[0]
+  #     if n0_0 is None or eps.R is None:
+  #       CPrint(4, 'l.dpl.DB has a broken entry')
+  #       continue
+  #     ptree.StartNode.XS= n0_0.XS
+  #     ptree.ResetFlags()
+  #     # Print(ptree.Tree[ptree.Start].XS)
+  #     l.dpl.BackwardTree(ptree)
+  #     for key in ptree.Tree.keys():
+  #       Print(key,"J:",ptree.Tree[key].J)
+  #       # Print(key,"J:",ptree.Tree[key].XS)
+  #     values= [eps.R, l.dpl.Value(ptree)]
+  # Print("estimate147 after add ep:", values[1])
+  ###
 
   l= None
   return True

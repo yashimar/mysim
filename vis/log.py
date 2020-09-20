@@ -9,14 +9,26 @@ def Help():
   return '''Visualize dpl logs.
   Usage: mysim.vis_log'''
 
-def Plot(df, ylabel):
+def Plot(df, ylabel,label, xmin=0, ymin=-30):
   for i in range(len(df.columns)):
-    plt.plot(df.iloc[:,i], label=df.columns[i])
+    plt.plot(df.iloc[:,i], label=label)
     plt.xlabel("episode")
     plt.ylabel(ylabel)
-    plt.ylim(-30,0)
+    plt.xlim(xmin,len(df))
+    plt.ylim(ymin,0)
     plt.legend()
     plt.grid()
+  plt.show()
+
+def MtrScatter(df, mtr_list, vis_mtr_list, xmin=0, ymin=-30):
+  c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
+  for mtr in list(set(mtr_list)):
+    if mtr in vis_mtr_list:
+      mtr_ids = [i for i, x in enumerate(mtr_list) if x==mtr]
+      plt.scatter(mtr_ids, df.iloc[mtr_ids], label=mtr, c=c_dict[mtr])
+  plt.xlim(xmin,len(mtr_list))
+  plt.ylim(ymin,0)
+  plt.legend()
   plt.show()
 
 def PlotMeanStd(df, df_error, ylabel):
@@ -33,33 +45,64 @@ def Run(ct, *args):
   is_ma = args[1] if len(args)==2 else "normal"
   i = 0;
   data_list = []
-  log_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-                  + name_log + "/dpl_est.dat"
-  data_list.append(np.loadtxt(log_path, comments='!'))
+  mtr_list = []
+  root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
+  log_path = root_path + name_log + "/dpl_est.dat"
+  db_path = root_path + name_log + "/sequence_list.yaml"
+  # data_list.append(np.genfromtxt(log_path))
+  data_list = []
+  with open(log_path, "r") as log_data:
+    for line in log_data:
+      line = line.split("\n")[0].split(" ")
+      line = map(lambda x: float(x), line)
+      data_list.append(line)
+  # print(data_list)
+  with open(db_path, "r") as yml:
+    config = yaml.load(yml)
+  for i in range(len(config)):
+    mtr = config[i]["config"]["material2"]
+    if mtr[0][0]==0.7: mtr_list.append("bounce")
+    elif mtr[2][0]==1.5: mtr_list.append("natto")
+    elif mtr[2][0]==0.25: mtr_list.append("ketchup")
+    else: mtr_list.append("nobounce")
 
   window = 10
   df_list = []
+  df_est_n0_list = []
+  df_est_last_list = []
   df_ma_list = []
   for i, data in enumerate(data_list):
-    skill = [0]*len(data)
-    title_reward = "reward_" + args[0] + str(i)
-    title_ma = "reward_ma" + str(window) + "_"  + args[0] + str(i)
-    df_tmp = pd.DataFrame({title_reward:data[:,1]})
-    df_list.append(df_tmp)
-    df_ma_list.append(df_tmp.rolling(window).mean())
-    if i==0: 
-      df = df_list[-1]
-      df_ma = df_ma_list[-1]
-    else: 
-      df = pd.concat([df, df_list[-1]], axis=1)
-      df_ma = pd.concat([df_ma, df_ma_list[-1]], axis=1)
-  # df["mean"] = df.mean(axis=1)
-  # df["std"] = df.std(axis=1)
-  # df_ma["mean"] = df_ma.mean(axis=1)
-  # df_ma["std"] = df_ma.std(axis=1)
-  
+    df_list.append(data[1])
+    df_est_n0_list.append(data[2])
+    df_est_last_list.append(data[-1])
+  df = pd.DataFrame(df_list)
+  df_est_n0 = pd.DataFrame(df_est_n0_list)
+  df_est_last = pd.DataFrame(df_est_last_list)
+ 
+  plt.figure()
+  plt.close()
   fig = plt.figure(figsize=(20,5))
   plt.title(args[0]) 
-  if is_ma=="ma": Plot(df_ma.iloc[:,:], "reward_ma" + str(window))
-  else: Plot(df.iloc[:,:], "reward")
+  
+  vis_mtr_list = [
+    "bounce", 
+    "nobounce", 
+    "natto", 
+    "ketchup"
+  ]
+  xmin = 80
+  ymin = -5
+  border = -0.5
+  plt.plot([border]*len(df), linestyle="dashed", alpha=0.5, c="red", label="border ("+str(border)+")")
+
+  # Plot(df.iloc[:,:], "return", "return", xmin, ymin)
+  # MtrScatter(df.iloc[:,:], mtr_list, vis_mtr_list, xmin, ymin)
+  
+  Plot(df_est_n0.iloc[:,:], "return", "estimate_n0", xmin , ymin)
+  MtrScatter(df_est_n0.iloc[:,:], mtr_list, vis_mtr_list, xmin, ymin)
+
+  Plot(df_est_last.iloc[:,:], "return", "estimate_last", xmin , ymin)
+  # MtrScatter(df_est_last.iloc[:,:], mtr_list, vis_mtr_list, xmin, ymin)
+
+
   # PlotMeanStd(df_ma["mean"], df_ma["std"], "reward_ma" + str(window))

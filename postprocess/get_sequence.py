@@ -78,7 +78,7 @@ def Run(ct, *args):
   # f = open(save_path+"choose_skill"+str(Num)+"_sequence_list.txt", "rb")
   # eps_list = pickle.load(f)
       
-  with open(save_path+name+"_sequence_list.yaml", "wb") as f:
+  with open(save_path+name+"/sequence_list.yaml", "wb") as f:
     for i, eps in enumerate(eps_list):
       yaml.dump({
         i: {"reward": eps[0], 

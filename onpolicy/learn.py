@@ -36,7 +36,10 @@ def ConfigCallback(ct,l,sim):
     m_setup.SetMaterial(l, preset=('natto','ketchup')[RandI(2)])
     l.config.SrcSize2H= Rand(0.05,0.09)  #Mouth size of source container
   elif l.mtr_smsz=="custom":
-    m_setup.SetMaterial(l, preset=l.custom_mtr)
+    if l.custom_mtr=="random":
+      m_setup.SetMaterial(l, preset=('bounce','nobounce','natto','ketchup')[RandI(4)])
+    else:
+      m_setup.SetMaterial(l, preset=l.custom_mtr)
     l.config.SrcSize2H= l.custom_smsz
   CPrint(3,'l.config.ViscosityParam1=',l.config.ViscosityParam1)
   CPrint(3,'l.config.SrcSize2H=',l.config.SrcSize2H)
@@ -44,31 +47,48 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "mtr_sms_sv/learn/test/"
+            + "mtr_sms_sv/learn/"
+  # suff = "continuous"
+  suff = "normal"
+  # model_dir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+  #           + "mtr_sms_sv/learn/shake_A/random/0055/normal/models/"
+  model_dir = ""
+  # db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+  #         + "mtr_sms_sv/learn/shake_A/random/0055/normal/database.yaml"
+  db_src = ""
   l.pour_skill = "shake_A"
 
   l.config_callback= ConfigCallback
-  l.custom_mtr = "nobounce"
-  l.custom_smsz = 0.02
+  l.custom_mtr = "random"
+  l.custom_smsz = 0.055
 
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 100,
-    'num_log_interval': 3,
+    'num_episodes': 190,
+    'num_log_interval': 1,  #should be 1
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA', "only_tip", "only_shakeA"
-    'model_dir': "",  #'',
+    'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
-    'db_src': '',
-    #'db_src': '/tmp/dpl/database.yaml',
+    'db_src': db_src,
     'config': {},  #Config of the simulator
     'dpl_options': {
-      'opt_log_name': None,  #Not save optimization log.
+      'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
+      "ddp_sol":{
+          'db_init_ratio': 0.5, #default 0.5
+          'prob_update_best': 0.4, #default 0.4
+          'prob_update_rand': 0.3, #default 0.3
+          'max_total_iter': 2000, #default 2000 
+          "grad_max_iter": 50,  #default 50
+          'gd_alpha': 0.03 #default 0.03
+        },
       },
     }
 
+  c = str(l.custom_smsz).split(".")
+  l.logdir = l.logdir + l.pour_skill + "/" + l.custom_mtr + "/" + c[0]+c[1] + "/" + suff + "/"
   print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
