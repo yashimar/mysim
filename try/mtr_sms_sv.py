@@ -27,11 +27,11 @@ def Run(ct,*args):
   sms = args[2] if len(args)>=3 else None
   n_episode = args[3] if len(args)>=4 else 1
   
-  target_logdir_name = "mtr_sms_sv/infer"
-  suff = "not_use_db"
-  model_dir_name_main_dynamics = "mtr_sms_sv/learn/shake_A/random/0055/normal"
-  # db_src = root_modeldir+ "mtr_sms_sv/learn/shake_A/random/0055/normal +"/database.yaml"" 
-  db_src = ""
+  target_logdir_name = "mtr_sms_sv/reduce_outlier_experiment/mtr_random/infer"
+  suff = "normal"
+  model_dir_name_main_dynamics = "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal"
+  db_src = root_modeldir+ "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal +"/database.yaml"" 
+  # db_src = ""
   root_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   # root_logdir = "/tmp/"
   root_modeldir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
@@ -84,7 +84,7 @@ def Run(ct,*args):
     'dpl_options': {
       'opt_log_name': None,  #Not save optimization log.
       "ddp_sol":{
-          'db_init_ratio': 0.0, #default 0.5
+          'db_init_ratio': 0.5, #default 0.5
           'prob_update_best': 0.4, #default 0.4
           'prob_update_rand': 0.3, #default 0.3
           'max_total_iter': 2000, #default 2000 

@@ -52,8 +52,9 @@ def Execute(ct,l):
     #l.xs.n0['shake_spd']= SSA([0.8])
     #l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     #l.xs.n0['skill']= SSA([1])
-    res= l.dpl.Plan('n0', l.xs.n0, l.interactive)
-    l.node_best_tree.append(res.PTree)
+    if "n0" in l.planning_node:
+      res= l.dpl.Plan('n0', l.xs.n0, l.interactive)
+      l.node_best_tree.append(res.PTree)
     # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
     # CPrint(2,"start node XS:",res.XS)
     l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
@@ -116,8 +117,9 @@ def Execute(ct,l):
       InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',)))
       #TEST: Heuristic init guess
       #l.xs.n2a['skill']= SSA([1])
-      res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
-      l.node_best_tree.append(res.PTree)
+      if "n2a" in l.planning_node:
+        res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
+        l.node_best_tree.append(res.PTree)
       # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
       # CPrint(2,"start node XS:",res.XS)
       l.idb.n2a= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2a',xs=l.xs.n2a)
@@ -233,15 +235,17 @@ def Execute(ct,l):
         l.xs.n4sar= l.dpl.Forward('Rdamount',l.xs.prev)
         l.idb.n4sar= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sar',xs=l.xs.n4sar)
 
-    # Conditions to break the try-and-error loop
-    if l.IsPoured():
+    if "n2a" in l.planning_node:
+      # Conditions to break the try-and-error loop
+      if l.IsPoured():
+        break
+      if l.IsTimeout() or l.IsEmpty():  # or l.IsSpilled()
+        break
+      if not IsSuccess(l.exec_status):
+        break
+      repeated= True
+    else:
       break
-    if l.IsTimeout() or l.IsEmpty():  # or l.IsSpilled()
-      break
-    if not IsSuccess(l.exec_status):
-      break
-
-    repeated= True
 
 
 def Run(ct,*args):
@@ -250,9 +254,12 @@ def Run(ct,*args):
   l.interactive= l.opt_conf['interactive']
   l.num_episodes= l.opt_conf['num_episodes']
   l.num_log_interval= l.opt_conf['num_log_interval']
+  l.planning_node = l.opt_conf["planning_node"]
   l.rcv_size= l.opt_conf['rcv_size']
   l.mtr_smsz= l.opt_conf['mtr_smsz']
   l.rwd_schedule= l.opt_conf['rwd_schedule']
+  l.mtr_schedule = l.opt_conf['mtr_schedule']
+  l.org_mtr_smsz = l.mtr_smsz
 
   l.not_learn= l.opt_conf['not_learn']
   l.config_log = []
@@ -401,6 +408,13 @@ def Run(ct,*args):
       else:         l.dpl.d.Models['Rdamount']= Rdamount_default
     elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+
+    if l.mtr_schedule==None:
+      pass
+    if l.mtr_schedule=="early_natto":
+      if count<40:  l.mtr_smsz = "early_natto"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+      
 
   def LogDPL(l, count):
     SaveYAML(l.dpl.MM.Save(l.dpl.MM.Options['base_dir']), l.dpl.MM.Options['base_dir']+'model_mngr.yaml')

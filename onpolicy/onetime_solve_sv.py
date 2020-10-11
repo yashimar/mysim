@@ -2,6 +2,7 @@
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
+import joblib
 def Help():
   return '''Dynamic Planning/Learning for grasping and pouring in ODE simulation
     using DPL version 4 (DNN, Bifurcation).
@@ -51,117 +52,13 @@ def Execute(ct,l):
     #l.xs.n0['shake_spd']= SSA([0.8])
     #l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     #l.xs.n0['skill']= SSA([1])
-    # In,Out,Fp= l.dpl.d.Models["Fgrasp"]
-    # x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, l.xs.n0, In)
-    
-    # xs = l.xs.n0
-    # xs["dtheta1"] = SSA([0.01])
-    # xs["dtheta2"] = SSA([0.005])
-    # xs["gh_ratio"] = SSA([0.8317029201599735])
-    # xs["p_pour_trg"] =  SSA(Vec([0.353291480306939,0.596595076648352]))
-    # ptree= l.dpl.GetPTree("n0", xs, max_visits=3)
-    # actions_in_xs= [key for key in ptree.Actions if key in xs]
-    # selections_in_xs= [key for key in ptree.Selections if key in xs]
-    # actions_to_plan= [key for key in ptree.Actions if key not in actions_in_xs]
-    # selections_to_plan= [key for key in ptree.Selections if key not in selections_in_xs]
-    # ptree_set= l.dpl.GetDDPSol().InitGuess(ptree, actions=actions_to_plan, selections=selections_to_plan)
-    # if len(actions_in_xs)>0:
-    #   for ptree2 in ptree_set:
-    #     a_noise= l.dpl.ActionNoise(actions_in_xs,var=l.dpl.Options['grad_act_noise'])
-    #     actions= {key:TSSA(ConstrainN(l.dpl.d.SpaceDefs[key].Bounds, xs[key].X + a_noise[key].X)) for key in actions_in_xs}
-    #     PartialCopyXSSA(actions, ptree2.StartNode.XS)
-    # ptree = ptree_set[0]
-    # value = l.dpl.Value(ptree)
-    # print(value)
-    # stop
-
-    # dynamics_list = ['Fgrasp','Fmvtorcv','Fmvtopour2',
-    #                 'Fflowc_tip10',
-    #                 # 'Fflowc_shakeA10',
-    #                 'Famount4']
-    # for dynamics in dynamics_list:
-    #   Print("----",dynamics,"----")
-    #   In,Out,Fp= l.dpl.d.Models[dynamics]
-    #   for key in In:
-    #     print(key)
-    #     print(xs[key])
-    #   x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, xs, In)
-    #   pred= Fp.Predict(x_in, cov_in, with_var=True, with_grad=True)
-    #   Print("pred:",pred.Y.ravel())
-    #   Print("dims_in:",dims_in)
-    #   dim_old = 0
-    #   for i,key in enumerate(Out):
-    #     print(key)
-    #     xs[key] = SSA(pred.Y[dim_old:dim_old+dims_in[i]])
-    #     dim_old = dims_in[i]
+    # ptree = l.dpl.GetDDPSol().GetPTree('n0', l.xs.n0)
+    # CPrint(2,"ptree num:",l.dpl.GetDDPSol().GetPTreeNum(ptree))
     # hoge
-
-    # graph= l.dpl.d.Graph
-    # queue= [ptree.Start]
-    # while len(queue)>0:
-    #   n_curr= queue.pop(0)
-    #   tnode= ptree.Tree[n_curr]
-    #   gnode= graph[n_curr.A]
-    #   key_Fp= gnode.Fp
-    #   with_grad=True
-    #   if key_Fp is not None:
-    #     if with_grad:  tnode.P,tnode.dFp= l.dpl.ForwardP(key_Fp, tnode.XS, with_grad=True)
-    #     else:          tnode.P= l.dpl.ForwardP(key_Fp, tnode.XS, with_grad=False)
-    #   tnode.dFd= [None]*len(tnode.Next)
-    #   #Done.  Prepare for the next:
-    #   for b,n_next in enumerate(tnode.Next):
-    #     if n_next is not None:
-    #       # print(n_next)
-    #       queue.append(n_next)
-    #       #Doing something with current to next edge:
-    #       tnode_nx= ptree.Tree[n_next]
-    #       #Compute next XSSA:
-    #       key_Fd= gnode.Fd[b]
-    #       # print(key_Fd)
-    #       if key_Fd is not None:
-    #         # In,Out,Fp= l.dpl.d.Models[key_Fd]
-    #         # x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, tnode.XS, In)
-    #         # print(x_in,cov_in,dims_in)
-    #         if with_grad:  tnode_nx.XS,tnode.dFd[b]= l.dpl.Forward(key_Fd, tnode.XS, with_grad=True)
-    #         else:          tnode_nx.XS= l.dpl.Forward(key_Fd, tnode.XS, with_grad=False)
-    #         try:
-    #           Print("----",key_Fd,"-----")
-    #           In,Out,Fp= l.dpl.d.Models[key_Fd]
-    #           x_in,cov_in,dims_in= SerializeXSSA(l.dpl.d.SpaceDefs, tnode.XS, In)
-    #           CPrint(1,"cov_in:",cov_in)
-    #           Print("x_in:",x_in)
-    #           pred= Fp.Predict(x_in, cov_in, with_var=True, with_grad=True)
-    #           Print("pred:",pred.Y.ravel())
-    #         except:
-    #           pass
-    #       #Done.
-    #     else:  #i.e. n_next is None
-    #       #In this case, we force the probability zero
-    #       tnode.P[b]= 0.0
-    #       if with_grad:
-    #         for key_x,dFp in tnode.dFp.iteritems():
-    #           dFp[:,b]= 0.0
-    #   ptree.FlagFwd= 2 if with_grad else 1
-    #   ptree.FlagBwd= 0
-    # hoge
-
-    # l.dpl.ForwardTree(ptree,with_grad=True)
-    # for n_curr in ptree.Terminal:
-    #   tnode= ptree.Tree[n_curr]
-    #   print(tnode.XS["a_trg"].Cov)
-    #   if REWARD_KEY in tnode.XS:
-    #     tnode.J= tnode.XS[REWARD_KEY].X[0,0]
-    #     if l.dpl.Options['f_reward_ucb']!=0.0:
-    #       tnode.J+= l.dpl.Options['f_reward_ucb'] * tnode.XS[REWARD_KEY].Cov[0,0]
-    #     tnode.dJ= {REWARD_KEY:1.0}
-    #   else:
-    #     tnode.J= 0.0
-    #     tnode.dJ= {REWARD_KEY:0.0}
-    # print(ptree.Terminal)
-    # # print(l.dpl.Value(ptree_set[0]))
-    # hoge
-
     res= l.dpl.Plan('n0', l.xs.n0, l.interactive)
+    l.node_best_tree.append(res.PTree)
+    # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
+    # CPrint(2,"start node XS:",res.XS)
     l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
     l.xs.prev= l.xs.n0
     l.idb.prev= l.idb.n0
@@ -223,6 +120,9 @@ def Execute(ct,l):
       #TEST: Heuristic init guess
       #l.xs.n2a['skill']= SSA([1])
       # res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
+      # l.node_best_tree.append(res.PTree)
+      # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
+      # CPrint(2,"start node XS:",res.XS)
       l.idb.n2a= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2a',xs=l.xs.n2a)
       l.xs.prev= l.xs.n2a
       l.idb.prev= l.idb.n2a
@@ -263,11 +163,12 @@ def Execute(ct,l):
       l.xs.prev= l.xs.n2c
       l.idb.prev= l.idb.n2c
 
-    if l.skill_pour=="std_pour": selected_skill=l.skill_pour
-    elif l.skill_pour=="shake_A": selected_skill=l.skill_pour
-    elif l.skill_pour=="choose":
-      idx = int(l.xs.n2c['skill'].X[0])
-      selected_skill= ('std_pour','shake_A')[idx]
+    if l.pour_skill=="std_pour": idx = 0
+    elif l.pour_skill=="shake_A": idx = 1
+    elif l.pour_skill=="choose": idx = int(l.xs.n2c['skill'].X[0])
+    
+    selected_skill= ('std_pour','shake_A')[idx]
+    # selected_skill= ('std_pour','shake_B')[idx]
     # selected_skill= ('std_pour','shake_A')[l.xs.n2c['skill'].X[0]]
     #selected_skill= 'shake_A'
     if selected_skill=='std_pour':
@@ -346,20 +247,15 @@ def Execute(ct,l):
     # repeated= True
     break
 
+
 def Run(ct,*args):
   l = args[0]
-  l.config_callback = args[1]
-  l.logdir= args[2]
-  l.opt_conf = args[3]
-  l.ask_restart = args[4]
-  l.reward_func = args[5]
-  l.pour_skills = args[6]
-  l.count = args[7]
 
-  l.skill_pour = l.opt_conf["skill_pour"]
   l.interactive= l.opt_conf['interactive']
   l.num_episodes= l.opt_conf['num_episodes']
   l.num_log_interval= l.opt_conf['num_log_interval']
+  l.rcv_size= l.opt_conf['rcv_size']
+  l.mtr_smsz= l.opt_conf['mtr_smsz']
   l.rwd_schedule= l.opt_conf['rwd_schedule']
 
   l.not_learn= l.opt_conf['not_learn']
@@ -377,15 +273,17 @@ def Run(ct,*args):
     'p_pour_trg0': SP('state',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position of preparation before pouring (x,z)
       #NOTE: we stopped to plan p_pour_trg0
     'p_pour_trg': SP('action',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position (x,z)
-    'dtheta1': l.pour_skills["dtheta1"],  #Pouring skill parameter for all skills
-    'dtheta2': l.pour_skills["dtheta2"],  #Pouring skill parameter for 'std_pour'
+    'dtheta1': SP('action',1,min=[0.01],max=[0.02]),  #Pouring skill parameter for all skills
+    'dtheta2': SP('action',1,min=[0.002],max=[0.005]),  #Pouring skill parameter for 'std_pour'
     #'dtheta1': SP('state',1),  #Pouring skill parameter for all skills
     #'dtheta2': SP('state',1),  #Pouring skill parameter for 'std_pour'
-    'shake_spd': l.pour_skills["shake_spd"],  #Pouring skill parameter for 'shake_A'
+    'shake_spd': SP('action',1,min=[0.7],max=[0.9]),  #Pouring skill parameter for 'shake_A'
     #'shake_spd': SP('state',1),  #Pouring skill parameter for 'shake_A'
     #'shake_axis': SP('action',2,min=[0.0,0.0],max=[0.1,0.1]),  #Pouring skill parameter for 'shake_A'
-    'shake_axis2': l.pour_skills["shake_axis2"],  #Pouring skill parameter for 'shake_A'
+    'shake_axis2': SP('action',2,min=[0.05,-0.5*math.pi],max=[0.1,0.5*math.pi]),  #Pouring skill parameter for 'shake_A'
     #'shake_axis2': SP('state',2),  #Pouring skill parameter for 'shake_A'
+    'shake_spd_B': SP('action',1,min=[2.0],max=[8.0]),  #Pouring skill parameter for 'shake_B'
+    "shake_range" : SP('action',1,min=[0.02],max=[0.06]),  #Pouring skill parameter for 'shake_B'
     'p_pour': SP('state',3),  #Pouring axis position (x,y,z)
     'lp_pour': SP('state',3),  #Pouring axis position (x,y,z) in receiver frame
     'dps_rcv': SP('state',12),  #Displacement of ps_rcv from previous time
@@ -428,6 +326,11 @@ def Run(ct,*args):
        'da_trg','size_srcmouth','material2',
        'dtheta1','shake_spd','shake_axis2'],
       ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
+    # 'Fflowc_shakeB10': [  #Flow control with shake_B.
+    #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
+    #    'da_trg','size_srcmouth','material2',
+    #    'dtheta1','shake_spd_B','shake_range'],
+    #   ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
     'Famount4': [  #Amount model common for tip and shake.
       ['lp_pour',  #Removed 'gh_abs','p_pour_trg0','p_pour_trg'
        'da_trg','material2',  #Removed 'size_srcmouth'
@@ -436,60 +339,50 @@ def Run(ct,*args):
     'Rrcvmv':  [['dps_rcv','v_rcv'],[REWARD_KEY],TLocalQuad(13,lambda y:-(np.dot(y[:12],y[:12]) + y[12]*y[12]))],
     'Rmvtopour':  [['p_pour_trg','p_pour'],[REWARD_KEY],TLocalQuad(5,lambda y:-0.1*((y[0]-y[2])**2+(y[1]-y[4])**2))],
     #'Ramount':  [['a_pour','a_trg','a_spill2'],[REWARD_KEY],TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - y[2]*y[2])],
-    'Rdamount':  l.reward_func, 
+    #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                  #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - y[2]*y[2])],
+    #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                  #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - math.log(1.0+max(0.0,y[2])))],
+    #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                  #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - max(0.0,y[2])**2)],
+    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                  #TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 10.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
     'P1': [[],[PROB_KEY], TLocalLinear(0,1,lambda x:[1.0],lambda x:[0.0])],
     'P2':  [[],[PROB_KEY], TLocalLinear(0,2,lambda x:[1.0]*2,lambda x:[0.0]*2)],
     'Pskill': [['skill'],[PROB_KEY], TLocalLinear(0,2,lambda s:Delta1(2,s[0]),lambda s:[0.0]*2)],
     }
-  if l.skill_pour=="std_pour":
-    domain.Graph={
-      'n0': TDynNode(None,'P1',('Fgrasp','n1')),
-      'n1': TDynNode('n0','P2',('Fmvtorcv','n2a'),('Fmvtorcv_rcvmv','n1rcvmv')),
-      'n1rcvmv': TDynNode('n1','P1',('Rrcvmv','n1rcvmvr')),
-      'n1rcvmvr': TDynNode('n1rcvmv'),
-      'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
-      'n2b': TDynNode('n2a','P2',('Fnone','n2c'),('Rmvtopour','n2br')),
-      'n2br': TDynNode('n2b'),
-      'n2c': TDynNode('n2b','P1',('Fflowc_tip10','n3ti')),
-      #Tipping:
-      'n3ti': TDynNode('n2c','P1',('Famount4','n4ti')),
-      'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
-      'n4tir': TDynNode('n4ti'),
+  domain.Graph={
+    'n0': TDynNode(None,'P1',('Fgrasp','n1')),
+    'n1': TDynNode('n0','P2',('Fmvtorcv','n2a'),('Fmvtorcv_rcvmv','n1rcvmv')),
+    'n1rcvmv': TDynNode('n1','P1',('Rrcvmv','n1rcvmvr')),
+    'n1rcvmvr': TDynNode('n1rcvmv'),
+    'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
+    'n2b': TDynNode('n2a','P2',('Fnone','n2c'),('Rmvtopour','n2br')),
+    'n2br': TDynNode('n2b'),
+    # 'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa')),
+    "n2c": None, 
+    #Tipping:
+    'n3ti': TDynNode('n2c','P1',('Famount4','n4ti')),
+    'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
+    'n4tir': TDynNode('n4ti'),
+    #Shaking-A:
+    'n3sa': TDynNode('n2c','P1',('Famount4','n4sa')),
+    'n4sa': TDynNode('n3sa','P1',('Rdamount','n4sar')),
+    'n4sar': TDynNode('n4sa'),
+    #Shaking-B:
+    'n3sb': TDynNode('n2c','P1',('Famount4','n4sb')),
+    'n4sb': TDynNode('n3sb','P1',('Rdamount','n4sbr')),
+    'n4sbr': TDynNode('n4sb'),
     }
-  elif l.skill_pour=="shake_A":
-    domain.Graph={
-      'n0': TDynNode(None,'P1',('Fgrasp','n1')),
-      'n1': TDynNode('n0','P2',('Fmvtorcv','n2a'),('Fmvtorcv_rcvmv','n1rcvmv')),
-      'n1rcvmv': TDynNode('n1','P1',('Rrcvmv','n1rcvmvr')),
-      'n1rcvmvr': TDynNode('n1rcvmv'),
-      'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
-      'n2b': TDynNode('n2a','P2',('Fnone','n2c'),('Rmvtopour','n2br')),
-      'n2br': TDynNode('n2b'),
-      'n2c': TDynNode('n2b','P1',('Fflowc_shakeA10','n3sa')),
-      #Shaking-A:
-      'n3sa': TDynNode('n2c','P1',('Famount4','n4sa')),
-      'n4sa': TDynNode('n3sa','P1',('Rdamount','n4sar')),
-      'n4sar': TDynNode('n4sa'),
-    }
-  elif l.skill_pour=="choose":
-    domain.Graph={
-      'n0': TDynNode(None,'P1',('Fgrasp','n1')),
-      'n1': TDynNode('n0','P2',('Fmvtorcv','n2a'),('Fmvtorcv_rcvmv','n1rcvmv')),
-      'n1rcvmv': TDynNode('n1','P1',('Rrcvmv','n1rcvmvr')),
-      'n1rcvmvr': TDynNode('n1rcvmv'),
-      'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
-      'n2b': TDynNode('n2a','P2',('Fnone','n2c'),('Rmvtopour','n2br')),
-      'n2br': TDynNode('n2b'),
-      'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa')),
-      #Tipping:
-      'n3ti': TDynNode('n2c','P1',('Famount4','n4ti')),
-      'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
-      'n4tir': TDynNode('n4ti'),
-      #Shaking-A:
-      'n3sa': TDynNode('n2c','P1',('Famount4','n4sa')),
-      'n4sa': TDynNode('n3sa','P1',('Rdamount','n4sar')),
-      'n4sar': TDynNode('n4sa'),
-    }
+  if l.pour_skill=="std_pour":
+    domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fflowc_tip10','n3ti'))})
+  elif l.pour_skill=="shake_A":
+    domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fflowc_shakeA10','n3sa'))})
+  elif l.pour_skill=="choose":
+    domain.Graph.update({'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa'))})
+  
   #Learning scheduling
   def EpisodicCallback(l,count):
     Rdamount_default= [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
@@ -510,64 +403,71 @@ def Run(ct,*args):
       #Reward scheduling (FOR EARLY SHAKING-A)
       if count<10:  l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
       else:         l.dpl.d.Models['Rdamount']= Rdamount_default
+    elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
+    elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
 
-  def LogDPL(l):
-    if l.count==0: mode="w"
-    else: mode="a"
-    def SaveYAML(d, file_name, except_cnv=lambda y:y, interactive=False):
-      OpenW(file_name,mode=mode,interactive=interactive).write(yamldump(ToStdType(d,except_cnv), Dumper=YDumper))
+  def LogDPL(l, count):
+    ### 
+    #to do: l.dpl.DB.Save -> l.dpl.NewDB.Save
+    ###
     SaveYAML(l.dpl.MM.Save(l.dpl.MM.Options['base_dir']), l.dpl.MM.Options['base_dir']+'model_mngr.yaml')
-    SaveYAML(l.dpl.DB.Save(), l.logdir+'database.yaml')
+    SaveYAML(l.dpl.DB.Save(), l.logdir+'database_org.yaml')
+    SaveYAML(l.NewDB.Save(), l.logdir+'database.yaml')
     SaveYAML(l.dpl.Save(), l.logdir+'dpl.yaml')
 
     config= {key: getattr(l.config,key) for key in l.config.__slots__}
-    l.config_log.append(config)
-    SaveYAML(l.config_log, l.logdir+'config_log.yaml', interactive=False)
+    l.config_log = [config]
+    # l.config_log.append(config)
+    # SaveYAML(l.config_log, l.logdir+'config_log.yaml', interactive=False)
+    if l.restarting==True or count>1: w_mode = "a"
+    else: w_mode = "w"
+    OpenW(l.logdir+'config_log.yaml',mode=w_mode,interactive=False).write(yamldump(ToStdType(l.config_log,lambda y:y), Dumper=YDumper))
 
-    #'''
-    #Analyze l.dpl.DB.Entry:
-    ptree= l.dpl.GetPTree('n0', {})
-    if l.count==0:
-      fp= open(l.logdir+'dpl_est.dat','w')
-    else:
-      fp= open(l.logdir+'dpl_est.dat','a')
-    for i,eps in enumerate(l.dpl.DB.Entry):
-      n0_0= eps.Find(('n0',0))[0]
-      if n0_0 is None or eps.R is None:
-        CPrint(4, 'l.dpl.DB has a broken entry')
-        continue
-      ptree.StartNode.XS= n0_0.XS
-      ptree.ResetFlags()
-      values= [eps.R, l.dpl.Value(ptree)]
-      fp.write('%i %s\n' % (i, ' '.join(map(str,values))))
+    fp = open(l.logdir+'dpl_est.dat',w_mode)
+    values = [l.NewDB.Entry[-1].R] + [l.dpl.Value(tree) for tree in l.node_best_tree]
+    fp.write('%i %s\n' % (len(l.NewDB.Entry)-1, ' '.join(map(str,values))))
     fp.close()
-    CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
-    #'''
+    if w_mode=="a": CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
+    else: CPrint(1,'Added:',l.logdir+'dpl_est.dat')
+
+    if not os.path.exists(l.logdir+"best_est_trees"): 
+      os.mkdir(l.logdir+"best_est_trees")
+    for i,tree in enumerate(l.node_best_tree):
+      if i==0: joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.NewDB.Entry)-1)+"_n0.jb")
+      else: joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.NewDB.Entry)-1)+"_n2a_"+str(i)+".jb")
+    
+    # #'''
+    # #Analyze l.dpl.DB.Entry:
+    # ptree= l.dpl.GetPTree('n0', {})
+    # fp= open(l.logdir+'dpl_est.dat','w')
+    # for i,eps in enumerate(l.dpl.DB.Entry):
+    #   n0_0= eps.Find(('n0',0))[0]
+    #   if n0_0 is None or eps.R is None:
+    #     CPrint(4, 'l.dpl.DB has a broken entry')
+    #     continue
+    #   ptree.StartNode.XS= n0_0.XS
+    #   ptree.ResetFlags()
+    #   values= [eps.R, l.dpl.Value(ptree)]
+    #   fp.write('%i %s\n' % (i, ' '.join(map(str,values))))
+    # fp.close()
+    # CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
+    # #'''
+
 
   # if l.interactive and 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
-  if l.ask_restart and 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
+  if 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
     l.dpl= ct.log_dpl
     l.restarting= True
   else:
     mm_options= {
       #'type': 'lwr',
       'base_dir': l.logdir+'models/',
-      # "base_dir": '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/learn_dynamics2/models/'
       }
     mm= TModelManager(domain.SpaceDefs, domain.Models)
     mm.Load({'options':mm_options})
     if l.opt_conf['model_dir'] not in ('',None):
-      if os.path.exists(l.opt_conf['model_dir']["main"]+'model_mngr.yaml'):
-        CPrint(3,"Load Options:",l.opt_conf['model_dir']["main"]+'model_mngr.yaml')
-        mm.Load(LoadYAML(l.opt_conf['model_dir']["main"]+'model_mngr.yaml'))
-        mm.CreateModels()
-        for key in mm.Learning:
-          In,Out,F= mm.Models[key]
-          prefix,path= mm.GetFilePrefixPath(l.opt_conf['model_dir'][key],key)
-          if os.path.exists(path):
-            F.Load(LoadYAML(path), prefix)
-            CPrint(3,"Find dynamics model:",key)
-            Print(path)
+      if os.path.exists(l.opt_conf['model_dir']+'model_mngr.yaml'):
+        mm.Load(LoadYAML(l.opt_conf['model_dir']+'model_mngr.yaml'), l.opt_conf['model_dir'])
       if l.opt_conf['model_dir_persistent']:
         mm.Options['base_dir']= l.opt_conf['model_dir']
       else:
@@ -575,6 +475,7 @@ def Run(ct,*args):
     db= TGraphEpisodeDB()
     if l.opt_conf['db_src'] not in ('',None):
       db.Load(LoadYAML(l.opt_conf['db_src']))
+
     l.dpl= TGraphDynPlanLearn(domain, db, mm)
     l.restarting= False
 
@@ -595,15 +496,7 @@ def Run(ct,*args):
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
   count= 0
-  # if l.restarting:
-  #   fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
-  # else:
-  #   fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
-  #   if len(l.dpl.DB.Entry)>0:
-  #     for i in range(len(l.dpl.DB.Entry)):
-  #       fp.write(l.dpl.DB.DumpOneYAML(i))
-  #     fp.flush()
-  if l.count!=0 and os.path.exists(l.logdir+'dpl_log.dat'):
+  if l.restarting:
     fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
   else:
     fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
@@ -611,22 +504,16 @@ def Run(ct,*args):
       for i in range(len(l.dpl.DB.Entry)):
         fp.write(l.dpl.DB.DumpOneYAML(i))
       fp.flush()
+  
+  l.NewDB = TGraphEpisodeDB()
   while True:
     for i in range(l.num_log_interval):
       CPrint(2,'========== Start %4i =========='%count)
-      ###
-      # l.dpl.MM.Init()
-      # l.dpl.Init()
-      # l.dpl.database = TGraphEpisodeDB()
-      # CPrint(2,"episode entry: ",l.dpl.database.Entry)
-      # l.dpl.database.Entry = []
-      # random.seed(0)
-      # np.random.seed(0)
-      ###
       EpisodicCallback(l,count)
       CPrint(3,"len(l.dpl.DB.Entry):",len(l.dpl.DB.Entry))
       l.dpl.NewEpisode()
       l.user_viz= []
+      l.node_best_tree = []
       #l.sm_logfp= OpenW(l.logdir+'sm/sm_log%04i.dat'%count,'w')
       try:
         Execute(ct,l)
@@ -641,15 +528,68 @@ def Run(ct,*args):
       fp.write(l.dpl.DB.DumpOneYAML())
       fp.flush()
       CPrint(1,count,l.dpl.DB.DumpOne())
+      l.NewDB.Entry.append(l.dpl.DB.Entry[-1])
+      l.dpl.DB.Entry.pop(-1)
       count+= 1
       if count>=l.num_episodes:  break
     #ct.Run('tsim2.dplD20log',l)
-    LogDPL(l)
+    LogDPL(l, count)
     if count>=l.num_episodes:  break
     if l.interactive:
       print 'Continue?'
       if not AskYesNo():  break
   fp.close()
+
+  ## for dpl_est debug!
+  # tree = joblib.load("/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/mtr_sms_sv/learn/shake_A/random/0055/normal/best_est_trees/ep203_n0.jb")
+  # Print(l.dpl.Value(tree))
+  # ct.Run('mysim.setup.setup_sv', l)
+  # ptree= l.dpl.GetPTree('n0', {})
+  # for i,eps in enumerate(l.dpl.DB.Entry):
+  #   if i==199:
+  #     n0_0= eps.Find(('n0',0))[0]
+  #     if n0_0 is None or eps.R is None:
+  #       CPrint(4, 'l.dpl.DB has a broken entry')
+  #       continue
+  #     ptree.StartNode.XS= n0_0.XS
+  #     ptree.ResetFlags()
+  #     # Print(ptree.Tree.keys())
+  #     # Print(ptree.Tree[ptree.Start].XS)
+  #     # ptree = l.dpl.ForwardTree(ptree, with_grad=True)
+  #     for key in ptree.Tree.keys():
+  #       Print(key,"J:",ptree.Tree[key].XS)
+  #     l.dpl.BackwardTree(ptree)
+  #     print("-"*20)
+  #     for key in ptree.Tree.keys():
+  #       Print(key,"J:",ptree.Tree[key].XS)
+  #       # Print(key,"J:",ptree.Tree[key].XS)
+  #     # Print(ptree.Start)
+  #     # Print(ptree.Tree[ptree.Start].dFd)
+  #     # values= [eps.R, l.dpl.Value(ptree)]
+  # # Print("estimate147 before add ep:", values[1])
+
+  # ct.Run('mysim.setup.setup_sv', l)
+  # l.dpl.NewEpisode()
+  # l.user_viz= []
+  # Execute(ct,l)
+
+  # ptree= l.dpl.GetPTree('n0', {})
+  # for i,eps in enumerate(l.dpl.DB.Entry):
+  #   if i==147:
+  #     n0_0= eps.Find(('n0',0))[0]
+  #     if n0_0 is None or eps.R is None:
+  #       CPrint(4, 'l.dpl.DB has a broken entry')
+  #       continue
+  #     ptree.StartNode.XS= n0_0.XS
+  #     ptree.ResetFlags()
+  #     # Print(ptree.Tree[ptree.Start].XS)
+  #     l.dpl.BackwardTree(ptree)
+  #     for key in ptree.Tree.keys():
+  #       Print(key,"J:",ptree.Tree[key].J)
+  #       # Print(key,"J:",ptree.Tree[key].XS)
+  #     values= [eps.R, l.dpl.Value(ptree)]
+  # Print("estimate147 after add ep:", values[1])
+  ###
 
   l= None
   return True

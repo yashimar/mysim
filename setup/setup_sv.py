@@ -57,6 +57,7 @@ def Run(ct,*args):
   print 'Previous config:\n',l.config
 
   #Setup config
+  l.config.BallNum = 100
   l.config.MaxContacts= 2
   l.config.TimeStep= 0.025
   l.config.Gravity= -1.0

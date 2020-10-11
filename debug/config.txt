@@ -4,11 +4,12 @@
 {% comment %} ReadControlTargetPath /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/debug/ctrtrg/replay_example.txt {% endcomment %}
 ContactSoftCFM 1e-1
 ContactSoftERP 0.2
-MaxContacts 2
-TimeStep 0.025
+MaxContacts 2 
+{% comment %} default TimeStep 0.025 {% endcomment %}
+TimeStep 0.05      
 Gravity -1.0
 RcvPartsWeight 100
-BallNum 100
+BallNum 30
 SrcSize2H 0.08
 {% comment %} MaxStepNum 5000 {% endcomment %}
 {% comment %} UseSubFlag true {% endcomment %}

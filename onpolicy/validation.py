@@ -37,61 +37,39 @@ def ConfigCallback(ct,l,sim):
     l.config.SrcSize2H= Rand(0.05,0.09)  #Mouth size of source container
   elif l.mtr_smsz=="custom":
     if l.custom_mtr=="random":
-      l.latest_mtr = ('bounce','nobounce','natto','ketchup')[RandI(4)]
-      m_setup.SetMaterial(l, preset=l.latest_mtr)
+      m_setup.SetMaterial(l, preset=('bounce','nobounce','natto','ketchup')[RandI(4)])
     else:
-      l.latest_mtr = l.custom_mtr
       m_setup.SetMaterial(l, preset=l.custom_mtr)
-    if l.custom_smsz=="random":
-      l.config.SrcSize2H= Rand(0.03,0.08)
-    else:
-      l.config.SrcSize2H= l.custom_smsz
-    l.latest_smsz = l.custom_smsz
-  elif l.mtr_smsz=="latest_mtr_smsz":
-    m_setup.SetMaterial(l, preset=l.latest_mtr)
-    if l.latest_smsz=="random":
-      l.config.SrcSize2H= Rand(0.03,0.08)
-    else:
-      l.config.SrcSize2H= l.latest_smsz
-  elif l.mtr_smsz=="early_natto":
-    m_setup.SetMaterial(l, preset='natto')
-    l.config.SrcSize2H = l.custom_smsz
+    l.config.SrcSize2H= l.custom_smsz
   CPrint(3,'l.config.ViscosityParam1=',l.config.ViscosityParam1)
   CPrint(3,'l.config.SrcSize2H=',l.config.SrcSize2H)
 
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "mtr_sms_sv/reduce_outlier_experiment/mtr_smsz_random/learn/"
-  # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #             + "mtr_sms_sv/test/reduce_experiment/"
-  suff = "priority_random"
-  # model_dir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #           + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal/models/"
-  # db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal/database.yaml"
-  model_dir = ""
-  db_src = ""
+            + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/infer/"
+  # suff = "continuous_natto"
+  suff = "normal"
+  model_dir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+            + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal/models/"
+  db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+          + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal/database.yaml"
+  # model_dir = ""
+  # db_src = ""
   l.pour_skill = "shake_A"
 
   l.config_callback= ConfigCallback
-  l.custom_mtr = "random"
-  l.custom_smsz = "random"    #random or 0.02~0.09
-  l.mtr_dir_name = "random"
+  l.custom_mtr = "natto"
+  l.custom_smsz = 0.055
 
   l.opt_conf={
     'interactive': False,
-    'not_learn': False,
-    'num_episodes': 100,
-    'num_sampling': 100, 
-    "sampling_mode": "random", #random, bo(bayesian optimization)
-    "return_epsiron": -1.0, 
+    'not_learn': True,
+    'num_episodes': 20,
     'num_log_interval': 1,  #should be 1
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
-    "planning_node": ["n0"], #"n0","n2a"
     'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA', "only_tip", "only_shakeA"
-    'mtr_schedule': None,  #None, "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
     'db_src': db_src,
@@ -99,19 +77,29 @@ def Run(ct,*args):
     'dpl_options': {
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
-          'db_init_ratio': 0.5, #default 0.5
-          'prob_update_best': 0.4, #default 0.4
-          'prob_update_rand': 0.3, #default 0.3
-          'max_total_iter': 2000, #default 2000 
-          "grad_max_iter": 50,  #default 50
-          'gd_alpha': 0.03 #default 0.03
+          'ptree_num': "auto",  #default auto, In multi-point search, how many trainee samples do we generate.  If 'auto', automatically decided.
+          'ptree_num_base': 20, #default 20, Used with 'ptree_num'=='auto'.
+          'db_init_ratio': 0.5, #default 0.5, How much ratio of samples we generate from the database (remaining samples are randomly generated).
+          'db_init_R_min': -1.0, #default -1.0, In samples of database, we only use samples whose R > this value.
+          'prob_update_best': 0.4, #default 0.4, In multi-point search, probability to update a best sample in trainee.
+          'prob_update_rand': 0.3, #default 0.3, In multi-point search, probability to update a randomly-chosen sample in trainee.
+                                   #In multi-point search, with probability 1-prob_update_best-prob_update_rand, we update a best sample in finished (noise is added before updating).
+
+          'num_finished': 20, #default 20, Stop optimization when the number of optimized points reaches this value.
+          'num_proc': 12, #default 12, Number of optimization processes.
+          'max_total_iter': 2000, #default 2000, Max total-iterations.
+
+          "grad_max_iter": 50,  #default 50, Max number of iterations of each gradient descent DP.
+          'grad_act_noise': 0.001, #default 0.001, Search noise used in PlanGrad.
+          'grad_tol': 1e-6, #default 1.0e-6, Gradient descent tolerance (stops if value_new-value<grad_tol).
+          'grad_max_bounce': 10, #default 10, Gradient descent stops if number of bounce (value_new-value < 0.0) reaches this value.
         },
       },
     }
-  if l.custom_smsz=="random": smsz_label="random"
-  else: smsz_label = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
-  l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + smsz_label + "/" + suff + "/"
+
+  c = str(l.custom_smsz).split(".")
+  l.logdir = l.logdir + l.pour_skill + "/" + l.custom_mtr + "/" + c[0]+c[1] + "/" + suff + "/"
   print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
-  ct.Run("mysim.onpolicy.basic2_sv", l)
+  ct.Run("mysim.onpolicy.onetime_solve_sv", l)

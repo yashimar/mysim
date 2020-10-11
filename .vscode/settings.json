@@ -1,0 +1,5 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/yashima/.local/lib/python2.7/site-packages/",
+    ]
+}

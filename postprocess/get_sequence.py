@@ -8,6 +8,7 @@ def Help():
 
 def Run(ct, *args):
   name = args[0]
+  # database_path = "/tmp/" + name + "/database.yaml"
   database_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
                   + name + "/database.yaml"
   with open(database_path) as f:
