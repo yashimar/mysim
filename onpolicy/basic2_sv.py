@@ -87,6 +87,7 @@ def Execute(ct,l):
     CPrint(2,'Node:','n1')
     l.xs.n1= CopyXSSA(l.xs.prev)
     InsertDict(l.xs.n1, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
+    l.dpl.MM.Models['Fgrasp'][2].Options.update(l.nn_options)
     l.dpl.MM.Update('Fgrasp',l.xs.prev,l.xs.n1, not_learn=l.not_learn)
     #res= l.dpl.Plan('n1', l.xs.n1)
     l.idb.n1= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n1',xs=l.xs.n1)
@@ -104,6 +105,7 @@ def Execute(ct,l):
     CPrint(2,'Node:','n1rcvmv')
     l.xs.n1rcvmv= CopyXSSA(l.xs.prev)
     InsertDict(l.xs.n1rcvmv, ObserveXSSA(l,l.xs.prev,('dps_rcv','v_rcv')))
+    l.dpl.MM.Models['Fmvtorcv_rcvmv'][2].Options.update(l.nn_options)
     l.dpl.MM.Update('Fmvtorcv_rcvmv',l.xs.prev,l.xs.n1rcvmv, not_learn=l.not_learn)
     #res= l.dpl.Plan('n1rcvmv', l.xs.n1rcvmv)
     l.idb.n1rcvmv= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n1rcvmv',xs=l.xs.n1rcvmv)
@@ -117,6 +119,7 @@ def Execute(ct,l):
     CPrint(2,'Node:','n2a','(update)')
     l.xs.n2a= CopyXSSA(l.xs.prev)
     InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
+    l.dpl.MM.Models['Fmvtorcv'][2].Options.update(l.nn_options)
     l.dpl.MM.Update('Fmvtorcv',l.xs.prev,l.xs.n2a, not_learn=l.not_learn)
 
   repeated= False  #For try-and-error learning
@@ -154,6 +157,7 @@ def Execute(ct,l):
       CPrint(2,'Node:','n2b')
       l.xs.n2b= CopyXSSA(l.xs.prev)
       InsertDict(l.xs.n2b, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
+      l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
       l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
       #res= l.dpl.Plan('n2b', l.xs.n2b)
       l.idb.n2b= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2b',xs=l.xs.n2b)
@@ -197,6 +201,7 @@ def Execute(ct,l):
         CPrint(2,'Node:','n3ti')
         l.xs.n3ti= CopyXSSA(l.xs.prev)
         InsertDict(l.xs.n3ti, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
+        l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Fflowc_tip10',l.xs.prev,l.xs.n3ti, not_learn=l.not_learn)
         #res= l.dpl.Plan('n3ti', l.xs.n3ti)
         l.idb.n3ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n3ti',xs=l.xs.n3ti)
@@ -210,6 +215,7 @@ def Execute(ct,l):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
+        l.dpl.MM.Models['Famount4'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Famount4',xs_in,l.xs.n4ti, not_learn=l.not_learn)
         #res= l.dpl.Plan('n4ti', l.xs.n4ti)
         l.idb.n4ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4ti',xs=l.xs.n4ti)
@@ -230,6 +236,7 @@ def Execute(ct,l):
         CPrint(2,'Node:','n3sa')
         l.xs.n3sa= CopyXSSA(l.xs.prev)
         InsertDict(l.xs.n3sa, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
+        l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Fflowc_shakeA10',l.xs.prev,l.xs.n3sa, not_learn=l.not_learn)
         #res= l.dpl.Plan('n3sa', l.xs.n3sa)
         l.idb.n3sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n3sa',xs=l.xs.n3sa)
@@ -243,6 +250,7 @@ def Execute(ct,l):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
+        l.dpl.MM.Models['Famount4'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Famount4',xs_in,l.xs.n4sa, not_learn=l.not_learn)
         #res= l.dpl.Plan('n4sa', l.xs.n4sa)
         l.idb.n4sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sa',xs=l.xs.n4sa)
@@ -448,13 +456,15 @@ def Run(ct,*args):
     l.config_log = [config]
     # l.config_log.append(config)
     # SaveYAML(l.config_log, l.logdir+'config_log.yaml', interactive=False)
-    if l.restarting==True or count>1: w_mode = "a"
-    else: w_mode = "w"
+
+    # if l.restarting==True or count>1: w_mode = "a"
+    # else: w_mode = "w"
+    w_mode = "a"
     OpenW(l.logdir+'config_log.yaml',mode=w_mode,interactive=False).write(yamldump(ToStdType(l.config_log,lambda y:y), Dumper=YDumper))
 
     fp = open(l.logdir+'dpl_est.dat',w_mode)
     values = [l.dpl.DB.Entry[-1].R] + [l.dpl.Value(tree) for tree in l.node_best_tree]
-    idx = 0 if w_mode=="w" else len(l.dpl.DB.Entry)-1
+    idx = len(l.dpl.DB.Entry)-1
     fp.write('%i %s\n' % (idx, ' '.join(map(str,values))))
     fp.close()
     if w_mode=="a": CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
@@ -560,7 +570,6 @@ def Run(ct,*args):
         fp.flush()
         CPrint(1,count,l.dpl.DB.DumpOne())
         count+= 1
-        if count>=l.num_episodes:  break
         if l.dpl.DB.Entry[-1].R<l.return_epsiron: 
           l.priority_sampling = True
 

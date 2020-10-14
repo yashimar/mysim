@@ -42,31 +42,35 @@ def PlotMeanStd(df, df_error, ylabel):
 
 def Run(ct, *args):
   name_log = args[0]
-  is_ma = args[1] if len(args)==2 else "normal"
-  i = 0;
+  r_thr = -1.0
+  
   data_list = []
   mtr_list = []
   smsz_list = []
+  low_r_list = []
   root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   log_path = root_path + name_log + "/dpl_est.dat"
-  db_path = root_path + name_log + "/sequence_list.yaml"
+  # db_path = root_path + name_log + "/sequence_list.yaml"
+  config_path = root_path + name_log + "/config_log.yaml"
   # data_list.append(np.genfromtxt(log_path))
   data_list = []
   with open(log_path, "r") as log_data:
-    for line in log_data:
+    for ep, line in enumerate(log_data):
       line = line.split("\n")[0].split(" ")
       line = map(lambda x: float(x), line)
       data_list.append(line)
-  with open(db_path, "r") as yml:
+      if line[1] < r_thr:
+        low_r_list.append(ep)
+  with open(config_path, "r") as yml:
     config = yaml.load(yml)
   for i in range(len(config)):
-    mtr = config[i]["config"]["material2"]
-    if mtr[0][0]==0.7: mtr_list.append("bounce")
-    elif mtr[2][0]==1.5: mtr_list.append("natto")
-    elif mtr[2][0]==0.25: mtr_list.append("ketchup")
+    conf = config[i]
+    if conf["ContactBounce"]==0.7: mtr_list.append("bounce")
+    elif conf["ViscosityParam1"]==1.5e-06: mtr_list.append("natto")
+    elif conf["ViscosityParam1"]==2.5e-07: mtr_list.append("ketchup")
     else: mtr_list.append("nobounce")
-    smsz_list.append(config[i]["config"]["size_srcmouth"][0][0])
-  learn_ep_list = map(lambda x: x[0], data_list)
+    smsz_list.append(conf["SrcSize2H"])
+  learn_ep_list = map(lambda x: int(x[0]), data_list)
   mtr_list = [mtr for j,mtr in enumerate(mtr_list) if j in learn_ep_list]
   smsz_list = [smsz for j,smsz in enumerate(smsz_list) if j in learn_ep_list]
   learn_ep_before_sampling_list = [i for i in range(len(learn_ep_list)-1) 
@@ -84,7 +88,14 @@ def Run(ct, *args):
   df = pd.DataFrame(df_list)
   df_est_n0 = pd.DataFrame(df_est_n0_list)
   df_est_last = pd.DataFrame(df_est_last_list)
- 
+
+  # print(len(config))
+  # print(len(learn_ep_list))
+  # print(len(mtr_list))
+  # print(len(data_list))
+  # print(learn_ep_list)
+  # print(mtr_list)
+
   plt.figure()
   plt.close()
   fig = plt.figure(figsize=(20,5))
@@ -110,13 +121,19 @@ def Run(ct, *args):
   # Plot(df_est_last.iloc[:,:], "return", "estimate_last", xmin , ymin)
   # MtrScatter(df_est_last.iloc[:,:], mtr_list, vis_mtr_list, xmin, ymin)
 
-  for ep in learn_ep_before_sampling_list:
-    plt.text(ep-3,df.iloc[ep]-2,str(smsz_list[ep]))
-  plt.vlines(learn_ep_before_sampling_list,ymin,0,
-              linestyles="dashed",colors="gray",
-              label="sampling timing")
-  plt.legend()
+  # for ep in learn_ep_before_sampling_list:
+  #   plt.text(ep,df.iloc[ep]-2,str(round(smsz_list[ep],3)))
+  # plt.vlines(learn_ep_before_sampling_list,ymin,0,
+  #             linestyles="dashed",colors="gray",
+  #             label="sampling timing")
 
+  low_r_list = [ep for ep in low_r_list if ep > 50]
+  plt.vlines(low_r_list,ymin,0,
+              linestyles="dashed",colors="gray",
+              label="low r episode")
+  
+  plt.legend()
+  plt.subplots_adjust(left=0.05, right=0.95)
   # PlotMeanStd(df_ma["mean"], df_ma["std"], "reward_ma" + str(window))
 
   # plt.savefig("/home/yashima/Pictures/dpl3_7_21/"+name_log+".png")

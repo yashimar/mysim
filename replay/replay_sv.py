@@ -36,8 +36,8 @@ def Run(ct,*args):
   # log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/" \
   #           + "replay/mtr_sms_sv/learn/shake_A/nobounce/002/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "mtr_sms_sv/learn/shake_A/random/0055/normal/"
-  i_episode_list = [0]
+              + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/priority_sampling/"
+  i_episode_list = [578]
   i_node = 0
   n_roop = 1
 
@@ -45,16 +45,16 @@ def Run(ct,*args):
     for roop in range(n_roop):
       l= TContainer(debug=True)
       l.opt_conf= {}
-      # l.opt_conf['config']= LoadYAML(target_dir+"config_log.yaml")[i_episode]
-      l.opt_conf['config']= LoadYAML(target_dir+"config_log.yaml")[0]
-      data = LoadYAML(target_dir+"database.yaml")['Entry'][i_episode]['Seq'][0]['XS']
-      l.opt_conf['config'].update({
-        # "ContactBounce": data["material2"]["X"][0][0], 
-        # "ContactBounceVel": data["material2"]["X"][1][0],
-        "ViscosityParam1": data["material2"]["X"][2][0],    #trouble!!!
-        # "ViscosityMaxDist": data["material2"]["X"][3][0],
-        "SrcSize2H": data["size_srcmouth"]["X"][0][0]
-      })
+      l.opt_conf['config']= LoadYAML(target_dir+"config_log.yaml")[i_episode]
+      # l.opt_conf['config']= LoadYAML(target_dir+"config_log.yaml")[0]
+      # data = LoadYAML(target_dir+"database.yaml")['Entry'][i_episode]['Seq'][0]['XS']
+      # l.opt_conf['config'].update({
+      #   # "ContactBounce": data["material2"]["X"][0][0], 
+      #   # "ContactBounceVel": data["material2"]["X"][1][0],
+      #   "ViscosityParam1": data["material2"]["X"][2][0],    #trouble!!!
+      #   # "ViscosityMaxDist": data["material2"]["X"][3][0],
+      #   "SrcSize2H": data["size_srcmouth"]["X"][0][0]
+      # })
       l.opt_conf['actions']= LoadActions(target_dir+'database.yaml',i_episode,i_node)
       l.config_log= []
       l.config_callback= TestConfigCallback
@@ -64,6 +64,7 @@ def Run(ct,*args):
 
       sim= ct.sim
       l= ct.sim_local
+      l.spilled_stop = 10
 
       obs_keys0= ('ps_rcv','p_pour','p_pour_z','lp_pour','a_trg','size_srcmouth','material2')
       obs_keys_after_grab= obs_keys0+('gh_abs',)
@@ -97,6 +98,7 @@ def Run(ct,*args):
         # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         # SaveYAML(XS,log_dir+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))
+        Print(XS)
 
       finally:
         sim.StopPubSub(ct,l)

@@ -46,13 +46,11 @@ def ConfigCallback(ct,l,sim):
       l.config.SrcSize2H= Rand(0.03,0.08)
     else:
       l.config.SrcSize2H= l.custom_smsz
-    l.latest_smsz = l.custom_smsz
+    l.latest_smsz = l.config.SrcSize2H
   elif l.mtr_smsz=="latest_mtr_smsz":
     m_setup.SetMaterial(l, preset=l.latest_mtr)
-    if l.latest_smsz=="random":
-      l.config.SrcSize2H= Rand(0.03,0.08)
-    else:
-      l.config.SrcSize2H= l.latest_smsz
+    l.config.SrcSize2H= Rand(max(0.03,l.latest_smsz-l.delta_smsz), 
+                              min(0.08,l.latest_smsz+l.delta_smsz))
   elif l.mtr_smsz=="early_natto":
     m_setup.SetMaterial(l, preset='natto')
     l.config.SrcSize2H = l.custom_smsz
@@ -61,29 +59,34 @@ def ConfigCallback(ct,l,sim):
 
 def Run(ct,*args):
   l = TContainer(debug=True)
-  l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "mtr_sms_sv/reduce_outlier_experiment/mtr_smsz_random/learn/"
+  # l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+  #           + "mtr_sms_sv/learning_branch/ranodm_mtr/normal/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #             + "mtr_sms_sv/test/reduce_experiment/"
-  suff = "priority_random"
+  #             + "mtr_sms_sv/test/learning_branch/"
+  l.logdir = "/tmp/lb/"
+  # suff = "priority_random/"
+  suff = ""
   # model_dir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #           + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal/models/"
-  # db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "mtr_sms_sv/reduce_outlier_experiment/mtr_random/learn/shake_A/random/0055/normal/database.yaml"
+  #           + "mtr_sms_sv/learning_branch/ranodm_mtr/base/shake_A/random/0055/models/"
+  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+  #         + "mtr_sms_sv/learning_branch/ranodm_mtr/base/shake_A/random/0055/"
+  # db_src = src_core + "database.yaml"
   model_dir = ""
+  src_core = ""
   db_src = ""
   l.pour_skill = "shake_A"
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "random"
-  l.custom_smsz = "random"    #random or 0.02~0.09
+  l.custom_smsz = 0.055    #random or 0.02~0.09
+  l.delta_smsz = 0.010
   l.mtr_dir_name = "random"
 
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 100,
-    'num_sampling': 100, 
+    'num_episodes': 2,
+    'num_sampling': 0, 
     "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -1.0, 
     'num_log_interval': 1,  #should be 1
@@ -108,10 +111,31 @@ def Run(ct,*args):
         },
       },
     }
+  l.nn_options = {
+    # "gpu": 0, 
+    "batch_size": 10,           #default 10
+    "num_max_update": 5000,     #default 5000
+    'num_check_stop': 50,       #default 50
+    'loss_stddev_stop': 1e-3,  #default 1e-3
+    'AdaDelta_rho': 0.9,        #default 0.9
+    # 'train_log_file': '{base}train/nn_log-{name}{code}.dat', 
+    # "train_batch_loss_log_file": '{base}train/nn_batch_loss_log-{name}{code}.dat',
+  }
   if l.custom_smsz=="random": smsz_label="random"
   else: smsz_label = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
-  l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + smsz_label + "/" + suff + "/"
+  l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + smsz_label + "/" + suff
   print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
+  if os.path.exists(l.logdir+"config_log.yaml")==False and os.path.exists(l.logdir+"dpl_est.dat")==False:
+    if src_core!="":
+      CopyFile(src_core+"config_log.yaml", l.logdir+"config_log.yaml")
+      Print("Copying",src_core+"config_log.yaml","to",l.logdir+"config_log.yaml")
+      CopyFile(src_core+"dpl_est.dat", l.logdir+"dpl_est.dat")
+      Print("Copying",src_core+"dpl_est.dat","to",l.logdir+"dpl_est.dat")
+    else:
+      os.mknod(l.logdir+"config_log.yaml")
+      os.mknod(l.logdir+"dpl_est.dat")
+  else:
+    pass
 
   ct.Run("mysim.onpolicy.basic2_sv", l)

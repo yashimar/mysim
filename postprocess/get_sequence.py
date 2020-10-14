@@ -13,6 +13,10 @@ def Run(ct, *args):
                   + name + "/database.yaml"
   with open(database_path) as f:
     database = yaml.safe_load(f)
+  # with open(database_path) as f:
+  #   for data in yaml.parse(f):
+  #     Print(data["Entry"])
+  Print("successfully loaded")
 
   eps_list = []
   for i in range(len(database["Entry"])):
