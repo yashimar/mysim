@@ -39,6 +39,7 @@ def Run(ct,*args):
     mean_batch_start_loss_list = []
     err_batch_start_loss_list = []
     trial_mean_batch_dict = {}
+    low_r_list = []
     if is_onpolicy:
       for i in range(1000):
         base_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" + log_name + "/models/train/"
@@ -48,20 +49,26 @@ def Run(ct,*args):
         if os.path.exists(mean_path):
           loss_list = list(np.loadtxt(mean_path, comments='!').transpose()[1])
           median_mean_batch_loss_list += [np.median(loss_list)]*len(loss_list)
-          q3_mean_batch_loss_list += [np.percentile(loss_list,75)]*len(loss_list)
-          q1_mean_batch_loss_list += [np.percentile(loss_list,25)]*len(loss_list)
+          q3_mean_batch_loss_list += [np.percentile(loss_list,95)]*len(loss_list)
+          q1_mean_batch_loss_list += [np.percentile(loss_list,5)]*len(loss_list)
           if i not in learn_ep_before_sampling_list: 
             median_mean_batch_loss_list_before_sampling += [np.nan]*len(loss_list)
             q3_mean_batch_loss_list_before_sampling += [np.nan]*len(loss_list)
             q1_mean_batch_loss_list_before_sampling += [np.nan]*len(loss_list)
           else:
             median_mean_batch_loss_list_before_sampling += [np.median(loss_list)]*len(loss_list)
-            q3_mean_batch_loss_list_before_sampling += [np.percentile(loss_list,75)]*len(loss_list)
-            q1_mean_batch_loss_list_before_sampling += [np.percentile(loss_list,25)]*len(loss_list)
+            q3_mean_batch_loss_list_before_sampling += [np.percentile(loss_list,95)]*len(loss_list)
+            q1_mean_batch_loss_list_before_sampling += [np.percentile(loss_list,5)]*len(loss_list)
           mean_batch_start_loss_list += [loss_list[0]] + [np.nan]*(len(loss_list)-1)
           mean_batch_loss_list += loss_list
           final_mean_batch_loss = loss_list
           trial_mean_batch_dict.update({i: len(mean_batch_loss_list)-len(loss_list)})
+          try:
+            if data_list[i+48][1]<-1.0: 
+              # print(data_list[i+48][0])
+              low_r_list += [len(mean_batch_start_loss_list) - len(loss_list)]
+          except:
+            pass
         if os.path.exists(err_path):  
           loss_list = list(np.loadtxt(err_path, comments='!').transpose()[1])
           err_batch_start_loss_list += [loss_list[0]] + [np.nan]*(len(loss_list)-1)
@@ -76,25 +83,26 @@ def Run(ct,*args):
       err_batch_loss_list += list(np.loadtxt(err_path, comments='!').transpose()[1])
 
     if not dynamics=="Famount4": continue
-    plt.figure()
-    plt.close()
-
-    plt.figure(figsize=(20,10))
+    ymin, ymax = 0, 0.075
+    plt.figure(figsize=(20,5))
     plt.title(log_name+"\n"+dynamics+" mean model")
     plt.xlabel("update")
     plt.ylabel("batch loss")
-    plt.ylim(0,0.025)
+    plt.ylim(ymin, ymax)
     # plt.plot(final_mean_batch_loss, linewidth=0.8, zorder=0)
-    plt.xlim(200000,220000)
-    plt.plot(mean_batch_loss_list, linewidth=0.1, zorder=0)
-    plt.plot(median_mean_batch_loss_list, zorder=2)
-    plt.plot(median_mean_batch_loss_list_before_sampling, zorder=3, linewidth=2, c="black")
-    plt.plot(q3_mean_batch_loss_list, zorder=2, c="purple")
-    plt.plot(q3_mean_batch_loss_list_before_sampling, zorder=3, linewidth=2, c="black")
-    plt.plot(q1_mean_batch_loss_list, zorder=2, c="pink")
-    plt.plot(q1_mean_batch_loss_list_before_sampling, zorder=3, linewidth=2, c="black")
-    plt.scatter(np.linspace(0,len(mean_batch_start_loss_list)-1,len(mean_batch_start_loss_list)),mean_batch_start_loss_list, c="red", zorder=1)
+    # plt.xlim(200000,220000)
+    plt.plot(mean_batch_loss_list, linewidth=0.1, zorder=0, label="batch loss")
+    plt.plot(median_mean_batch_loss_list, zorder=2, label="median batch loss of the episode")
+    # plt.plot(median_mean_batch_loss_list_before_sampling, zorder=3, linewidth=2, c="black")
+    plt.plot(q3_mean_batch_loss_list, zorder=2, c="purple", label="95% point batch loss of the episode")
+    # plt.plot(q3_mean_batch_loss_list_before_sampling, zorder=3, linewidth=2, c="black")
+    plt.plot(q1_mean_batch_loss_list, zorder=2, c="pink", label="5% point batch loss of the episode")
+    # plt.plot(q1_mean_batch_loss_list_before_sampling, zorder=3, linewidth=2, c="black")
+    plt.scatter(np.linspace(0,len(mean_batch_start_loss_list)-1,len(mean_batch_start_loss_list)),mean_batch_start_loss_list, c="red", zorder=1, label="first update batch loss of the episode", s=20)
     # plt.subplots_adjust(left=0.05, right=0.95)
+    plt.vlines(low_r_list, ymin, ymax, label="first update of low return episode", linestyle="dashed", colors="gray")
+    plt.legend()
+    plt.subplots_adjust(left=0.05, right=0.95)
     plt.show()
     # print(trial_mean_batch_dict)
     # print([i for i,loss in enumerate(mean_batch_loss_list) if loss>1.5])

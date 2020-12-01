@@ -59,35 +59,35 @@ def ConfigCallback(ct,l,sim):
 
 def Run(ct,*args):
   l = TContainer(debug=True)
-  # l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #           + "mtr_sms_sv/learning_branch/ranodm_mtr/normal/"
+  l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+            + "mtr_sms_sv/learning_branch/random_mtr/normal/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
-  l.logdir = "/tmp/lb/"
-  # suff = "priority_random/"
-  suff = ""
-  # model_dir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #           + "mtr_sms_sv/learning_branch/ranodm_mtr/base/shake_A/random/0055/models/"
-  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "mtr_sms_sv/learning_branch/ranodm_mtr/base/shake_A/random/0055/"
-  # db_src = src_core + "database.yaml"
-  model_dir = ""
-  src_core = ""
-  db_src = ""
+  # l.logdir = "/tmp/lb/"
+  suff = "continue/"
+  hoge
+  # suff = ""
+  src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+          + "mtr_sms_sv/learning_branch/random_mtr/normal/shake_A/random/0055/"
+  model_dir = src_core + "models/"
+  db_src = src_core + "database.yaml"
+  # model_dir = ""
+  # src_core = ""
+  # db_src = ""
   l.pour_skill = "shake_A"
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "random"
   l.custom_smsz = 0.055    #random or 0.02~0.09
-  l.delta_smsz = 0.010
+  l.delta_smsz = 0.0
   l.mtr_dir_name = "random"
 
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 2,
-    'num_sampling': 0, 
-    "sampling_mode": "random", #random, bo(bayesian optimization)
+    'num_episodes': 499,
+    'max_priority_sampling': 0, 
+    # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -1.0, 
     'num_log_interval': 1,  #should be 1
     'rcv_size': 'static',  #'static', 'random'

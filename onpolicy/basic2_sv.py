@@ -54,21 +54,21 @@ def Execute(ct,l):
     #l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     #l.xs.n0['skill']= SSA([1])
 
-    if l.priority_sampling:
-      l.xs.n0['gh_ratio']= l.reserve["gh_ratio"]
-      l.xs.n0['p_pour_trg0']= l.reserve["p_pour_trg0"]
-      l.xs.n0['p_pour_trg']= l.reserve["p_pour_trg"]
-      l.xs.n0['dtheta1']= l.reserve["dtheta1"]
-      if l.pour_skill=="std_pour":
-        l.xs.n0['dtheta2']= l.reserve["dtheta2"]
-      elif l.pour_skill=="shake_A":
-        l.xs.n0['shake_spd']= l.reserve["shake_spd"]
-        l.xs.n0['shake_axis2']= l.reserve["shake_axis2"]
-      elif l.pour_skill=="choose":
-        l.xs.n0['dtheta2']= l.reserve["dtheta2"]
-        l.xs.n0['shake_spd']= l.reserve["shake_spd"]
-        l.xs.n0['shake_axis2']= l.reserve["shake_axis2"]
-        l.xs.n0['skill']= l.reserve["skill"]
+    # if l.priority_sampling:
+    #   l.xs.n0['gh_ratio']= l.reserve["gh_ratio"]
+    #   l.xs.n0['p_pour_trg0']= l.reserve["p_pour_trg0"]
+    #   l.xs.n0['p_pour_trg']= l.reserve["p_pour_trg"]
+    #   l.xs.n0['dtheta1']= l.reserve["dtheta1"]
+    #   if l.pour_skill=="std_pour":
+    #     l.xs.n0['dtheta2']= l.reserve["dtheta2"]
+    #   elif l.pour_skill=="shake_A":
+    #     l.xs.n0['shake_spd']= l.reserve["shake_spd"]
+    #     l.xs.n0['shake_axis2']= l.reserve["shake_axis2"]
+    #   elif l.pour_skill=="choose":
+    #     l.xs.n0['dtheta2']= l.reserve["dtheta2"]
+    #     l.xs.n0['shake_spd']= l.reserve["shake_spd"]
+    #     l.xs.n0['shake_axis2']= l.reserve["shake_axis2"]
+    #     l.xs.n0['skill']= l.reserve["skill"]
 
     if "n0" in l.planning_node:
       res= l.dpl.Plan('n0', l.xs.n0, l.interactive)
@@ -279,8 +279,8 @@ def Run(ct,*args):
 
   l.interactive= l.opt_conf['interactive']
   l.num_episodes= l.opt_conf['num_episodes']
-  l.num_sampling = l.opt_conf["num_sampling"]
-  l.sampling_mode = l.opt_conf["sampling_mode"]
+  l.max_priority_sampling = l.opt_conf["max_priority_sampling"]
+  # l.sampling_mode = l.opt_conf["sampling_mode"]
   l.return_epsiron = l.opt_conf["return_epsiron"]
   l.num_log_interval= l.opt_conf['num_log_interval']
   l.planning_node = l.opt_conf["planning_node"]
@@ -547,148 +547,159 @@ def Run(ct,*args):
   
   l.priority_sampling = False
   while True:
-    if not l.priority_sampling:
-      for i in range(l.num_log_interval):
-        CPrint(2,'========== Start %4i =========='%count)
-        EpisodicCallback(l,count)
-        CPrint(3,"learning data size:",len(l.dpl.MM.Models["Fgrasp"][2].DataX))
-        l.dpl.NewEpisode()
-        l.user_viz= []
-        l.node_best_tree = []
-        #l.sm_logfp= OpenW(l.logdir+'sm/sm_log%04i.dat'%count,'w')
-        try:
-          Execute(ct,l)
-        finally:
-          ct.sim.StopPubSub(ct,l)
-          ct.sim_local.sensor_callback= None
-          ct.srvp.ode_pause()
-        #l.sm_logfp.close()
-        l.dpl.EndEpisode()
-        CPrint(2,'========== End %4i =========='%count)
-        #xyar_line= l.dpl.DB.Entry[-1].Dump()
-        fp.write(l.dpl.DB.DumpOneYAML())
-        fp.flush()
-        CPrint(1,count,l.dpl.DB.DumpOne())
-        count+= 1
-        if l.dpl.DB.Entry[-1].R<l.return_epsiron: 
-          l.priority_sampling = True
+    CPrint(2,'========== Start %4i =========='%count)
+    EpisodicCallback(l,count)
+    CPrint(3,"learning data size:",len(l.dpl.MM.Models["Fgrasp"][2].DataX))
+    l.dpl.NewEpisode()
+    l.user_viz= []
+    l.node_best_tree = []
 
-      #ct.Run('tsim2.dplD20log',l)
-      LogDPL(l, count)
-      if count>=l.num_episodes:  break
-      if l.interactive:
-        print 'Continue?'
-        if not AskYesNo():  break
+    if l.priority_sampling==True:
+      if t_sampling<l.max_priority_sampling:
+        l.mtr_smsz = "latest_mtr_smsz"
+        t_sampling += 1
+      else:
+        l.mtr_smsz = l.org_mtr_smsz
+        l.priority_sampling = False
 
-    else:
-      l.not_learn = True                #only sampling
-      l.planning_node = []              #not plan
-      l.mtr_smsz = "latest_mtr_smsz"    #use latest mtr and smsz
+    try:
+      Execute(ct,l)
+    finally:
+      ct.sim.StopPubSub(ct,l)
+      ct.sim_local.sensor_callback= None
+      ct.srvp.ode_pause()
+    #l.sm_logfp.close()
+    l.dpl.EndEpisode()
+    CPrint(2,'========== End %4i =========='%count)
+    #xyar_line= l.dpl.DB.Entry[-1].Dump()
+    fp.write(l.dpl.DB.DumpOneYAML())
+    fp.flush()
+    CPrint(1,count,l.dpl.DB.DumpOne())
+    count+= 1
+    if l.dpl.DB.Entry[-1].R<l.return_epsiron: 
+      l.priority_sampling = True
+      t_sampling = 0
+      # if l.priority_sampling==False:
+      #   l.priority_sampling = True
+      #   t_sampling = 0
+      # else:
+      #   pass
 
-      def random_policy(l):
-        l.reserve = dict()
-        pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)
-        l.reserve['gh_ratio']= SSA([Rand(0.0,1.0)])
-        l.reserve['p_pour_trg0']= SSA(Vec([-0.3,0.35])+Vec([pc_rcv[0],pc_rcv[2]]))  #A bit above of p_pour_trg
-        l.reserve['p_pour_trg']= SSA(Vec([Rand(0.2,1.2),Rand(0.1,0.7)]))
-        l.reserve['dtheta1']= SSA([Rand(0.01,0.02)])
-        if l.pour_skill=="std_pour":
-          l.reserve['dtheta2']= SSA([Rand(0.002,0.005)])
-        elif l.pour_skill=="shake_A":
-          l.reserve['shake_spd']= SSA([Rand(0.7,0.9)])
-          l.reserve['shake_axis2']= SSA([Rand(0.05,0.1),Rand(-0.5*math.pi,0.5*math.pi)])
-        elif l.pour_skill=="choose":
-          l.reserve['dtheta2']= SSA([Rand(0.002,0.005)])
-          l.reserve['shake_spd']= SSA([Rand(0.7,0.9)])
-          l.reserve['shake_axis2']= SSA([Rand(0.05,0.1),Rand(-0.5*math.pi,0.5*math.pi)])
-          l.reserve['skill']= SSA([random.randint(0,1)])
-        return l
+    LogDPL(l, count)
+    if count>=l.num_episodes:  break
+    if l.interactive:
+      print 'Continue?'
+      if not AskYesNo():  break
+
+    # else:
+    #   l.not_learn = True                #only sampling
+    #   l.planning_node = []              #not plan
+    #   l.mtr_smsz = "latest_mtr_smsz"    #use latest mtr and smsz
+
+    #   def random_policy(l):
+    #     l.reserve = dict()
+    #     pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)
+    #     l.reserve['gh_ratio']= SSA([Rand(0.0,1.0)])
+    #     l.reserve['p_pour_trg0']= SSA(Vec([-0.3,0.35])+Vec([pc_rcv[0],pc_rcv[2]]))  #A bit above of p_pour_trg
+    #     l.reserve['p_pour_trg']= SSA(Vec([Rand(0.2,1.2),Rand(0.1,0.7)]))
+    #     l.reserve['dtheta1']= SSA([Rand(0.01,0.02)])
+    #     if l.pour_skill=="std_pour":
+    #       l.reserve['dtheta2']= SSA([Rand(0.002,0.005)])
+    #     elif l.pour_skill=="shake_A":
+    #       l.reserve['shake_spd']= SSA([Rand(0.7,0.9)])
+    #       l.reserve['shake_axis2']= SSA([Rand(0.05,0.1),Rand(-0.5*math.pi,0.5*math.pi)])
+    #     elif l.pour_skill=="choose":
+    #       l.reserve['dtheta2']= SSA([Rand(0.002,0.005)])
+    #       l.reserve['shake_spd']= SSA([Rand(0.7,0.9)])
+    #       l.reserve['shake_axis2']= SSA([Rand(0.05,0.1),Rand(-0.5*math.pi,0.5*math.pi)])
+    #       l.reserve['skill']= SSA([random.randint(0,1)])
+    #     return l
       
-      def bo_policy(l,A,r_list):
-        l.reserve = dict()
-        pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)
-        if len(A)<1:
-          l = random_policy(l)
-        else:
-          A = np.array(A)
-          domain =[ {'name': 'gh_ratio', 'type': 'continuous', 'domain': (0,1)},
-                    {'name': 'p_pour_trg0x', 'type': 'continuous', 'domain': (-0.3+pc_rcv[0],-0.3+pc_rcv[0])},
-                    {'name': 'p_pour_trg0z', 'type': 'continuous', 'domain': (0.35+pc_rcv[2],0.35+pc_rcv[2])},
-                    {'name': 'p_pour_trgx', 'type': 'continuous', 'domain': (0.2,1.2)},
-                    {'name': 'p_pour_trgz', 'type': 'continuous', 'domain': (0.1,0.7)},
-                    {'name': 'dtheta1', 'type': 'continuous', 'domain': (0.01,0.02)}]
-          if l.pour_skill=="std_pour":
-            domain += [{'name': 'dtheta2', 'type': 'continuous', 'domain': (0.002,0.005)}]
-          elif l.pour_skill=="shake_A":
-            domain += [ {'name': 'shake_spd', 'type': 'continuous', 'domain': (0.7,0.9)},
-                        {'name': 'shake_axis2x', 'type': 'continuous', 'domain': (0.05,0.1)},
-                        {'name': 'shake_axis2z', 'type': 'continuous', 'domain': (-0.5*math.pi,0.5*math.pi)}]
-          # SHOULD BE FIXED
-          elif l.pour_skill=="choose":
-            domain += [ {'name': 'dtheta2', 'type': 'continuous', 'domain': (0.002,0.005)},
-                        {'name': 'shake_spd', 'type': 'continuous', 'domain': (0.7,0.9)},
-                        {'name': 'shake_axis2x', 'type': 'continuous', 'domain': (0.05,0.1)},
-                        {'name': 'shake_axis2z', 'type': 'continuous', 'domain': (-0.5*math.pi,0.5*math.pi)},
-                        {'name': 'skill', 'type': 'discrete', 'domain': (0,1)}] #SHOULD BE FIXED
-          bo_step = GPyOpt.methods.BayesianOptimization(f=None, domain=domain, X=A, Y=r_list)
-          a_list_next = bo_step.suggest_next_locations()
-          print(a_list_next)
-          hoge
-        return l
+    #   def bo_policy(l,A,r_list):
+    #     l.reserve = dict()
+    #     pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)
+    #     if len(A)<1:
+    #       l = random_policy(l)
+    #     else:
+    #       A = np.array(A)
+    #       domain =[ {'name': 'gh_ratio', 'type': 'continuous', 'domain': (0,1)},
+    #                 {'name': 'p_pour_trg0x', 'type': 'continuous', 'domain': (-0.3+pc_rcv[0],-0.3+pc_rcv[0])},
+    #                 {'name': 'p_pour_trg0z', 'type': 'continuous', 'domain': (0.35+pc_rcv[2],0.35+pc_rcv[2])},
+    #                 {'name': 'p_pour_trgx', 'type': 'continuous', 'domain': (0.2,1.2)},
+    #                 {'name': 'p_pour_trgz', 'type': 'continuous', 'domain': (0.1,0.7)},
+    #                 {'name': 'dtheta1', 'type': 'continuous', 'domain': (0.01,0.02)}]
+    #       if l.pour_skill=="std_pour":
+    #         domain += [{'name': 'dtheta2', 'type': 'continuous', 'domain': (0.002,0.005)}]
+    #       elif l.pour_skill=="shake_A":
+    #         domain += [ {'name': 'shake_spd', 'type': 'continuous', 'domain': (0.7,0.9)},
+    #                     {'name': 'shake_axis2x', 'type': 'continuous', 'domain': (0.05,0.1)},
+    #                     {'name': 'shake_axis2z', 'type': 'continuous', 'domain': (-0.5*math.pi,0.5*math.pi)}]
+    #       # SHOULD BE FIXED
+    #       elif l.pour_skill=="choose":
+    #         domain += [ {'name': 'dtheta2', 'type': 'continuous', 'domain': (0.002,0.005)},
+    #                     {'name': 'shake_spd', 'type': 'continuous', 'domain': (0.7,0.9)},
+    #                     {'name': 'shake_axis2x', 'type': 'continuous', 'domain': (0.05,0.1)},
+    #                     {'name': 'shake_axis2z', 'type': 'continuous', 'domain': (-0.5*math.pi,0.5*math.pi)},
+    #                     {'name': 'skill', 'type': 'discrete', 'domain': (0,1)}] #SHOULD BE FIXED
+    #       bo_step = GPyOpt.methods.BayesianOptimization(f=None, domain=domain, X=A, Y=r_list)
+    #       a_list_next = bo_step.suggest_next_locations()
+    #       print(a_list_next)
+    #       hoge
+    #     return l
       
-      A = []
-      r_list = []
-      for i in range(l.num_sampling):
-        CPrint(3,'========== Start %s sampling %4i-%2i =========='%(l.sampling_mode,count,i))
-        CPrint(3,"learning data size:",len(l.dpl.MM.Models["Fgrasp"][2].DataX))
+    #   A = []
+    #   r_list = []
+    #   for i in range(l.max_priority_sampling):
+    #     CPrint(3,'========== Start %s sampling %4i-%2i =========='%(l.sampling_mode,count,i))
+    #     CPrint(3,"learning data size:",len(l.dpl.MM.Models["Fgrasp"][2].DataX))
 
-        if l.sampling_mode=="random":   
-          l = random_policy(l)
-        elif l.sampling_mode=="bo":
-          l = bo_policy(l,A,r_list)
-        a_list = [
-          l.reserve['gh_ratio'].X.tolist()[0][0],
-          l.reserve['p_pour_trg0'].X.tolist()[0][0],
-          l.reserve['p_pour_trg0'].X.tolist()[1][0],
-          l.reserve['p_pour_trg'].X.tolist()[0][0],
-          l.reserve['p_pour_trg'].X.tolist()[1][0],
-          l.reserve['dtheta1'].X.tolist()[0][0]
-        ]
-        if l.pour_skill=="std_pour": a_list += [l.reserve['dtheta2'].X.tolist()[0][0]]
-        elif l.pour_skill=="shake_A": a_list += [l.reserve['shake_spd'].X.tolist()[0][0]] \
-                                              + [l.reserve['shake_axis2'].X.tolist()[0][0]] \
-                                              + [l.reserve['shake_axis2'].X.tolist()[1][0]]
-        #SHOULD BE FIXED
-        elif l.pour_skill=="choose": a_list += [l.reserve['dtheta2'].X.tolist()[0][0]] \
-                                              + [l.reserve['shake_spd'].X.tolist()[0][0]] \
-                                              + [l.reserve['shake_axis2'].X.tolist()[0][0]] \
-                                              + [l.reserve['shake_axis2'].X.tolist()[1][0]] \
-                                              + [l.reserve['skill'].X.tolist()] #SHOULD BE FIXED
-        A.append(a_list)
+    #     if l.sampling_mode=="random":   
+    #       l = random_policy(l)
+    #     elif l.sampling_mode=="bo":
+    #       l = bo_policy(l,A,r_list)
+    #     a_list = [
+    #       l.reserve['gh_ratio'].X.tolist()[0][0],
+    #       l.reserve['p_pour_trg0'].X.tolist()[0][0],
+    #       l.reserve['p_pour_trg0'].X.tolist()[1][0],
+    #       l.reserve['p_pour_trg'].X.tolist()[0][0],
+    #       l.reserve['p_pour_trg'].X.tolist()[1][0],
+    #       l.reserve['dtheta1'].X.tolist()[0][0]
+    #     ]
+    #     if l.pour_skill=="std_pour": a_list += [l.reserve['dtheta2'].X.tolist()[0][0]]
+    #     elif l.pour_skill=="shake_A": a_list += [l.reserve['shake_spd'].X.tolist()[0][0]] \
+    #                                           + [l.reserve['shake_axis2'].X.tolist()[0][0]] \
+    #                                           + [l.reserve['shake_axis2'].X.tolist()[1][0]]
+    #     #SHOULD BE FIXED
+    #     elif l.pour_skill=="choose": a_list += [l.reserve['dtheta2'].X.tolist()[0][0]] \
+    #                                           + [l.reserve['shake_spd'].X.tolist()[0][0]] \
+    #                                           + [l.reserve['shake_axis2'].X.tolist()[0][0]] \
+    #                                           + [l.reserve['shake_axis2'].X.tolist()[1][0]] \
+    #                                           + [l.reserve['skill'].X.tolist()] #SHOULD BE FIXED
+    #     A.append(a_list)
 
-        l.dpl.NewEpisode()
-        try:
-          Execute(ct,l)
-        finally:
-          ct.sim.StopPubSub(ct,l)
-          ct.sim_local.sensor_callback= None
-          ct.srvp.ode_pause()
-        l.dpl.EndEpisode()
-        r_list.append([l.dpl.DB.Entry[-1].R])
+    #     l.dpl.NewEpisode()
+    #     try:
+    #       Execute(ct,l)
+    #     finally:
+    #       ct.sim.StopPubSub(ct,l)
+    #       ct.sim_local.sensor_callback= None
+    #       ct.srvp.ode_pause()
+    #     l.dpl.EndEpisode()
+    #     r_list.append([l.dpl.DB.Entry[-1].R])
 
-        fp.write(l.dpl.DB.DumpOneYAML())
-        fp.flush()
-        config= {key: getattr(l.config,key) for key in l.config.__slots__}
-        l.config_log = [config]
-        OpenW(l.logdir+'config_log.yaml',mode="a",interactive=False).write(yamldump(ToStdType(l.config_log,lambda y:y), Dumper=YDumper))
+    #     fp.write(l.dpl.DB.DumpOneYAML())
+    #     fp.flush()
+    #     config= {key: getattr(l.config,key) for key in l.config.__slots__}
+    #     l.config_log = [config]
+    #     OpenW(l.logdir+'config_log.yaml',mode="a",interactive=False).write(yamldump(ToStdType(l.config_log,lambda y:y), Dumper=YDumper))
         
-        Print(a_list,r_list[-1])
-        CPrint(3,'========== End %s sampling %4i-%2i =========='%(l.sampling_mode,count,i))
+    #     Print(a_list,r_list[-1])
+    #     CPrint(3,'========== End %s sampling %4i-%2i =========='%(l.sampling_mode,count,i))
 
-      l.not_learn = l.org_not_learn
-      l.planning_node = l.org_planning_node
-      l.mtr_smsz = l.org_mtr_smsz
-      l.priority_sampling = False
+    #   l.not_learn = l.org_not_learn
+    #   l.planning_node = l.org_planning_node
+    #   l.mtr_smsz = l.org_mtr_smsz
+    #   l.priority_sampling = False
   
   fp.close()
 
