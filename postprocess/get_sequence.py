@@ -39,13 +39,15 @@ def Run(ct, *args):
                         "ps_rcv": data["ps_rcv"]["X"], 
                         "size_srcmouth": data["size_srcmouth"]["X"], 
                         "material2": data["material2"]["X"]})
-        if state=="n0": keys.append({"gh_ratio": data["gh_ratio"]["X"]})
-        if state=="n2a": keys.append({"p_pour_trg": data["p_pour_trg"]["X"]})
-        if state=="n3ti": keys.append({"dtheta1": data["dtheta1"]["X"],
-                                      "dtheta2": data["dtheta2"]["X"]})
-        if state=="n3sa": keys.append({"dtheta1": data["dtheta1"]["X"],
+        if state=="n0": keys.append({state: {"gh_ratio": data["gh_ratio"]["X"]}})
+        if state=="n1": keys.append({state: {"gh_abs": data["gh_abs"]["X"]}})
+        if state=="n2a": keys.append({state: {"p_pour_trg": data["p_pour_trg"]["X"]}})
+        if state=="n2b": keys.append({state: {"lp_pour": data["lp_pour"]["X"]}})
+        if state=="n3ti": keys.append({state: {"dtheta1": data["dtheta1"]["X"],
+                                      "dtheta2": data["dtheta2"]["X"]}})
+        if state=="n3sa": keys.append({state: {"dtheta1": data["dtheta1"]["X"],
                                       "shake_spd": data["shake_spd"]["X"],
-                                      "shake_axis2": data["shake_axis2"]["X"]})
+                                      "shake_axis2": data["shake_axis2"]["X"]}})
         if state=="n1rcvmvr": 
           rewards.append({str(reward_counter)+"_n1rcvmvr": data[".r"]["X"][0][0]})
           reward_counter += 1
@@ -67,6 +69,11 @@ def Run(ct, *args):
                           [{"da_pour": data["da_pour"]["X"][0][0]}], 
                           [{"a_pour": data["a_pour"]["X"][0][0]}], 
                           [{"a_spill2": data["a_spill2"]["X"][0][0]}]])
+          keys.append({state:{
+            "flow_var": data["flow_var"]["X"],
+            "lp_flow": data["lp_flow"]["X"],
+            "da_total": data["da_total"]["X"],
+          }})
           reward_counter += 1
       except:
         state = "end"
@@ -88,6 +95,9 @@ def Run(ct, *args):
       yaml.dump({
         i: {"reward": eps[0], 
             "config": eps[1], 
-            "sequence": {j: state for j, state in enumerate(eps[2:])}}
+            # "sequence": {j: state for j, state in enumerate(eps[2:])}}
+            "sequence": eps[2:]}
       }, f, default_flow_style=False)
+
+  del database, eps_list
       
