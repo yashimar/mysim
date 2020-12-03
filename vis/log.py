@@ -231,25 +231,18 @@ def Run(ct, *args):
       var_spill.append(vs)
       sq_mean_spill.append(ms2)
       sq_var_spill.append(vs2)
-      mean_da_total.append(tree.Tree[TPair("n4sar",0)].XS["da_total"].X.item())
-      var_da_total.append(tree.Tree[TPair("n4sar",0)].XS["da_total"].Cov.item())
-      mean_lp_flow_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].X.tolist()[0][0])
-      var_lp_flow_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].Cov.tolist()[0][0])
-      mean_lp_flow_y.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].X.tolist()[1][0])
-      var_lp_flow_y.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].Cov.tolist()[1][1])
-      mean_flow_var.append(tree.Tree[TPair("n4sar",0)].XS["flow_var"].X.item())
-      var_flow_var.append(tree.Tree[TPair("n4sar",0)].XS["flow_var"].Cov.item())
-      mean_lp_pour_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].X.tolist()[0][0])
-      var_lp_pour_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].Cov.tolist()[0][0])
-      mean_lp_pour_z.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].X.tolist()[2][0])
-      var_lp_pour_z.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].Cov.tolist()[2][2])
-  # print(tree.Tree[TPair("n4sar",0)].XS)
-  # mean_pour = pd.DataFrame(mean_pour)
-  # var_pour = pd.DataFrame(var_pour)
-  # mean_spill = pd.DataFrame(mean_spill)
-  # var_spill = pd.DataFrame(var_spill)
-  # sq_mean_spill = pd.DataFrame(sq_mean_spill)
-  # sq_var_spill = pd.DataFrame(sq_var_spill)
+      # mean_da_total.append(tree.Tree[TPair("n4sar",0)].XS["da_total"].X.item())
+      # var_da_total.append(tree.Tree[TPair("n4sar",0)].XS["da_total"].Cov.item())
+      # mean_lp_flow_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].X.tolist()[0][0])
+      # var_lp_flow_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].Cov.tolist()[0][0])
+      # mean_lp_flow_y.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].X.tolist()[1][0])
+      # var_lp_flow_y.append(tree.Tree[TPair("n4sar",0)].XS["lp_flow"].Cov.tolist()[1][1])
+      # mean_flow_var.append(tree.Tree[TPair("n4sar",0)].XS["flow_var"].X.item())
+      # var_flow_var.append(tree.Tree[TPair("n4sar",0)].XS["flow_var"].Cov.item())
+      # mean_lp_pour_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].X.tolist()[0][0])
+      # var_lp_pour_x.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].Cov.tolist()[0][0])
+      # mean_lp_pour_z.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].X.tolist()[2][0])
+      # var_lp_pour_z.append(tree.Tree[TPair("n4sar",0)].XS["lp_pour"].Cov.tolist()[2][2])
 
   ### plot
   vis_mtr_list = [
@@ -280,6 +273,17 @@ def Run(ct, *args):
                 linestyles="dashed",colors="gray",
                 label="low r episode")
     
+    plt.legend()
+    plt.subplots_adjust(left=0.05, right=0.95)
+    plt.show()
+
+  if True:
+    fig = plt.figure(figsize=(20,5))
+    plt.title(args[0]) 
+    xmin = 0
+    ymin = -50
+    Plot(df.iloc[:,:], "return", "return", xmin, ymin)
+    Plot(df_est_n0.iloc[:,:], "return", "estimate_n0", xmin , ymin)
     plt.legend()
     plt.subplots_adjust(left=0.05, right=0.95)
     plt.show()

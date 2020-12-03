@@ -41,7 +41,10 @@ def Run(ct, *args):
                         "material2": data["material2"]["X"]})
         if state=="n0": keys.append({state: {"gh_ratio": data["gh_ratio"]["X"]}})
         if state=="n1": keys.append({state: {"gh_abs": data["gh_abs"]["X"]}})
-        if state=="n2a": keys.append({state: {"p_pour_trg": data["p_pour_trg"]["X"]}})
+        if state=="n2a": keys.append({state: {
+          "p_pour_trg": data["p_pour_trg"]["X"],
+          "p_pour": data["p_pour"]["X"]
+          }})
         if state=="n2b": keys.append({state: {"lp_pour": data["lp_pour"]["X"]}})
         if state=="n3ti": keys.append({state: {"dtheta1": data["dtheta1"]["X"],
                                       "dtheta2": data["dtheta2"]["X"]}})
