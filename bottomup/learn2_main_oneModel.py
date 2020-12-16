@@ -299,7 +299,7 @@ def Run(ct,*args):
     #   ['ps_rcv','gh_abs','p_pour','p_pour_trg'],
     #   ['lp_pour'],None],
     'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg'],
+      ['p_pour_trg', "ps_rcv"],
       ['da_pour','da_spill2'],None],
     # 'Fflowc_tip10': [  #Flow control with tipping.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'

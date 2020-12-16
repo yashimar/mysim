@@ -66,7 +66,7 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = "continue/"
-  suff = "random_RcvPos/"
+  suff = "oneModel/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #         + "mtr_sms_sv/learning_branch/random_mtr/normal/shake_A/random/0055/"
   # model_dir = src_core + "models/"
@@ -82,10 +82,11 @@ def Run(ct,*args):
   l.delta_smsz = 0.0
   l.mtr_dir_name = "nobounce"
 
+  l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 70,
+    'num_episodes': 60,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -102,7 +103,10 @@ def Run(ct,*args):
     'dpl_options': {
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
+          'ptree_num': "auto", #default auto
           'db_init_ratio': 0.5, #default 0.5
+          'db_init_R_min': -1.0, #default -1.0
+          'grad_max_bounce': 10, #default 10
           'prob_update_best': 0.4, #default 0.4
           'prob_update_rand': 0.3, #default 0.3
           'max_total_iter': 2000, #default 2000 
@@ -111,9 +115,20 @@ def Run(ct,*args):
         },
       },
     }
+  # batchsize = 10
+  # n_epochs = 300
+  # l.nn_options = {
+  #   "batchsize": batchsize,           #default 10
+  #   "num_max_update": n_epochs*(200/batchsize),     #default 5000
+  #   'num_check_stop': (200/batchsize*10),       #default 50
+  #   'loss_stddev_stop': 1e-3,  #default 1e-3
+  #   'AdaDelta_rho': 0.9,        #default 0.9
+  #   # 'train_log_file': '{base}train/nn_log-{name}{code}.dat', 
+  #   # "train_batch_loss_log_file": '{base}train/nn_batch_loss_log-{name}{code}.dat',
+  # }
   l.nn_options = {
     # "gpu": 0, 
-    "batch_size": 10,           #default 10
+    "batchsize": 10,           #default 10
     "num_max_update": 5000,     #default 5000
     'num_check_stop': 50,       #default 50
     'loss_stddev_stop': 1e-3,  #default 1e-3
@@ -138,4 +153,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn2_main", l)
+  ct.Run("mysim.bottomup.learn2_main_oneModel", l)
