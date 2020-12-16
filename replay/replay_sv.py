@@ -36,8 +36,8 @@ def Run(ct,*args):
   # log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/" \
   #           + "replay/mtr_sms_sv/learn/shake_A/nobounce/002/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "bottomup/learn2/shake_A/nobounce/0065/"
-  i_episode_list = [18]
+              + "bottomup/learn1/shake_A/nobounce/0065/seventh/"
+  i_episode_list = [150]
   i_node = 0
   n_roop = 1
 
