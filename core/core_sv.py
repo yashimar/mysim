@@ -132,6 +132,18 @@ def MoveDTheta(ct,l,dth):
 #   ct.pub.ode_theta.publish(theta_msg)
 #   SimSleep(ct,l,dt)
 
+def MoveDTheta2(ct,l,dth,dt):
+  GetSensor(ct,l)
+  # dt = l.config.TimeStep
+  # print(dth,dt)
+  # hoge
+  # dt = 1e-4
+  p_pour0 = l.sensors.p_pour
+  theta0 = l.sensors.theta
+  p_pour = Vec(p_pour0)
+  theta = theta0 + dth
+  SimMove(ct,l,dt,p_pour,theta)
+
 def MoveDPPourDTheta(ct,l,dp,dth):
   dt= l.config.TimeStep
   p_pour0= l.sensors.p_pour

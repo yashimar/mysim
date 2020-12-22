@@ -66,14 +66,14 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = "continue/"
-  suff = "oneModel/"
-  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "mtr_sms_sv/learning_branch/random_mtr/normal/shake_A/random/0055/"
-  # model_dir = src_core + "models/"
-  # db_src = src_core + "database.yaml"
-  model_dir = ""
-  src_core = ""
-  db_src = ""
+  suff = "oneModel2/"
+  src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+          + "bottomup/learn2/shake_A/nobounce/0065/oneModel"+"/"
+  model_dir = src_core + "models/"
+  db_src = src_core + "database.yaml"
+  # model_dir = ""
+  # src_core = ""
+  # db_src = ""
   l.pour_skill = "shake_A"
 
   l.config_callback= ConfigCallback
@@ -86,7 +86,7 @@ def Run(ct,*args):
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 60,
+    'num_episodes': 100,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -103,8 +103,8 @@ def Run(ct,*args):
     'dpl_options': {
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
-          'ptree_num': "auto", #default auto
-          'db_init_ratio': 0.5, #default 0.5
+          'ptree_num': 40, #default auto
+          'db_init_ratio': 1.0, #default 0.5
           'db_init_R_min': -1.0, #default -1.0
           'grad_max_bounce': 10, #default 10
           'prob_update_best': 0.4, #default 0.4

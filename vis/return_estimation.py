@@ -52,30 +52,108 @@ def Run(ct, *args):
   true = returns["true"]
   est = returns["est_n0"]
 
-  fig = plt.figure(figsize=(20,5))
-  ax = fig.add_subplot(1, 1, 1)
-  ax.set_title(args[0])
+  if True:
+    true = returns["true"]
+    est = returns["est_n0"]
 
-  # plt.ylabel("return")
-  # ax.set_ylim(-5,0)
-  true = -1*np.array(true)
-  est = -1*np.array(est)
-  ax.set_yscale('log')
-  plt.ylabel("log(-return)")
-  ax.set_ylim(0.01,1)
+    fig = plt.figure(figsize=(20,4))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title("true/est return", fontsize=15)
 
-  ax.plot(true, label="true")
-  ax.plot(est, label="est", c="orange")
-  c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
-  for mtr in list(set(envs["mtr"])):
-    mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
-    ax.scatter(mtr_ids, np.array(true)[mtr_ids], label=mtr, c=c_dict[mtr])
-  ax.set_xlim(0,len(true))
-  ax.set_xticks(np.arange(0, len(true)+1, 10))
-  ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
-  ax.grid(which='minor', alpha=0.4, linestyle='dotted') 
-  ax.grid(which='major', alpha=0.9, linestyle='dotted') 
-  plt.xlabel("episode")
-  plt.legend()
-  plt.subplots_adjust(left=0.05, right=0.95)
-  plt.show()
+    # plt.ylabel("return")
+    # ax.set_ylim(-1,0)
+    true = -1*np.array(true)
+    est = -1*np.array(est)
+    diff = abs(true - est)
+    ax.set_yscale('log')
+    plt.ylabel("log(-return)")
+    ax.set_ylim(0.01,1)
+
+    ax.axhline(y=0.25, xmin=0, xmax=len(true), c="purple",linewidth=1,linestyle="dashed", label="return = -0.25")
+    ax.axhline(y=0.1, xmin=0, xmax=len(true), c="red",linewidth=1,linestyle="dashed", label="return = -0.1")
+
+    ax.plot(true, label="true")
+    ax.plot(est, label="est", c="orange")
+    # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
+    # for mtr in list(set(envs["mtr"])):
+    #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
+    #   ax.scatter(mtr_ids, np.array(true)[mtr_ids], label=mtr, c=c_dict[mtr])
+    ax.set_xlim(0,len(true))
+    ax.set_xticks(np.arange(0, len(true)+1, 10))
+    ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
+    ax.grid(which='minor', alpha=0.4, linestyle='dotted') 
+    ax.grid(which='major', alpha=0.9, linestyle='dotted') 
+    plt.xlabel("episode")
+    plt.legend()
+    plt.subplots_adjust(left=0.05, right=0.95)
+    plt.show()
+
+
+  if True:
+    true = returns["true"]
+    est = returns["est_n0"]
+
+    fig = plt.figure(figsize=(20,4))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title("return estimation error", fontsize=15)
+
+    diff = abs(np.array(true) - np.array(est))
+    # ax.set_yscale('log')
+    # plt.ylabel("log(|true - est|)")
+    ax.set_ylim(0.0,0.4)
+
+    ax.plot(diff, label="diff")
+    # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
+    # for mtr in list(set(envs["mtr"])):
+    #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
+    #   ax.scatter(mtr_ids, np.array(diff)[mtr_ids], label=mtr, c=c_dict[mtr])
+    ax.set_xlim(0,len(true))
+    ax.set_xticks(np.arange(0, len(diff)+1, 10))
+    ax.set_xticks(np.arange(0, len(diff)+1, 1), minor=True)
+    ax.grid(which='minor', alpha=0.4, linestyle='dotted') 
+    ax.grid(which='major', alpha=0.9, linestyle='dotted') 
+    plt.xlabel("episode")
+    plt.ylabel("|true - est|")
+    plt.legend()
+    plt.subplots_adjust(left=0.05, right=0.95)
+    plt.show()
+
+
+  if True:    
+    true = returns["true"]
+    est = returns["est_n0"]
+  
+    # fig = plt.figure(figsize=(20,4))
+    # ax = fig.add_subplot(1, 1, 1)
+    # ax.set_title("true/est return", fontsize=15)
+
+    # plt.ylabel("return")
+    # ax.set_ylim(-0.3,0)
+    # true = -1*np.array(true)
+    # est = -1*np.array(est)
+    # diff = abs(true - est)
+    # ax.set_yscale('log')
+    # plt.ylabel("log(-return)")
+    # ax.set_ylim(0.01,1)
+
+    # ax.plot(true, label="true")
+    # ax.plot(est, label="est", c="orange")
+    c_dict = {0.04:"purple", 0.05:"green", 0.06:"blue", 0.07:"orange", 0.08:"red"}
+    for smsz in [0.04,0.05,0.06,0.07,0.08]:
+      fig = plt.figure(figsize=(20,4))
+      ax = fig.add_subplot(1, 1, 1)
+      ax.set_title("true return (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
+      plt.ylabel("return")
+      ax.set_ylim(-1.0,0)
+
+      smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz]
+      ax.scatter(smsz_ids, np.array(true)[smsz_ids], label=smsz, c=c_dict[smsz])
+      ax.set_xlim(0,len(true))
+      ax.set_xticks(np.arange(0, len(true)+1, 10))
+      ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
+      ax.grid(which='minor', alpha=0.4, linestyle='dotted') 
+      ax.grid(which='major', alpha=0.9, linestyle='dotted') 
+      plt.xlabel("episode")
+      # plt.legend(loc='lower right')
+      plt.subplots_adjust(left=0.05, right=0.95)
+      plt.show()

@@ -20,12 +20,15 @@ def Run(ct, *args):
   SP= TCompSpaceDef
   domain.SpaceDefs={
     'p_pour_trg': SP('action',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position (x,z)
+    'shake_axis2': SP('action',2,min=[0.01,-0.5*math.pi],max=[0.1,0.5*math.pi]),  #Pouring skill parameter for 'shake_A'
+    'ps_rcv': SP('state',12),  #4 edge point positions (x,y,z)*4 of receiver
     'da_pour': SP('state',1),  #Amount poured in receiver (displacement)
     'da_spill2': SP('state',1),  #Amount spilled out (displacement)
+    'size_srcmouth': SP('state',1),  #Size of mouth of the source container
     }
   domain.Models={
     'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg'],
+      ['p_pour_trg', "size_srcmouth", "shake_axis2"],
       ['da_pour','da_spill2'],None],
     }
   
@@ -99,6 +102,6 @@ def Run(ct, *args):
 
   plt.close()
   fig = plt.figure()
-  plt.title("p_pour_trg_z")
-  plt.hist(x2, bins=50)
+  plt.title("sampled smsz histgram")
+  plt.hist(model.DataX[:,2], bins=5)
   plt.show()
