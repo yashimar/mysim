@@ -45,12 +45,15 @@ def Run(ct, *args):
     trues["lp_pour_z"].append(sequence[3]["n2b"]["lp_pour"][2][0])
 
   ests = defaultdict(list)
+  ests_cov = defaultdict(list)
   for i in range(len(sl)):
     with open(tree_path+"ep"+str(i)+"_n0.jb", mode="rb") as f:
       tree = joblib.load(f)
       try:
         ests["da_spill2"].append(tree.Tree[TPair("n4sar",0)].XS["da_spill2"].X.item())
+        ests_cov["da_spill2"].append(tree.Tree[TPair("n4sar",0)].XS["da_spill2"].Cov.item())
         ests["da_pour"].append(tree.Tree[TPair("n4sar",0)].XS["da_pour"].X.item())
+        ests_cov["da_pour"].append(tree.Tree[TPair("n4sar",0)].XS["da_pour"].Cov.item())
       except:
         ests["da_spill2"].append(tree.Tree[TPair("n4tir",0)].XS["da_spill2"].X.item())
         ests["da_pour"].append(tree.Tree[TPair("n4tir",0)].XS["da_pour"].X.item())
@@ -64,19 +67,18 @@ def Run(ct, *args):
     var_list = ["da_spill2", "da_pour"]
     ep_block = 100
     for i, var in enumerate(var_list):
-      # smsz = 0.04
+      smsz = 0.04
       fig = plt.figure(figsize=(20,4))
-      fig.suptitle(str(var)+" est/true", fontsize=15)
-      # fig.suptitle(str(var)+" est/true (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
+      # fig.suptitle(str(var)+" est/true", fontsize=15)
+      fig.suptitle(str(var)+" est/true (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
       n_row = 1
       n_col = int(len(sl)/ep_block)
       for j in range(int(len(sl)/ep_block)):
-        est = ests[var][j*ep_block:(j+1)*ep_block]
-        true = trues[var][j*ep_block:(j+1)*ep_block]
-        ## smsz = 0.04
-        # smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz and j*ep_block<=i<(j+1)*ep_block]
-        # est = np.array(ests[var])[smsz_ids]
-        # true = np.array(trues[var])[smsz_ids]
+        # est = ests[var][j*ep_block:(j+1)*ep_block]
+        # true = trues[var][j*ep_block:(j+1)*ep_block]
+        smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz and j*ep_block<=i<(j+1)*ep_block]
+        est = np.array(ests[var])[smsz_ids]
+        true = np.array(trues[var])[smsz_ids]
         corr = round(np.corrcoef(est, true)[0][1], 2)
         rmse = round(np.sqrt(mean_squared_error(true, est)), 2)
         diff = abs(np.array(true)-np.array(est))
@@ -91,7 +93,10 @@ def Run(ct, *args):
                   )
         plt.xlabel("est "+var)
         plt.ylabel("true "+var)
-        plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
+        # plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
+        plt.plot(np.linspace(0, 1, 2), np.linspace(0, 1, 2), c="orange", linestyle="dashed")
+        plt.xlim(0,1.0)
+        plt.ylim(0,1.0)
         plt.legend()
       plt.subplots_adjust(left=0.05, right=0.95, top=0.70)
       plt.show()
@@ -127,6 +132,40 @@ def Run(ct, *args):
       ax.grid(which='major', alpha=0.9, linestyle='dotted') 
       plt.xlabel("episode")
       plt.ylabel("|true - est|")
+      plt.subplots_adjust(left=0.05, right=0.95, top=0.9)
+      plt.show()
+      # plt.savefig("/home/yashima/Pictures/BottomUp/learn5_MaterialOnlyShake/after_add_5FixedPPourTrgSample/output_episode_error/"+str(var)+""+".png")
+      # plt.close()
+
+  if False:
+    # var_list = ["da_spill2", "da_pour", "p_pour_x", "p_pour_z", "lp_pour_x", "lp_pour_z"]
+    var_list = ["da_spill2", "da_pour"]
+    max_dict = {
+      "da_spill2": 0.5, 
+      "da_pour": 0.1
+    }
+    for var in var_list:
+      fig = plt.figure(figsize=(20,4))
+      fig.suptitle(str(var)+" epsiode/error")
+      ax = fig.add_subplot(1, 1, 1)
+      est = ests[var]
+      est_cov = ests_cov[var]
+      true = trues[var]
+      # ax.plot(np.array(true)/100, label="true")
+      ax.plot(est_cov, label="sdv estimation")
+      # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
+      # for mtr in list(set(envs["mtr"])):
+      #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
+      #   ax.scatter(mtr_ids, np.array(diff)[mtr_ids], label=mtr, c=c_dict[mtr])
+      plt.legend()
+      ax.set_xlim(0,len(est))
+      ax.set_ylim(0,0.1)
+      ax.set_xticks(np.arange(0, len(est)+1, 10))
+      ax.set_xticks(np.arange(0, len(est)+1, 1), minor=True)
+      ax.grid(which='minor', alpha=0.4, linestyle='dotted') 
+      ax.grid(which='major', alpha=0.9, linestyle='dotted') 
+      plt.xlabel("episode")
+      # plt.ylabel("|true - est|")
       plt.subplots_adjust(left=0.05, right=0.95, top=0.9)
       plt.show()
       # plt.savefig("/home/yashima/Pictures/BottomUp/learn5_MaterialOnlyShake/after_add_5FixedPPourTrgSample/output_episode_error/"+str(var)+""+".png")

@@ -52,7 +52,7 @@ def Run(ct, *args):
   true = returns["true"]
   est = returns["est_n0"]
 
-  if True:
+  if False:
     true = returns["true"]
     est = returns["est_n0"]
 
@@ -67,10 +67,10 @@ def Run(ct, *args):
     diff = abs(true - est)
     ax.set_yscale('log')
     plt.ylabel("log(-return)")
-    ax.set_ylim(0.01,1)
+    ax.set_ylim(0.0001,10)
 
-    ax.axhline(y=0.25, xmin=0, xmax=len(true), c="purple",linewidth=1,linestyle="dashed", label="return = -0.25")
-    ax.axhline(y=0.1, xmin=0, xmax=len(true), c="red",linewidth=1,linestyle="dashed", label="return = -0.1")
+    # ax.axhline(y=0.25, xmin=0, xmax=len(true), c="purple",linewidth=1,linestyle="dashed", label="return = -0.25")
+    # ax.axhline(y=0.1, xmin=0, xmax=len(true), c="red",linewidth=1,linestyle="dashed", label="return = -0.1")
 
     ax.plot(true, label="true")
     ax.plot(est, label="est", c="orange")
@@ -89,7 +89,7 @@ def Run(ct, *args):
     plt.show()
 
 
-  if True:
+  if False:
     true = returns["true"]
     est = returns["est_n0"]
 
@@ -100,7 +100,7 @@ def Run(ct, *args):
     diff = abs(np.array(true) - np.array(est))
     # ax.set_yscale('log')
     # plt.ylabel("log(|true - est|)")
-    ax.set_ylim(0.0,0.4)
+    ax.set_ylim(0.0,1.0)
 
     ax.plot(diff, label="diff")
     # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
@@ -144,7 +144,7 @@ def Run(ct, *args):
       ax = fig.add_subplot(1, 1, 1)
       ax.set_title("true return (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
       plt.ylabel("return")
-      ax.set_ylim(-1.0,0)
+      ax.set_ylim(-10.0,0)
 
       smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz]
       ax.scatter(smsz_ids, np.array(true)[smsz_ids], label=smsz, c=c_dict[smsz])

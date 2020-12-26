@@ -10,8 +10,8 @@ def ConfigCallback(ct,l,sim):
   m_setup= ct.Load('mysim.setup.setup_sv')
   l.amount_trg= 0.3
   l.spilled_stop= 10
-  # l.config.RcvPos= [0.6, l.config.RcvPos[1], l.config.RcvPos[2]]
-  l.config.RcvPos= [0.8+0.6*(random.random()-0.5), l.config.RcvPos[1], l.config.RcvPos[2]]
+  l.config.RcvPos= [0.6, l.config.RcvPos[1], l.config.RcvPos[2]]
+  # l.config.RcvPos= [0.8+0.6*(random.random()-0.5), l.config.RcvPos[1], l.config.RcvPos[2]]
   CPrint(3,'l.config.RcvPos=',l.config.RcvPos)
   for key,value in l.opt_conf['config'].iteritems():
     setattr(l.config, key, value)
@@ -61,14 +61,14 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "bottomup/learn4/"
+            + "bottomup/learn4"+"/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  suff = ""
+  suff = "graphModel/modifiedStdPour/first"+"/"
   # suff = "random_smsz_addAxis2"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "mtr_sms_sv/learning_branch/random_mtr/normal/shake_A/random/0055/"
+  #         + "bottomup/learn4/std_pour/nobounce/random/graphModel/third"+"/"
   # model_dir = src_core + "models/"
   # db_src = src_core + "database.yaml"
   model_dir = ""
@@ -83,10 +83,11 @@ def Run(ct,*args):
   l.delta_smsz = 0.0
   l.mtr_dir_name = "nobounce"
 
+  l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 40,
+    'num_episodes': 600,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -103,7 +104,10 @@ def Run(ct,*args):
     'dpl_options': {
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
-          'db_init_ratio': 0.5, #default 0.5
+          # 'ptree_num': 40, #default auto
+          # 'db_init_ratio': 1.0, #default 0.5
+          'db_init_R_min': -1.0, #default -1.0
+          'grad_max_bounce': 10, #default 10
           'prob_update_best': 0.4, #default 0.4
           'prob_update_rand': 0.3, #default 0.3
           'max_total_iter': 2000, #default 2000 
@@ -114,7 +118,7 @@ def Run(ct,*args):
     }
   l.nn_options = {
     # "gpu": 0, 
-    "batch_size": 10,           #default 10
+    "batchsize": 10,           #default 10
     "num_max_update": 5000,     #default 5000
     'num_check_stop': 50,       #default 50
     'loss_stddev_stop': 1e-3,  #default 1e-3
@@ -139,4 +143,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn4_main", l)
+  ct.Run("mysim.bottomup.learn4_main_graphModel", l)

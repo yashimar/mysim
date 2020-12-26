@@ -38,8 +38,8 @@ def ConfigCallback(ct,l,sim):
     l.config.SrcSize2H= Rand(0.05,0.09)  #Mouth size of source container
   elif l.mtr_smsz=="custom":
     if l.custom_mtr=="random":
-      # l.latest_mtr = ('bounce','nobounce','natto','ketchup')[RandI(4)]
-      l.latest_mtr = ('nobounce','ketchup')[RandI(2)]
+      l.latest_mtr = ('bounce','nobounce','natto','ketchup')[RandI(4)]
+      # l.latest_mtr = ('nobounce','ketchup')[RandI(2)]
       m_setup.SetMaterial(l, preset=l.latest_mtr)
     else:
       l.latest_mtr = l.custom_mtr
@@ -67,27 +67,28 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "after_first40"+"/"
-  src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-          + "bottomup/learn5/shake_A/nobouce_ketchup/random/first40/"
-  model_dir = src_core + "models/"
-  db_src = src_core + "database.yaml"
-  # model_dir = ""
-  # src_core = ""
-  # db_src = ""
-  l.pour_skill = "shake_A"
+  suff = "/modifiedStdPour/first"+"/"
+  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+  #         + "bottomup/learn5/choose/nobounce/random/first"+"/"
+  # model_dir = src_core + "models/"
+  # db_src = src_core + "database.yaml"
+  model_dir = ""
+  src_core = ""
+  db_src = ""
+  l.pour_skill = "choose"
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "nobounce"
   # l.custom_smsz = 0.065    #random or 0.03~0.08
   l.custom_smsz = "random"    #random or 0.03~0.08
   l.delta_smsz = 0.0
-  l.mtr_dir_name = "nobouce_ketchup"
+  l.mtr_dir_name = "nobounce"
 
+  l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 40,
+    'num_episodes': 600,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -95,7 +96,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA', "only_tip", "only_shakeA"
+    'rwd_schedule': "early_shakeA",  #None, 'early_tip', 'early_shakeA', "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -104,7 +105,10 @@ def Run(ct,*args):
     'dpl_options': {
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
-          'db_init_ratio': 0.5, #default 0.5
+          # 'ptree_num': 40, #default auto
+          # 'db_init_ratio': 1.0, #default 0.5
+          'db_init_R_min': -1.0, #default -1.0
+          'grad_max_bounce': 10, #default 10
           'prob_update_best': 0.4, #default 0.4
           'prob_update_rand': 0.3, #default 0.3
           'max_total_iter': 2000, #default 2000 
@@ -115,7 +119,7 @@ def Run(ct,*args):
     }
   l.nn_options = {
     # "gpu": 0, 
-    "batch_size": 10,           #default 10
+    "batchsize": 10,           #default 10
     "num_max_update": 5000,     #default 5000
     'num_check_stop': 50,       #default 50
     'loss_stddev_stop': 1e-3,  #default 1e-3
@@ -140,4 +144,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn5_main", l)
+  ct.Run("mysim.bottomup.learn5_main_selection", l)

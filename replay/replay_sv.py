@@ -23,12 +23,12 @@ def LoadActions(database, i_episode=0, i_node=0):
   # act_keys= (
   #   'gh_ratio','p_pour_trg0','p_pour_trg',
   #   'dtheta1','dtheta2','shake_spd','shake_axis2','skill',)
-  # act_keys= (
-  #   'gh_ratio','p_pour_trg0','p_pour_trg',
-  #   'dtheta1','dtheta2')
   act_keys= (
     'gh_ratio','p_pour_trg0','p_pour_trg',
-    'dtheta1','shake_spd','shake_axis2')
+    'dtheta1','dtheta2')
+  # act_keys= (
+  #   'gh_ratio','p_pour_trg0','p_pour_trg',
+  #   'dtheta1','shake_spd','shake_axis2')
   actions= [ToList(np.array(xs[key]['X']).ravel()) for key in act_keys]
   return {key:(value[0] if len(value)==1 else value) for key,value in zip(act_keys,actions)}
 
@@ -36,8 +36,8 @@ def Run(ct,*args):
   # log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/" \
   #           + "replay/mtr_sms_sv/learn/shake_A/nobounce/002/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "bottomup/learn3/shake_A/nobounce/random/oneModel/second"+"/"
-  i_episode_list = [379]
+              + "bottomup/learn4/std_pour/nobounce/random/graphModel/third"+"/"
+  i_episode_list = [284]
   i_node = 0
   n_roop = 1
 
@@ -84,11 +84,11 @@ def Run(ct,*args):
         ct.Run('mysim.act.move_to_pour_sv', l.opt_conf['actions'])
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
 
-        ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
-        XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
-
-        # ct.Run('mysim.act.std_pour_sv', l.opt_conf['actions'])
+        # ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
         # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
+
+        ct.Run('mysim.act.std_pour_sv', l.opt_conf['actions'])
+        XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         # ct.Run('mysim.act.shake_A_5s2', l.opt_conf['actions'])
         # # if l.opt_conf['actions']['skill']==0:

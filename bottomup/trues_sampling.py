@@ -62,12 +62,12 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "bottomup/learn1/"
+            + "bottomup/learn4/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "trues_sampling"+"/"
+  suff = "trues_sampling/MinimalChange/DTheta2/s1ep169"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #         + "bottomup/learn5/shake_A/nobouce_ketchup/random/first40/"
   # model_dir = src_core + "models/"
@@ -75,28 +75,30 @@ def Run(ct,*args):
   model_dir = ""
   src_core = ""
   db_src = ""
-  l.pour_skill = "shake_A"
+  l.pour_skill = "std_pour"
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "nobounce"
-  l.custom_smsz = 0.065    #random or 0.03~0.08
+  l.custom_smsz = 0.0724008046503824    #random or 0.03~0.08
   l.delta_smsz = 0.0
   l.mtr_dir_name = "nobounce"
   
-  n_episode = 400
+  n_episode = 20
   l.skill_params = {
     'gh_ratio': [SSA([0.5])]*n_episode,
     'p_pour_trg0': lambda pc_rcv: [SSA(Vec([-0.3,0.35])+Vec([pc_rcv[0],pc_rcv[2]]))]*n_episode,
-    'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,z])) for x in np.linspace(0.38, 0.45, 20) for z in np.linspace(0.18, 0.28, 20)],
+    # 'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,z])) for x in np.linspace(0.44, 0.46, 20) for z in np.linspace(0.10, 0.12, 20)],
+    'p_pour_trg': lambda pc_rcv: [SSA(Vec([0.5413389184998657,0.1568713706936932]))]*n_episode,
     'dtheta1': [SSA([0.014])]*n_episode,
-    'dtheta2': [SSA([0.004])]*n_episode,
+    # 'dtheta2': [SSA([0.004])]*n_episode,
+    'dtheta2': [SSA([x]) for x in np.linspace(0.001, 0.02, 20)],
     'shake_spd': [SSA([0.8])]*n_episode,
-    'shake_axis2': [SSA([0.08,0.0])]*n_episode
+    'shake_axis2': [SSA([0.01,0.0])]*n_episode
   }
 
   l.opt_conf={
     'interactive': False,
-    'not_learn': False,
+    'not_learn': True,
     'num_episodes': n_episode,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
@@ -125,7 +127,7 @@ def Run(ct,*args):
     }
   l.nn_options = {
     # "gpu": 0, 
-    "batch_size": 10,           #default 10
+    "batchsize": 10,           #default 10
     "num_max_update": 5000,     #default 5000
     'num_check_stop': 50,       #default 50
     'loss_stddev_stop': 1e-3,  #default 1e-3
