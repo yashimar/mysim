@@ -64,6 +64,11 @@ def Run(ct, *args):
                           [{"da_pour": data["da_pour"]["X"][0][0]}], 
                           [{"a_pour": data["a_pour"]["X"][0][0]}], 
                           [{"a_spill2": data["a_spill2"]["X"][0][0]}]])
+          keys.append({state:{
+            "flow_var": data["flow_var"]["X"],
+            "lp_flow": data["lp_flow"]["X"],
+            "da_total": data["da_total"]["X"],
+          }})
           reward_counter += 1
         if state=="n4sar": 
           rewards.append([{str(reward_counter)+"_n4sar": data[".r"]["X"][0][0]}, 

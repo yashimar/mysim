@@ -37,10 +37,6 @@ def Run(ct, *args):
     else: envs["mtr"].append("nobounce")
     trues["da_spill2"].append(reward[1][2][0]["da_spill2"])
     trues["da_pour"].append(reward[1][3][0]["da_pour"])
-    # trues["da_spill2"].append(reward[3][2][0]["da_spill2"])
-    # trues["da_pour"].append(reward[3][3][0]["da_pour"])
-    # trues["p_pour_x"].append(sequence[2]["n2a"]["p_pour"][0][0])
-    # trues["p_pour_z"].append(sequence[2]["n2a"]["p_pour"][2][0])
     trues["lp_pour_x"].append(sequence[3]["n2b"]["lp_pour"][0][0])
     trues["lp_pour_z"].append(sequence[3]["n2b"]["lp_pour"][2][0])
 
@@ -49,36 +45,38 @@ def Run(ct, *args):
   for i in range(len(sl)):
     with open(tree_path+"ep"+str(i)+"_n0.jb", mode="rb") as f:
       tree = joblib.load(f)
-      try:
+      skill = tree.Tree[TPair("n2c",0)].XS["skill"].X.item()
+      if skill==0:
+        ests["da_spill2"].append(tree.Tree[TPair("n4tir",0)].XS["da_spill2"].X.item())
+        ests["da_pour"].append(tree.Tree[TPair("n4tir",0)].XS["da_pour"].X.item())
+      elif skill==1:
         ests["da_spill2"].append(tree.Tree[TPair("n4sar",0)].XS["da_spill2"].X.item())
         ests_cov["da_spill2"].append(tree.Tree[TPair("n4sar",0)].XS["da_spill2"].Cov.item())
         ests["da_pour"].append(tree.Tree[TPair("n4sar",0)].XS["da_pour"].X.item())
         ests_cov["da_pour"].append(tree.Tree[TPair("n4sar",0)].XS["da_pour"].Cov.item())
-      except:
-        ests["da_spill2"].append(tree.Tree[TPair("n4tir",0)].XS["da_spill2"].X.item())
-        ests["da_pour"].append(tree.Tree[TPair("n4tir",0)].XS["da_pour"].X.item())
       # ests["p_pour_x"].append(tree.Tree[TPair("n2a",0)].XS["p_pour"].X[0].item())
       # ests["p_pour_z"].append(tree.Tree[TPair("n2a",0)].XS["p_pour"].X[2].item())
-      ests["lp_pour_x"].append(tree.Tree[TPair("n2a",0)].XS["lp_pour"].X[0].item())
-      ests["lp_pour_z"].append(tree.Tree[TPair("n2a",0)].XS["lp_pour"].X[2].item())
+      ests["lp_pour_x"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[0].item())
+      ests["lp_pour_z"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[2].item())
+
+  # var_list = [ "lp_pour_x", "lp_pour_z"]
+  var_list = ["da_spill2"]
 
   if True:
-    # var_list = [ "lp_pour_x", "lp_pour_z"]
-    var_list = ["da_spill2", "da_pour"]
-    ep_block = 100
+    ep_block = 40
     for i, var in enumerate(var_list):
-      smsz = 0.04
+      # smsz = 0.08
       fig = plt.figure(figsize=(20,4))
-      # fig.suptitle(str(var)+" est/true", fontsize=15)
-      fig.suptitle(str(var)+" est/true (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
+      fig.suptitle(str(var)+" est/true", fontsize=15)
+      # fig.suptitle(str(var)+" est/true (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
       n_row = 1
       n_col = int(len(sl)/ep_block)
       for j in range(int(len(sl)/ep_block)):
-        # est = ests[var][j*ep_block:(j+1)*ep_block]
-        # true = trues[var][j*ep_block:(j+1)*ep_block]
-        smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz and j*ep_block<=i<(j+1)*ep_block]
-        est = np.array(ests[var])[smsz_ids]
-        true = np.array(trues[var])[smsz_ids]
+        est = ests[var][j*ep_block:(j+1)*ep_block]
+        true = trues[var][j*ep_block:(j+1)*ep_block]
+        # smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz and j*ep_block<=i<(j+1)*ep_block]
+        # est = np.array(ests[var])[smsz_ids]
+        # true = np.array(trues[var])[smsz_ids]
         corr = round(np.corrcoef(est, true)[0][1], 2)
         rmse = round(np.sqrt(mean_squared_error(true, est)), 2)
         diff = abs(np.array(true)-np.array(est))
@@ -93,10 +91,10 @@ def Run(ct, *args):
                   )
         plt.xlabel("est "+var)
         plt.ylabel("true "+var)
-        # plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
-        plt.plot(np.linspace(0, 1, 2), np.linspace(0, 1, 2), c="orange", linestyle="dashed")
-        plt.xlim(0,1.0)
-        plt.ylim(0,1.0)
+        plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
+        # plt.plot(np.linspace(0.2, 0.5, 2), np.linspace(0.2, 0.5, 2), c="orange", linestyle="dashed")
+        # plt.xlim(0.2,0.5)
+        # plt.ylim(0.2,0.5)
         plt.legend()
       plt.subplots_adjust(left=0.05, right=0.95, top=0.70)
       plt.show()
@@ -104,8 +102,6 @@ def Run(ct, *args):
       # plt.close()
 
   if False:
-    # var_list = ["da_spill2", "da_pour", "p_pour_x", "p_pour_z", "lp_pour_x", "lp_pour_z"]
-    var_list = ["da_spill2", "da_pour"]
     max_dict = {
       "da_spill2": 0.5, 
       "da_pour": 0.1
@@ -138,8 +134,6 @@ def Run(ct, *args):
       # plt.close()
 
   if False:
-    # var_list = ["da_spill2", "da_pour", "p_pour_x", "p_pour_z", "lp_pour_x", "lp_pour_z"]
-    var_list = ["da_spill2", "da_pour"]
     max_dict = {
       "da_spill2": 0.5, 
       "da_pour": 0.1
@@ -172,11 +166,9 @@ def Run(ct, *args):
       # plt.close()
 
   if False:
-    # var_list = ["da_spill2", "da_pour", "p_pour_x", "p_pour_z", "lp_pour_x", "lp_pour_z"]
-    var_list = ["da_spill2", "da_pour"]
     max_dict = {
       "da_spill2": 0.7, 
-      "da_pour": 0.12
+      "da_pour": 0.2
     }
     WindowSize = 20
     for var in var_list:

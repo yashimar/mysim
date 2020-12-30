@@ -67,9 +67,9 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "/modifiedStdPour/first"+"/"
+  suff = "modifiedStdPour/third"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "bottomup/learn5/choose/nobounce/random/first"+"/"
+  #         + "bottomup/learn5/shake_A/nobounce/random/modifiedStdPour/ShakeSecondTest"+"/"
   # model_dir = src_core + "models/"
   # db_src = src_core + "database.yaml"
   model_dir = ""
@@ -88,7 +88,7 @@ def Run(ct,*args):
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 600,
+    'num_episodes': 200,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -96,7 +96,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "early_shakeA",  #None, 'early_tip', 'early_shakeA', "only_tip", "only_shakeA"
+    'rwd_schedule': "early_tip_and_shakeA",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'

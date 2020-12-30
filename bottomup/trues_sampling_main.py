@@ -19,6 +19,8 @@ def Delta1(dim,s):
   return p
 
 def Execute(ct,l,count):
+  l.custom_smsz = l.custom_smsz_all[count]
+
   ct.Run('mysim.setup.setup_sv', l)
   sim= ct.sim
   #l= ct.sim_local

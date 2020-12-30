@@ -39,6 +39,7 @@ def ConfigCallback(ct,l,sim):
   elif l.mtr_smsz=="custom":
     if l.custom_mtr=="random":
       l.latest_mtr = ('bounce','nobounce','natto','ketchup')[RandI(4)]
+      # l.latest_mtr = ('nobounce','ketchup')[RandI(2)]
       m_setup.SetMaterial(l, preset=l.latest_mtr)
     else:
       l.latest_mtr = l.custom_mtr
@@ -61,32 +62,32 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "bottomup/learn4"+"/"
+            + "bottomup/learn6/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  suff = "graphModel/modifiedStdPour/OmmitDtheta2/first"+"/"
+  # suff = ""
+  suff = "first200"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "bottomup/learn4/std_pour/nobounce/random/graphModel/modifiedStdPour/first"+"/"
+  #         + "bottomup/learn5/shake_A/nobounce/random/modifiedStdPour/ShakeSecondTest"+"/"
   # model_dir = src_core + "models/"
   # db_src = src_core + "database.yaml"
   model_dir = ""
   src_core = ""
   db_src = ""
-  l.pour_skill = "std_pour"
+  l.pour_skill = "choose"
 
   l.config_callback= ConfigCallback
-  l.custom_mtr = "nobounce"
-  # l.custom_smsz = 0.065    #random or 0.03~0.08
-  l.custom_smsz = "random"    #random or 0.03~0.08
+  l.custom_mtr = "random"
+  l.custom_smsz = 0.055    #random or 0.03~0.08
   l.delta_smsz = 0.0
-  l.mtr_dir_name = "nobounce"
+  l.mtr_dir_name = "random"
 
   l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 100,
+    'num_episodes': 200,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -94,7 +95,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA', "only_tip", "only_shakeA"
+    'rwd_schedule': "early_tip_and_shakeA",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -142,4 +143,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn4_main_graphModel_OmmitDtheta2", l)
+  ct.Run("mysim.bottomup.learn6_main", l)

@@ -380,7 +380,7 @@ def Run(ct,*args):
     'n2b': TDynNode('n2a','P1',('Fnone','n2c')),
     # 'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa')),
     # "n2c": None, 
-    'n2c': TDynNode('n2b','Pskill',('Fnone','n3ti'),('Fnone','n3sa')),
+    "n2c": TDynNode('n2b','P1',('Fnone','n3ti')),
     #Tipping:
     'n3ti': TDynNode('n2c','P1',('Fflowc_tip10','n4ti')),
     'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
@@ -417,11 +417,6 @@ def Run(ct,*args):
       #Reward scheduling (FOR EARLY SHAKING-A)
       if count<10:  l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
       else:         l.dpl.d.Models['Rdamount']= Rdamount_default
-    elif l.rwd_schedule=='early_tip_and_shakeA':
-      if count<100:
-        if count%2==0:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
-        else:           l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
-      else:             l.dpl.d.Models['Rdamount']= Rdamount_default
     elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
 

@@ -40,19 +40,23 @@ def Run(ct, *args):
     sl = yaml.load(yml)
 
   envs = defaultdict(list)
+  skills = []
   for ep in range(len(sl)):
     config = sl[ep]["config"]
+    seq = sl[ep]["sequence"]
 
     envs["smsz"].append(config["size_srcmouth"][0][0])
     if config["material2"][0][0] == 0.7: envs["mtr"].append("bounce")
     elif config["material2"][2][0] == 0.25: envs["mtr"].append("ketchup")
-    elif config["material2"][0][0] == 1.5: envs["mtr"].append("natto")
+    elif config["material2"][2][0] == 1.5: envs["mtr"].append("natto")
     else: envs["mtr"].append("nobounce")
+    if "sa" in seq[4].keys()[0]: skills.append("shake_A")
+    else:              skills.append("std_pour")
 
   true = returns["true"]
   est = returns["est_n0"]
 
-  if False:
+  if True:
     true = returns["true"]
     est = returns["est_n0"]
 
@@ -60,24 +64,36 @@ def Run(ct, *args):
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title("true/est return", fontsize=15)
 
-    # plt.ylabel("return")
+    plt.ylabel("- return")
     # ax.set_ylim(-1,0)
     true = -1*np.array(true)
     est = -1*np.array(est)
     diff = abs(true - est)
     ax.set_yscale('log')
-    plt.ylabel("log(-return)")
-    ax.set_ylim(0.0001,10)
+    # plt.ylabel("log(-return)")
+    ax.set_ylim(0.0001,100)
 
     # ax.axhline(y=0.25, xmin=0, xmax=len(true), c="purple",linewidth=1,linestyle="dashed", label="return = -0.25")
     # ax.axhline(y=0.1, xmin=0, xmax=len(true), c="red",linewidth=1,linestyle="dashed", label="return = -0.1")
 
     ax.plot(true, label="true")
-    ax.plot(est, label="est", c="orange")
+    ax.plot(est, label="est", c="pink")
     # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
     # for mtr in list(set(envs["mtr"])):
     #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
     #   ax.scatter(mtr_ids, np.array(true)[mtr_ids], label=mtr, c=c_dict[mtr])
+    # c_dict = {"std_pour":"green","shake_A":"red"}
+    # for skill in list(set(skills)):
+    #   skill_ids = [i for i, x in enumerate(skills) if x==skill]
+    #   ax.scatter(skill_ids, np.array(true)[skill_ids], label=skill, c=c_dict[skill])
+    c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
+    marker_dict = {"std_pour":"o","shake_A":"*"}
+    for mtr in list(set(envs["mtr"])):
+      mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
+      for skill in list(set(skills)):
+        skill_ids = [i for i, x in enumerate(skills) if x==skill]
+        ids = list(set(mtr_ids) & set(skill_ids))
+        ax.scatter(ids, np.array(true)[ids], label=mtr, c=c_dict[mtr], marker=marker_dict[skill])
     ax.set_xlim(0,len(true))
     ax.set_xticks(np.arange(0, len(true)+1, 10))
     ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
@@ -100,13 +116,18 @@ def Run(ct, *args):
     diff = abs(np.array(true) - np.array(est))
     # ax.set_yscale('log')
     # plt.ylabel("log(|true - est|)")
-    ax.set_ylim(0.0,1.0)
+    # ax.set_ylim(0.0,1.0)
+    ax.set_yscale('log')
 
     ax.plot(diff, label="diff")
     # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
     # for mtr in list(set(envs["mtr"])):
     #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
     #   ax.scatter(mtr_ids, np.array(diff)[mtr_ids], label=mtr, c=c_dict[mtr])
+    # c_dict = {"std_pour":"green","shake_A":"red"}
+    # for skill in list(set(skills)):
+    #   skill_ids = [i for i, x in enumerate(skills) if x==skill]
+    #   ax.scatter(skill_ids, np.array(diff)[skill_ids], label=skill, c=c_dict[skill])
     ax.set_xlim(0,len(true))
     ax.set_xticks(np.arange(0, len(diff)+1, 10))
     ax.set_xticks(np.arange(0, len(diff)+1, 1), minor=True)
@@ -119,7 +140,7 @@ def Run(ct, *args):
     plt.show()
 
 
-  if True:    
+  if False:    
     true = returns["true"]
     est = returns["est_n0"]
   
