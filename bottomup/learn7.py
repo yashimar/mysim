@@ -41,6 +41,10 @@ def ConfigCallback(ct,l,sim):
       l.latest_mtr = ('bounce','nobounce','natto','ketchup')[RandI(4)]
       # l.latest_mtr = ('nobounce','ketchup')[RandI(2)]
       m_setup.SetMaterial(l, preset=l.latest_mtr)
+    elif type(l.custom_mtr)==tuple:
+      l.latest_mtr = l.custom_mtr[RandI(len(l.custom_mtr))]
+      # l.latest_mtr = ('nobounce','ketchup')[RandI(2)]
+      m_setup.SetMaterial(l, preset=l.latest_mtr)
     else:
       l.latest_mtr = l.custom_mtr
       m_setup.SetMaterial(l, preset=l.custom_mtr)
@@ -53,6 +57,15 @@ def ConfigCallback(ct,l,sim):
     m_setup.SetMaterial(l, preset=l.latest_mtr)
     l.config.SrcSize2H= Rand(max(0.03,l.latest_smsz-l.delta_smsz), 
                               min(0.08,l.latest_smsz+l.delta_smsz))
+  elif l.mtr_smsz=="early_nobounce":
+    m_setup.SetMaterial(l, preset='nobounce')
+    l.config.SrcSize2H = l.custom_smsz
+  elif l.mtr_smsz=="early_bounce":
+    m_setup.SetMaterial(l, preset='bounce')
+    l.config.SrcSize2H = l.custom_smsz
+  elif l.mtr_smsz=="early_ketchup":
+    m_setup.SetMaterial(l, preset='ketchup')
+    l.config.SrcSize2H = l.custom_smsz
   elif l.mtr_smsz=="early_natto":
     m_setup.SetMaterial(l, preset='natto')
     l.config.SrcSize2H = l.custom_smsz
@@ -62,32 +75,33 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "bottomup/learn6/"
+            + "bottomup/learn7/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "first200/second"+"/"
-  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "bottomup/learn5/shake_A/nobounce/random/modifiedStdPour/ShakeSecondTest"+"/"
-  # model_dir = src_core + "models/"
-  # db_src = src_core + "database.yaml"
-  model_dir = ""
-  src_core = ""
-  db_src = ""
+  suff = "first"+"/"
+  src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+          + "bottomup/learn5/choose/nobounce/random/modifiedStdPour/third"+"/"
+  model_dir = src_core + "models/"
+  db_src = src_core + "database.yaml"
+  # model_dir = ""
+  # src_core = ""
+  # db_src = ""
   l.pour_skill = "choose"
 
   l.config_callback= ConfigCallback
-  l.custom_mtr = "random"
+  l.custom_mtr = ("nobounce", "bounce")
   l.custom_smsz = 0.055    #random or 0.03~0.08
   l.delta_smsz = 0.0
-  l.mtr_dir_name = "random"
+  # l.mtr_dir_name = "nobounce_bounce"
+  l.mtr_dir_name = "_".join(l.custom_mtr)
 
   l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 100,
+    'num_episodes': 1,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -96,7 +110,7 @@ def Run(ct,*args):
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
     'rwd_schedule': "early_tip_and_shakeA",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
-    'mtr_schedule': None,  #None, "early_natto"
+    'mtr_schedule': "early_bounce",  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
     'db_src': db_src,
@@ -143,4 +157,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn6_main", l)
+  ct.Run("mysim.bottomup.learn7_main", l)

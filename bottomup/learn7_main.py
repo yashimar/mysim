@@ -427,9 +427,20 @@ def Run(ct,*args):
 
     if l.mtr_schedule==None:
       pass
-    if l.mtr_schedule=="early_natto":
-      if count<40:  l.mtr_smsz = "early_natto"
+    elif l.mtr_schedule=="early_nobounce":
+      if count<100:  l.mtr_smsz = "early_nobounce"
       else:         l.mtr_smsz = l.org_mtr_smsz
+    elif l.mtr_schedule=="early_bounce":
+      if count<100:  l.mtr_smsz = "early_bounce"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+    elif l.mtr_schedule=="early_ketchup":
+      if count<100:  l.mtr_smsz = "early_ketchup"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+    elif l.mtr_schedule=="early_natto":
+      if count<100:  l.mtr_smsz = "early_natto"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+    else:
+      raise(Exception("Invalid mtr_schedule"))
       
 
   def LogDPL(l, count):
@@ -521,6 +532,7 @@ def Run(ct,*args):
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
   count= 0
+  # count = len(l.dpl.DB.Entry)
   if l.restarting:
     fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
   else:
