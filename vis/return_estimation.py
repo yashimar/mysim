@@ -56,7 +56,7 @@ def Run(ct, *args):
   true = returns["true"]
   est = returns["est_n0"]
 
-  if True:
+  if False:
     true = returns["true"]
     est = returns["est_n0"]
 
@@ -82,18 +82,18 @@ def Run(ct, *args):
     # for mtr in list(set(envs["mtr"])):
     #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
     #   ax.scatter(mtr_ids, np.array(true)[mtr_ids], label=mtr, c=c_dict[mtr])
-    # c_dict = {"std_pour":"green","shake_A":"red"}
-    # for skill in list(set(skills)):
-    #   skill_ids = [i for i, x in enumerate(skills) if x==skill]
-    #   ax.scatter(skill_ids, np.array(true)[skill_ids], label=skill, c=c_dict[skill])
-    c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
-    marker_dict = {"std_pour":"o","shake_A":"*"}
-    for mtr in list(set(envs["mtr"])):
-      mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
-      for skill in list(set(skills)):
-        skill_ids = [i for i, x in enumerate(skills) if x==skill]
-        ids = list(set(mtr_ids) & set(skill_ids))
-        ax.scatter(ids, np.array(true)[ids], label=mtr, c=c_dict[mtr], marker=marker_dict[skill])
+    c_dict = {"std_pour":"green","shake_A":"red"}
+    for skill in list(set(skills)):
+      skill_ids = [i for i, x in enumerate(skills) if x==skill]
+      ax.scatter(skill_ids, np.array(true)[skill_ids], label=skill, c=c_dict[skill])
+    # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
+    # marker_dict = {"std_pour":"o","shake_A":"*"}
+    # for mtr in list(set(envs["mtr"])):
+    #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
+    #   for skill in list(set(skills)):
+    #     skill_ids = [i for i, x in enumerate(skills) if x==skill]
+    #     ids = list(set(mtr_ids) & set(skill_ids))
+    #     ax.scatter(ids, np.array(true)[ids], label=mtr, c=c_dict[mtr], marker=marker_dict[skill])
     ax.set_xlim(0,len(true))
     ax.set_xticks(np.arange(0, len(true)+1, 10))
     ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
@@ -124,10 +124,10 @@ def Run(ct, *args):
     # for mtr in list(set(envs["mtr"])):
     #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]
     #   ax.scatter(mtr_ids, np.array(diff)[mtr_ids], label=mtr, c=c_dict[mtr])
-    # c_dict = {"std_pour":"green","shake_A":"red"}
-    # for skill in list(set(skills)):
-    #   skill_ids = [i for i, x in enumerate(skills) if x==skill]
-    #   ax.scatter(skill_ids, np.array(diff)[skill_ids], label=skill, c=c_dict[skill])
+    c_dict = {"std_pour":"green","shake_A":"red"}
+    for skill in list(set(skills)):
+      skill_ids = [i for i, x in enumerate(skills) if x==skill]
+      ax.scatter(skill_ids, np.array(diff)[skill_ids], label=skill, c=c_dict[skill])
     ax.set_xlim(0,len(true))
     ax.set_xticks(np.arange(0, len(diff)+1, 10))
     ax.set_xticks(np.arange(0, len(diff)+1, 1), minor=True)
@@ -140,9 +140,12 @@ def Run(ct, *args):
     plt.show()
 
 
-  if False:    
+  if True:    
     true = returns["true"]
     est = returns["est_n0"]
+
+    true = -1*np.array(true)
+    est = -1*np.array(est)
   
     # fig = plt.figure(figsize=(20,4))
     # ax = fig.add_subplot(1, 1, 1)
@@ -159,16 +162,26 @@ def Run(ct, *args):
 
     # ax.plot(true, label="true")
     # ax.plot(est, label="est", c="orange")
-    c_dict = {0.04:"purple", 0.05:"green", 0.06:"blue", 0.07:"orange", 0.08:"red"}
+    # c_dict = {0.04:"purple", 0.05:"green", 0.06:"blue", 0.07:"orange", 0.08:"red"}
+    c_dict = {"std_pour":"green","shake_A":"red"}
     for smsz in [0.04,0.05,0.06,0.07,0.08]:
       fig = plt.figure(figsize=(20,4))
       ax = fig.add_subplot(1, 1, 1)
       ax.set_title("true return (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
-      plt.ylabel("return")
-      ax.set_ylim(-10.0,0)
+
+      # plt.ylabel("return")
+      # ax.set_ylim(-10.0,0)
+      plt.ylabel("- return")
+      ax.set_yscale('log')
+      ax.set_ylim(0.0001,100)
 
       smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz]
-      ax.scatter(smsz_ids, np.array(true)[smsz_ids], label=smsz, c=c_dict[smsz])
+      for skill in list(set(skills)):
+        skill_ids = [i for i, x in enumerate(skills) if x==skill]
+        ids = list(set(smsz_ids) & set(skill_ids))
+        ax.scatter(ids, np.array(true)[ids], label=skill, c=c_dict[skill])
+
+      # ax.scatter(smsz_ids, np.array(true)[smsz_ids], label=smsz, c=c_dict[smsz])
       ax.set_xlim(0,len(true))
       ax.set_xticks(np.arange(0, len(true)+1, 10))
       ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
@@ -176,5 +189,6 @@ def Run(ct, *args):
       ax.grid(which='major', alpha=0.9, linestyle='dotted') 
       plt.xlabel("episode")
       # plt.legend(loc='lower right')
+      plt.legend()
       plt.subplots_adjust(left=0.05, right=0.95)
       plt.show()

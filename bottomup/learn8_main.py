@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
-from tsim.dpl_cmn import *
+from mysim.dpl_cmn import *
 import joblib
 import GPyOpt
 def Help():
@@ -31,7 +31,7 @@ def Execute(ct,l):
     'shake_A'      : lambda a: ct.Run('mysim.act.shake_A_5s_sv', a),
     }
 
-  #NOTE: Do not include 'da_trg' in obs_keys0 since 'da_trg' should be kept during some node transitions.
+  #NOTE: Do not include 'da_trg' and "a_src" in obs_keys0 since 'da_trg' and "a_src" should be kept during some node transitions.
   obs_keys0= ('ps_rcv','p_pour','lp_pour','a_trg','size_srcmouth','material2')
   obs_keys_after_grab= obs_keys0+('gh_abs',)
   obs_keys_before_flow= obs_keys_after_grab+('a_pour','a_spill2','a_total')
@@ -42,7 +42,7 @@ def Execute(ct,l):
 
   with sim.TPause(ct):
     CPrint(2,'Node:','n0')
-    l.xs.n0= ObserveXSSA(l,None,obs_keys0+('da_trg',))
+    l.xs.n0= ObserveXSSA(l,None,obs_keys0+('da_trg',"a_src",))
 
     pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)  #Center of ps_rcv
     l.xs.n0['gh_ratio']= SSA([0.5])
@@ -118,10 +118,12 @@ def Execute(ct,l):
         for key in l.xs.n2a.keys():
           if l.dpl.d.SpaceDefs[key].Type in ('action','select'):
             del l.xs.n2a[key]
-      InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',)))
+      InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',"a_src",)))
       #TEST: Heuristic init guess
       #l.xs.n2a['skill']= SSA([1])
-      if "n2a" in l.planning_node:
+      if "n2a" in l.planning_node and repeated:
+        l.dpl.d.Models['Rdamount']= [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                                      TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)]
         res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
         l.node_best_tree.append(res.PTree)
       # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
@@ -206,6 +208,7 @@ def Execute(ct,l):
         CPrint(2,'Node:','n4tir')
         l.xs.n4tir= l.dpl.Forward('Rdamount',l.xs.prev)
         l.idb.n4tir= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4tir',xs=l.xs.n4tir)
+        l.true_return.append(l.xs.n4tir[".r"].X.item())
 
     elif selected_skill=='shake_A':
       dtheta1= l.xs.n2c['dtheta1'].X[0,0]
@@ -241,6 +244,7 @@ def Execute(ct,l):
         CPrint(2,'Node:','n4sar')
         l.xs.n4sar= l.dpl.Forward('Rdamount',l.xs.prev)
         l.idb.n4sar= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sar',xs=l.xs.n4sar)
+        l.true_return.append(l.xs.n4sar[".r"].X.item())
 
     if "n2a" in l.planning_node:
       # Conditions to break the try-and-error loop
@@ -310,6 +314,7 @@ def Run(ct,*args):
     'a_pour': SP('state',1),  #Amount poured in receiver
     'a_spill2': SP('state',1),  #Amount spilled out
     'a_total':  SP('state',1),  #Total amount moved from source
+    "a_src": SP('state',1),
     'a_trg': SP('state',1),  #Target amount
     'da_pour': SP('state',1),  #Amount poured in receiver (displacement)
     'da_spill2': SP('state',1),  #Amount spilled out (displacement)
@@ -336,7 +341,8 @@ def Run(ct,*args):
       ['p_pour_trg'],
       ['lp_pour'],None],
     'Fflowc_tip10': [  #Flow control with tipping.
-      ['lp_pour','size_srcmouth'],
+      ['lp_pour','size_srcmouth',
+        "da_trg","a_src"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeA10': [  #Flow control with shake_A.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
@@ -344,7 +350,8 @@ def Run(ct,*args):
     #    'dtheta1','shake_spd','shake_axis2'],
       # ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
     'Fflowc_shakeA10': [  #Flow control with shake_A.
-      ['lp_pour','size_srcmouth','shake_axis2'],
+      ['lp_pour','size_srcmouth','shake_axis2',
+        "da_trg","a_src"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeB10': [  #Flow control with shake_B.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
@@ -459,7 +466,10 @@ def Run(ct,*args):
     OpenW(l.logdir+'config_log.yaml',mode=w_mode,interactive=False).write(yamldump(ToStdType(l.config_log,lambda y:y), Dumper=YDumper))
 
     fp = open(l.logdir+'dpl_est.dat',w_mode)
-    values = [l.dpl.DB.Entry[-1].R] + [l.dpl.Value(tree) for tree in l.node_best_tree]
+    a_spill = l.dpl.DB.Entry[-1].Seq[-1].XS["a_spill2"].X[0][0]
+    a_pour = l.dpl.DB.Entry[-1].Seq[-1].XS["a_pour"].X[0][0]
+    env_return = (-100.0*max(0.0,0.3-a_pour)**2 - 1.0*max(0.0,a_pour-0.3)**2 - 1.0*max(0.0,a_spill)**2).item()
+    values = [env_return] + sum([[true_return, l.dpl.Value(tree)] for true_return, tree in zip(l.true_return, l.node_best_tree)], [])
     idx = len(l.dpl.DB.Entry)-1
     fp.write('%i %s\n' % (idx, ' '.join(map(str,values))))
     fp.close()
@@ -550,6 +560,7 @@ def Run(ct,*args):
     l.dpl.NewEpisode()
     l.user_viz= []
     l.node_best_tree = []
+    l.true_return = []
 
     if l.priority_sampling==True:
       if t_sampling<l.max_priority_sampling:

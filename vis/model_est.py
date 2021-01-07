@@ -20,34 +20,38 @@ def Run(ct, *args):
   model_path = root_path + args[0] + "/models/"
 
   #set target_model
-  target_model = "Fmvtopour2"
+  target_model = "Fflowc_tip10"
+  # target_model = "Fflowc_shakeA10"
 
   #set inputs
   # x_values = np.linspace(0.38, 0.45, 20)    #p_pour_trg_x
   # y_values = np.linspace(0.18, 0.28, 20)[::-1]     #p_pour_trg_z
-  x_values = np.linspace(0.35, 0.6, 60)    #p_pour_trg_x
-  y_values = np.linspace(0.1, 0.25, 60)[::-1]     #p_pour_trg_z
+  x_values = np.linspace(0.35, 0.6, 100)    #p_pour_trg_x
+  y_values = np.linspace(0.1, 0.6, 100)[::-1]     #p_pour_trg_z
   inputs = []
   for y in y_values:
     for x in x_values:
       inputs.append([
-        # x - 0.6,
-        # 0,
-        # y - 0.202,
-        x,
-        y,
+        x - 0.6,
+        0,
+        y - 0.202,
+        # x,
+        # y,
         0.04,
-        0.01,
-        0
+        # 0.01,
+        # 0,
+        0.3,
+        0.55
       ])
   inputs = np.array(inputs)
   
   #set output_var_idx
-  output_var_idx = 1
+  output_var_idx = 0
 
   #set fig params
-  fig_title = "leran3 nobounce's da_spill2 estimation heatmap"
+  fig_title = "leran8 ketchup's da_pour estimation heatmap"
   subtitle = "smsz = 0.04" \
+            #  + ", shake_axis2 = (0.01, 0)" \
             #  + "referenced p_pour_trg = (0.43, 0.15) and (0.45, 0.11)"
   fig_xlabel = "p_pour_trg_x"
   fig_ylabel = "p_pour_trg_z"
@@ -61,6 +65,8 @@ def Run(ct, *args):
     'shake_axis2': SP('action',2,min=[0.01,-0.5*math.pi],max=[0.1,0.5*math.pi]),  #Pouring skill parameter for 'shake_A'
     'ps_rcv': SP('state',12),  #4 edge point positions (x,y,z)*4 of receiver
     'lp_pour': SP('state',3),  #Pouring axis position (x,y,z) in receiver frame
+    "da_trg": SP("state",1),
+    "a_src": SP("state",1),
     'da_pour': SP('state',1),  #Amount poured in receiver (displacement)
     'da_spill2': SP('state',1),  #Amount spilled out (displacement)
     'size_srcmouth': SP('state',1),  #Size of mouth of the source container
@@ -70,13 +76,21 @@ def Run(ct, *args):
     #   ['p_pour_trg'],
     #   ['lp_pour'],None],
     'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg'],
+      ['p_pour_trg','size_srcmouth','shake_axis2'],
       ['da_pour','da_spill2'],None],
+    # 'Fflowc_tip10': [  #Flow control with tipping.
+    #   ['lp_pour','size_srcmouth'],
+    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    # 'Fflowc_shakeA10': [  #Flow control with shake_A.
+    #   ['lp_pour','size_srcmouth','shake_axis2'],
+    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     'Fflowc_tip10': [  #Flow control with tipping.
-      ['lp_pour','size_srcmouth'],
+      ['lp_pour','size_srcmouth',
+        "da_trg","a_src"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     'Fflowc_shakeA10': [  #Flow control with shake_A.
-      ['lp_pour','size_srcmouth','shake_axis2'],
+      ['lp_pour','size_srcmouth','shake_axis2',
+        "da_trg","a_src"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     }
   
@@ -101,8 +115,14 @@ def Run(ct, *args):
   pred = preds["mean"]
 
   fig = go.Figure()
-  fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values, colorscale='Oranges',
-                            zmin=0.0, zmax=1.0, zauto=False
+  fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values,
+                            # colorscale='Oranges',
+                            colorscale=[
+                              [0.3, "rgb(1, 1, 1)"],
+                              [0, "rgb(1, 0, 0)"],
+                              [0.6, "rgb(0, 1, 0)"]
+                            ],
+                            zmin=0, zmax=0.6, zauto=False
                           ))
   fig.update_layout(height=800, width=800, title_text=fig_title+"<br>"+"min = "+str(round(pred.min(),3))+", max = "+str(round(pred.max(),3))+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel})
   fig.show()

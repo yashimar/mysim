@@ -25,6 +25,7 @@ def Run(ct, *args):
 
   envs = defaultdict(list)
   trues = defaultdict(list)
+  skills = []
   for ep in range(len(sl)):
     config = sl[ep]["config"]
     reward = sl[ep]["reward"]
@@ -35,6 +36,8 @@ def Run(ct, *args):
     elif config["material2"][2][0] == 0.25: envs["mtr"].append("ketchup")
     elif config["material2"][0][0] == 1.5: envs["mtr"].append("natto")
     else: envs["mtr"].append("nobounce")
+    if "sa" in sequence[4].keys()[0]: skills.append("shake_A")
+    else:                        skills.append("std_pour")
     trues["da_spill2"].append(reward[1][2][0]["da_spill2"])
     trues["da_pour"].append(reward[1][3][0]["da_pour"])
     trues["lp_pour_x"].append(sequence[3]["n2b"]["lp_pour"][0][0])
@@ -60,10 +63,10 @@ def Run(ct, *args):
       ests["lp_pour_z"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[2].item())
 
   # var_list = [ "lp_pour_x", "lp_pour_z"]
-  var_list = ["da_spill2"]
+  var_list = ["da_spill2", "da_pour"]
 
-  if True:
-    ep_block = 40
+  if False:
+    ep_block = 50
     for i, var in enumerate(var_list):
       # smsz = 0.08
       fig = plt.figure(figsize=(20,4))
@@ -91,12 +94,57 @@ def Run(ct, *args):
                   )
         plt.xlabel("est "+var)
         plt.ylabel("true "+var)
-        plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
-        # plt.plot(np.linspace(0.2, 0.5, 2), np.linspace(0.2, 0.5, 2), c="orange", linestyle="dashed")
-        # plt.xlim(0.2,0.5)
-        # plt.ylim(0.2,0.5)
+        # plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
+        plt.plot(np.linspace(0., 0.6, 2), np.linspace(0., 0.6, 2), c="orange", linestyle="dashed")
+        plt.xlim(-0.,0.6)
+        plt.ylim(-0.,0.6)
         plt.legend()
       plt.subplots_adjust(left=0.05, right=0.95, top=0.70)
+      plt.show()
+      # plt.savefig("/home/yashima/Pictures/BottomUp/learn5_MaterialOnlyShake/after_add_5FixedPPourTrgSample/output_est_true/"+str(var)+""+".png")
+      # plt.close()
+
+  if True:
+    ep_block = 160
+    for i, var in enumerate(var_list):
+      # smsz = 0.08
+      fig = plt.figure(figsize=(20,8))
+      fig.suptitle(str(var)+" est/true", fontsize=15)
+      # fig.suptitle(str(var)+" est/true (smsz: "+str(smsz-0.01)+"~"+str(smsz)+")", fontsize=15)
+      n_row = 2
+      n_col = int(len(sl)/ep_block)
+      c_dict = {"std_pour":"green","shake_A":"red"}
+      lim_dict = {"da_spill2": [-0.1,1.5], "da_pour": [0,0.7]}
+      for j in range(int(len(sl)/ep_block)):
+        block_ids = np.linspace(j*ep_block, (j+1)*ep_block-1, ep_block).astype(np.int)
+        for k,skill in enumerate(list(set(skills))):
+          skill_ids = [i for i, x in enumerate(skills) if x==skill]
+          ids = list(set(block_ids) & set(skill_ids))
+          # smsz_ids = [i for i, x in enumerate(envs["smsz"]) if smsz-0.01<x<smsz and j*ep_block<=i<(j+1)*ep_block]
+          # ids = list(set(block_ids) & set(skill_ids) & set(smsz_ids))
+          est = np.array(ests[var])[ids]
+          true = np.array(trues[var])[ids]
+          corr = round(np.corrcoef(est, true)[0][1], 2)
+          rmse = round(np.sqrt(mean_squared_error(true, est)), 2) if not len(ids)==0 else None
+          diff = abs(np.array(true)-np.array(est))
+          fig.add_subplot(n_row, n_col, j+k*n_col+1).scatter(x=est, y=true, label=skill, c=c_dict[skill])
+          title = "episode" + str(j*ep_block) + "~" + str((j+1)*ep_block) + "\n" if k==0 else "" \
+                    # + "Correlation coefficient: "+str(corr) + "\n" \
+          title += "RMSE: "+str(rmse)
+                    # + "max |true-est|: "+str(max_diff) + "\n"
+                    # + "quantile |true-est|: "+str(", ".join(map(str, q_diff))) 
+          plt.title(title)
+          plt.xlabel("est "+var)
+          plt.ylabel("true "+var)
+          # plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
+          lims = lim_dict[var]
+          plt.plot(np.linspace(lims[0], lims[1], 2), np.linspace(lims[0], lims[1], 2), c="orange", linestyle="dashed")
+          plt.xlim(lims[0],lims[1])
+          plt.ylim(lims[0],lims[1])
+          # plt.legend()
+          # plt.subplots_adjust(left=0.05, right=0.95, top=0.70)
+          
+      plt.subplots_adjust(left=0.05, right=0.95, top=0.85, hspace=0.6)
       plt.show()
       # plt.savefig("/home/yashima/Pictures/BottomUp/learn5_MaterialOnlyShake/after_add_5FixedPPourTrgSample/output_est_true/"+str(var)+""+".png")
       # plt.close()
@@ -140,7 +188,7 @@ def Run(ct, *args):
     }
     for var in var_list:
       fig = plt.figure(figsize=(20,4))
-      fig.suptitle(str(var)+" epsiode/error")
+      fig.suptitle(str(var)+" epsiode/sdv_estimation")
       ax = fig.add_subplot(1, 1, 1)
       est = ests[var]
       est_cov = ests_cov[var]

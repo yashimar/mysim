@@ -1,6 +1,6 @@
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
-from tsim.dpl_cmn import *
+from mysim.dpl_cmn import *
 from collections import defaultdict
 
 def Help():
@@ -77,19 +77,19 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "bottomup/learn7/"
+            + "bottomup/learn8/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "continue/tip/first"+"/"
-  src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-          + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
-  model_dir = src_core + "models/"
-  db_src = src_core + "database.yaml"
-  # model_dir = ""
-  # src_core = ""
-  # db_src = ""
+  suff = "first"+"/"
+  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+  #         + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
+  # model_dir = src_core + "models/"
+  # db_src = src_core + "database.yaml"
+  model_dir = ""
+  src_core = ""
+  db_src = ""
   l.pour_skill = "choose"
 
   l.config_callback= ConfigCallback
@@ -103,15 +103,15 @@ def Run(ct,*args):
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 200,
+    'num_episodes': 100,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
     'num_log_interval': 1,  #should be 1
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
-    "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "early_tip",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
+    "planning_node": ["n0", "n2a"], #"n0","n2a"
+    'rwd_schedule': "early_tip_and_shakeA",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -159,4 +159,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn7_main", l)
+  ct.Run("mysim.bottomup.learn8_main", l)
