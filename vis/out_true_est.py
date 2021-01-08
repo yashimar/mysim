@@ -62,8 +62,8 @@ def Run(ct, *args):
       ests["lp_pour_x"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[0].item())
       ests["lp_pour_z"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[2].item())
 
-  # var_list = [ "lp_pour_x", "lp_pour_z"]
-  var_list = ["da_spill2", "da_pour"]
+  var_list = [ "lp_pour_x", "lp_pour_z"]
+  # var_list = ["da_spill2", "da_pour"]
 
   if False:
     ep_block = 50
@@ -105,7 +105,7 @@ def Run(ct, *args):
       # plt.close()
 
   if True:
-    ep_block = 160
+    ep_block = 100
     for i, var in enumerate(var_list):
       # smsz = 0.08
       fig = plt.figure(figsize=(20,8))
@@ -114,7 +114,7 @@ def Run(ct, *args):
       n_row = 2
       n_col = int(len(sl)/ep_block)
       c_dict = {"std_pour":"green","shake_A":"red"}
-      lim_dict = {"da_spill2": [-0.1,1.5], "da_pour": [0,0.7]}
+      lim_dict = {"da_spill2": [-0.1,1.5], "da_pour": [0,0.7], "lp_pour_x": [-1,1], "lp_pour_z": [-1,1]}
       for j in range(int(len(sl)/ep_block)):
         block_ids = np.linspace(j*ep_block, (j+1)*ep_block-1, ep_block).astype(np.int)
         for k,skill in enumerate(list(set(skills))):

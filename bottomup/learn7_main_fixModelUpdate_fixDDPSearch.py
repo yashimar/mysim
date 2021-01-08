@@ -18,9 +18,13 @@ def Delta1(dim,s):
   p[int(s)]= 1.0
   return p
 
-def Execute(ct,l,count):
-  l.custom_smsz = l.custom_smsz_all[count]
+def Update(l,dynamics,xs_prev,xs_latest):
+  l.dpl.MM.Models[dynamics][2].Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=l.dpl.MM.Models[dynamics][2].load_base_dir)
+  l.dpl.MM.Models[dynamics][2].Init()
+  l.dpl.MM.Models[dynamics][2].Options.update(l.nn_options)
+  l.dpl.MM.Update(dynamics,xs_prev,xs_latest, not_learn=l.not_learn)
 
+def Execute(ct,l):
   ct.Run('mysim.setup.setup_sv', l)
   sim= ct.sim
   #l= ct.sim_local
@@ -47,18 +51,16 @@ def Execute(ct,l,count):
     l.xs.n0= ObserveXSSA(l,None,obs_keys0+('da_trg',))
 
     pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)  #Center of ps_rcv
-    skill_params = l.skill_params
-    l.xs.n0['gh_ratio']= skill_params['gh_ratio'][count]
-    l.xs.n0['p_pour_trg0']= skill_params['p_pour_trg0'](pc_rcv)[count]
-    l.xs.n0['p_pour_trg']= skill_params['p_pour_trg'](pc_rcv)[count]
-    l.xs.n0['dtheta1']= skill_params['dtheta1'][count]
-    l.xs.n0['dtheta2']= skill_params['dtheta2'][count]
-    l.xs.n0['shake_spd']= skill_params['shake_spd'][count]
-    l.xs.n0['shake_axis2']= skill_params['shake_axis2'][count]
+    l.xs.n0['gh_ratio']= SSA([0.5])
+    l.xs.n0['p_pour_trg0']= SSA(Vec([-0.3,0.35])+Vec([pc_rcv[0],pc_rcv[2]]))  #A bit above of p_pour_trg
+    l.xs.n0['dtheta1']= SSA([0.014])
+    l.xs.n0['dtheta2']= SSA([0.002])
+    l.xs.n0['shake_spd']= SSA([0.8])
+    # l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     
     # planed result into l.xs.n0
-    # res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
-    # l.node_best_tree.append(res.PTree)
+    res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
+    l.node_best_tree.append(res.PTree)
 
     l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
     l.xs.prev= l.xs.n0
@@ -143,10 +145,10 @@ def Execute(ct,l,count):
     with sim.TPause(ct):  #Pause during plan/learn
       CPrint(2,'Node:','n2b')
       l.xs.n2b= CopyXSSA(l.xs.prev)
-      # l.xs.before_mvtopour = CopyXSSA(l.xs.prev)
       InsertDict(l.xs.n2b, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
       # l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
       # l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
+      Update(l,"Fmvtopour2",l.xs.prev,l.xs.n2b)
       #res= l.dpl.Plan('n2b', l.xs.n2b)
       l.idb.n2b= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2b',xs=l.xs.n2b)
       l.xs.prev= l.xs.n2b
@@ -201,8 +203,9 @@ def Execute(ct,l,count):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
-        l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
-        l.dpl.MM.Update('Fmvtopour2',xs_in,l.xs.n4ti, not_learn=l.not_learn)
+        # l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
+        # l.dpl.MM.Update('Fflowc_tip10',xs_in,l.xs.n4ti, not_learn=l.not_learn)
+        Update(l,"Fflowc_tip10",xs_in,l.xs.n4ti)
         #res= l.dpl.Plan('n4ti', l.xs.n4ti)
         l.idb.n4ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4ti',xs=l.xs.n4ti)
         l.xs.prev= l.xs.n4ti
@@ -221,7 +224,6 @@ def Execute(ct,l,count):
       with sim.TPause(ct):  #Pause during plan/learn
         CPrint(2,'Node:','n3sa')
         l.xs.n3sa= CopyXSSA(l.xs.prev)
-        # l.xs.before_shake = CopyXSSA(l.xs.prev)
         InsertDict(l.xs.n3sa, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
         # l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
         # l.dpl.MM.Update('Fflowc_shakeA10',l.xs.prev,l.xs.n3sa, not_learn=l.not_learn)
@@ -237,8 +239,9 @@ def Execute(ct,l,count):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
-        l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
-        l.dpl.MM.Update('Fmvtopour2',xs_in,l.xs.n4sa, not_learn=l.not_learn)
+        # l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
+        # l.dpl.MM.Update('Fflowc_shakeA10',xs_in,l.xs.n4sa, not_learn=l.not_learn)
+        Update(l,"Fflowc_shakeA10",xs_in,l.xs.n4sa)
         #res= l.dpl.Plan('n4sa', l.xs.n4sa)
         l.idb.n4sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sa',xs=l.xs.n4sa)
         l.xs.prev= l.xs.n4sa
@@ -302,7 +305,7 @@ def Run(ct,*args):
     'shake_spd': SP('state',1,min=[0.7],max=[0.9]),  #Pouring skill parameter for 'shake_A'
     #'shake_spd': SP('state',1),  #Pouring skill parameter for 'shake_A'
     #'shake_axis': SP('action',2,min=[0.0,0.0],max=[0.1,0.1]),  #Pouring skill parameter for 'shake_A'
-    'shake_axis2': SP('state',2,min=[0.05,-0.5*math.pi],max=[0.1,0.5*math.pi]),  #Pouring skill parameter for 'shake_A'
+    'shake_axis2': SP('action',2,min=[0.01,-0.5*math.pi],max=[0.1,0.5*math.pi]),  #Pouring skill parameter for 'shake_A'
     #'shake_axis2': SP('state',2),  #Pouring skill parameter for 'shake_A'
     'shake_spd_B': SP('state',1,min=[2.0],max=[8.0]),  #Pouring skill parameter for 'shake_B'
     "shake_range" : SP('state',1,min=[0.02],max=[0.06]),  #Pouring skill parameter for 'shake_B'
@@ -339,18 +342,19 @@ def Run(ct,*args):
     #   ['ps_rcv','gh_abs','p_pour','p_pour_trg'],
     #   ['lp_pour'],None],
     'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg', "size_srcmouth", "shake_axis2"],
-      ['da_pour','da_spill2'],None],
-    # 'Fflowc_tip10': [  #Flow control with tipping.
-    #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
-    #    'da_trg','size_srcmouth','material2',
-    #    'dtheta1','dtheta2'],
-    #   ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
+      ['p_pour_trg'],
+      ['lp_pour'],None],
+    'Fflowc_tip10': [  #Flow control with tipping.
+      ['lp_pour','size_srcmouth'],
+      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeA10': [  #Flow control with shake_A.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
     #    'da_trg','size_srcmouth','material2',
     #    'dtheta1','shake_spd','shake_axis2'],
-    #   ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
+      # ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
+    'Fflowc_shakeA10': [  #Flow control with shake_A.
+      ['lp_pour','size_srcmouth','shake_axis2'],
+      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeB10': [  #Flow control with shake_B.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
     #    'da_trg','size_srcmouth','material2',
@@ -381,55 +385,71 @@ def Run(ct,*args):
   domain.Graph={
     'n0': TDynNode(None,'P1',('Fnone','n1')),
     'n1': TDynNode('n0','P1',('Fnone','n2a')),
-    'n2a': TDynNode('n1','P1',('Fnone','n2b')),
+    'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
     'n2b': TDynNode('n2a','P1',('Fnone','n2c')),
     # 'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa')),
-    "n2c": None, 
-    # "n2c": TDynNode('n2b','P1',('Fnone','n3sa')),
+    # "n2c": None, 
+    'n2c': TDynNode('n2b','Pskill',('Fnone','n3ti'),('Fnone','n3sa')),
     #Tipping:
     'n3ti': TDynNode('n2c','P1',('Fflowc_tip10','n4ti')),
     'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
     'n4tir': TDynNode('n4ti'),
     #Shaking-A:
-    'n3sa': TDynNode('n2c','P1',('Fmvtopour2','n4sa')),
+    'n3sa': TDynNode('n2c','P1',('Fflowc_shakeA10','n4sa')),
     'n4sa': TDynNode('n3sa','P1',('Rdamount','n4sar')),
     'n4sar': TDynNode('n4sa'),
     }
-  if l.pour_skill=="std_pour":
-    domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3ti'))})
-  elif l.pour_skill=="shake_A":
-    domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3sa'))})
-  elif l.pour_skill=="choose":
-    domain.Graph.update({'n2c': TDynNode('n2b','Pskill',('Fnone','n3ti'),('Fnone','n3sa'))})
+  # if l.pour_skill=="std_pour":
+  #   domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3ti'))})
+  # elif l.pour_skill=="shake_A":
+  #   domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3sa'))})
+  # elif l.pour_skill=="choose":
+  #   domain.Graph.update({'n2c': TDynNode('n2b','Pskill',('Fnone','n3ti'),('Fnone','n3sa'))})
   
   #Learning scheduling
   def EpisodicCallback(l,count):
     Rdamount_default= [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
           TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)]
     Rdamount_early_tip= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
-          TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2 - (10.0 if y[3]!=0 else 0.0))]
+          TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2 - (200.0 if y[3]!=0 else 0.0))]
     Rdamount_early_shakeA= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
-          TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2 - (10.0 if y[3]!=1 else 0.0))]
+          TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2 - (200.0 if y[3]!=1 else 0.0))]
     #'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA'
     if l.rwd_schedule is None:
       #No reward scheduling
       pass
     elif l.rwd_schedule=='early_tip':
       #Reward scheduling (FOR EARLY TIPPING)
-      if count<10:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
+      if count<200:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
       else:         l.dpl.d.Models['Rdamount']= Rdamount_default
     elif l.rwd_schedule=='early_shakeA':
       #Reward scheduling (FOR EARLY SHAKING-A)
-      if count<10:  l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+      if count<200:  l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
       else:         l.dpl.d.Models['Rdamount']= Rdamount_default
+    elif l.rwd_schedule=='early_tip_and_shakeA':
+      if count<100:
+        if count%2==0:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
+        else:           l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+      else:             l.dpl.d.Models['Rdamount']= Rdamount_default
     elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
 
     if l.mtr_schedule==None:
       pass
-    if l.mtr_schedule=="early_natto":
-      if count<40:  l.mtr_smsz = "early_natto"
+    elif l.mtr_schedule=="early_nobounce":
+      if count<100:  l.mtr_smsz = "early_nobounce"
       else:         l.mtr_smsz = l.org_mtr_smsz
+    elif l.mtr_schedule=="early_bounce":
+      if count<100:  l.mtr_smsz = "early_bounce"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+    elif l.mtr_schedule=="early_ketchup":
+      if count<100:  l.mtr_smsz = "early_ketchup"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+    elif l.mtr_schedule=="early_natto":
+      if count<100:  l.mtr_smsz = "early_natto"
+      else:         l.mtr_smsz = l.org_mtr_smsz
+    else:
+      raise(Exception("Invalid mtr_schedule"))
       
 
   def LogDPL(l, count):
@@ -485,7 +505,7 @@ def Run(ct,*args):
     l.restarting= True
   else:
     mm_options= {
-      #'type': 'lwr',
+      'type': l.type,
       'base_dir': l.logdir+'models/',
       }
     mm= TModelManager(domain.SpaceDefs, domain.Models)
@@ -521,6 +541,7 @@ def Run(ct,*args):
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
   count= 0
+  # count = len(l.dpl.DB.Entry)
   if l.restarting:
     fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
   else:
@@ -548,7 +569,7 @@ def Run(ct,*args):
         l.priority_sampling = False
 
     try:
-      Execute(ct,l,count)
+      Execute(ct,l)
     finally:
       ct.sim.StopPubSub(ct,l)
       ct.sim_local.sensor_callback= None

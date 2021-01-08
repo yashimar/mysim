@@ -342,7 +342,7 @@ def Run(ct,*args):
       ['lp_pour'],None],
     'Fflowc_tip10': [  #Flow control with tipping.
       ['lp_pour','size_srcmouth',
-        "da_trg","a_src"],
+        "da_trg","a_src","a_spill2"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeA10': [  #Flow control with shake_A.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
@@ -351,7 +351,7 @@ def Run(ct,*args):
       # ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
     'Fflowc_shakeA10': [  #Flow control with shake_A.
       ['lp_pour','size_srcmouth','shake_axis2',
-        "da_trg","a_src"],
+        "da_trg","a_src","a_spill2"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeB10': [  #Flow control with shake_B.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'

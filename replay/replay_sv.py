@@ -37,7 +37,7 @@ def Run(ct,*args):
   #           + "replay/mtr_sms_sv/learn/shake_A/nobounce/002/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
               + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
-  i_episode_list = [162]
+  i_episode_list = [351]
   i_node = 0
   n_roop = 1
 

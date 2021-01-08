@@ -3,6 +3,7 @@ SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
 from scipy.stats import zscore
 from matplotlib import pyplot as plt
+from matplotlib.ticker import PercentFormatter
 
 def Help():
   pass
@@ -29,20 +30,20 @@ def createDomain():
     'Fmvtopour2': [  #Move to pouring point
       ['p_pour_trg','size_srcmouth','shake_axis2'],
       ['da_pour','da_spill2'],None],
-    # 'Fflowc_tip10': [  #Flow control with tipping.
-    #   ['lp_pour','size_srcmouth'],
-    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
-    # 'Fflowc_shakeA10': [  #Flow control with shake_A.
-    #   ['lp_pour','size_srcmouth','shake_axis2'],
-    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     'Fflowc_tip10': [  #Flow control with tipping.
-      ['lp_pour','size_srcmouth',
-        "da_trg","a_src"],
+      ['lp_pour','size_srcmouth'],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     'Fflowc_shakeA10': [  #Flow control with shake_A.
-      ['lp_pour','size_srcmouth','shake_axis2',
-        "da_trg","a_src"],
+      ['lp_pour','size_srcmouth','shake_axis2'],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    # 'Fflowc_tip10': [  #Flow control with tipping.
+    #   ['lp_pour','size_srcmouth',
+    #     "da_trg","a_src"],
+    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    # 'Fflowc_shakeA10': [  #Flow control with shake_A.
+    #   ['lp_pour','size_srcmouth','shake_axis2',
+    #     "da_trg","a_src"],
+    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     }
   return domain
 
@@ -52,15 +53,25 @@ def Run(ct, *args):
   # model_path = root_path + args[0] + "/manual_train/models/"
   save_path = root_path + args[0] + "/manual_train/models/"
 
-  batchsize = 10
-  n_epochs = 10
+  # batchsize = 10
+  # n_epochs = 10
+  # nn_options = {
+  #   "batchsize": batchsize,           #default 10
+  #   "num_max_update": n_epochs*(200/batchsize),     #default 5000
+  #   'num_check_stop': 200/batchsize*10,       #default 50
+  #   "dropout": True, #default True
+  #   'loss_stddev_stop': 1e-5,  #default 1e-3
+  #   # 'AdaDelta_rho': 0.9,        #default 0.9
+  # }
   nn_options = {
-    "batchsize": batchsize,           #default 10
-    "num_max_update": n_epochs*(200/batchsize),     #default 5000
-    'num_check_stop': 200/batchsize*10,       #default 50
-    "dropout": True, #default True
-    'loss_stddev_stop': 1e-5,  #default 1e-3
-    # 'AdaDelta_rho': 0.9,        #default 0.9
+    # "gpu": 0, 
+    "batchsize": 10,           #default 10
+    "num_max_update": 5000,     #default 5000
+    'num_check_stop': 50,       #default 50
+    'loss_stddev_stop': 1e-3,  #default 1e-3
+    'AdaDelta_rho': 0.9,        #default 0.9
+    # 'train_log_file': '{base}train/nn_log-{name}{code}.dat', 
+    # "train_batch_loss_log_file": '{base}train/nn_batch_loss_log-{name}{code}.dat',
   }
 
   domain = createDomain()
@@ -70,6 +81,8 @@ def Run(ct, *args):
   predict_model = "Fflowc_tip10"
   # predict_model = "Fflowc_shakeA10"
   model = mm.Models[predict_model][2]
+  model.Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=model.load_base_dir)
+  model.Init()
 
   DataX = model.DataX
   DataY = model.DataY
@@ -78,35 +91,14 @@ def Run(ct, *args):
 
 
   # domain = createDomain()
-  # domain= TGraphDynDomain()
-  # SP= TCompSpaceDef
-  # domain.SpaceDefs={
-  #   'p_pour_trg': SP('action',2,min=[0.2,0.1],max=[1.2,0.7]),
-  #   'p_pour_trg2': SP('action',2,min=[0.2**2,0.1**2],max=[1.2**2,0.7**2]),
-  #   'r': SP('action',1,min=[0.],max=[1e5]),
-  #   'da_spill2': SP('state',1),
-  #   'da_pour':  SP('state',1),
-  #   }
-  # domain.Models={
-  #   'Fmvtopour2': [  #Move to pouring point
-  #     ['p_pour_trg'],
-  #     ['da_spill2'],None],
-  #   }
   # mm= TModelManager(domain.SpaceDefs, domain.Models)
-  # # mm.Load({"options": {"type": "lwr"}})
-  # mm.Load({"options": {"dnn_hidden_units": [200,200]}})
+  # mm.Load({"options": {"type": "lwr"}})
+  # # mm.Load({"options": {"dnn_hidden_units": [200,200,200]}})
   # mm.Init()
-  # model = mm.Models["Fmvtopour2"][2]
-
-  # rs = [x[0]**2+x[1]**2 for x in DataX]
-  # DataX = np.insert(DataX, -1, rs, axis=1)
-  # DataX = np.log(DataX)
-  # DataX, DataY = DataX[50:], DataY[50:]
-  # DataX = zscore(DataX)
-  # DataY = DataY[:,1].reshape(-1,1)
-  # model.DataX, model.DataY = DataX, DataY
-  # model.DataX.extend(DataX)
-  # model.DataY.extend(DataY)
+  # predict_model = "Fflowc_tip10"
+  # # predict_model = "Fflowc_shakeA10"
+  # model = mm.Models[predict_model][2]
+  # # model.DataX, model.DataY = DataX, DataY #for NN
 
   # model.Options.update({
   #   'c_min': 0.01,
@@ -116,6 +108,9 @@ def Run(ct, *args):
   # })
   # for X, Y in zip(DataX, DataY):
   #   model.Update(list(X),list(Y),not_learn=False)
+  # print(len(model.DataX))
+  # for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
+  #   pred = model.Predict(X)
 
   # model.Options.update(nn_options)
   # model.Update(None, None, not_learn=False)
@@ -129,19 +124,22 @@ def Run(ct, *args):
     for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
       pred = model.Predict(x=X, x_var=0.0, with_var=True, with_grad=True)
       idx = out_idx
+      smsz = X[3]
+      t_da_pour_mean = Y[0]
+      t_da_spill2_mean = Y[1]
+      p_da_pour_mean = pred.Y[0].item()
+      p_da_spill2_mean = pred.Y[1].item()
+      p_da_pour_sdv = np.sqrt(pred.Var[0,0])
+      p_da_spill2_sdv = np.sqrt(pred.Var[1,1])
       mean = pred.Y[idx]
       var = pred.Var[idx,idx]
       diff.append(abs(mean-Y[idx]).item())
       trues.append(Y[idx])
       preds.append(pred.Y[idx])
 
-      # if do_print and Y[idx]<0.3:
-      #   print(i, list(X), Y[idx], mean, np.sqrt(var))
-      print(i, list(X), Y[idx], mean, np.sqrt(var))
-      # mean = pred.Y[0]
-      # var = pred.Var[0,0]
-      # diff.append(abs(mean-Y[0]))
-      # print(i, list(X), Y[0], mean, np.sqrt(var))
+      if 0.5<t_da_spill2_mean:
+        print(i, list(X), t_da_pour_mean, t_da_spill2_mean, p_da_pour_mean, p_da_spill2_mean, p_da_pour_sdv, p_da_spill2_sdv)
+
     print(sum(diff)/len(diff))
 
     return trues, preds, diff
@@ -152,11 +150,14 @@ def Run(ct, *args):
       smsz = X[3]
       da_pour = Y[0]
       da_spill2 = Y[1]
-      if da_pour<0.3:
+      if da_spill2>0.5:
         smsz_list.append(smsz)
 
     fig = plt.figure(figsize=(5,5))
-    plt.hist(smsz_list, bins=10)
+    plt.title("failure sample's smsz histgram (da_spill2 > 0.5)"+"\n"+"selected model: "+predict_model)
+    plt.hist(smsz_list, bins=10, range=(0.03,0.08), weights=np.ones(len(smsz_list))/len(smsz_list))
+    # plt.ylim(0,20)
+    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
     plt.show()
 
   def plot(out_var, trues, preds):
@@ -167,7 +168,8 @@ def Run(ct, *args):
     ax.set_title("true/estimated "+out_var+" "+predict_model)
     ax.plot(trues, label="trues")
     ax.plot(preds, label="preds (after training)")
-    ax.hlines(0.3, 0, len(trues)+1, label="target value")
+    if out_var=="da_pour":
+      ax.hlines(0.3, 0, len(trues)+1, label="target value")
     ax.set_xlim(0,len(trues))
     ax.set_xticks(np.arange(0, len(trues)+1, 10))
     ax.set_xticks(np.arange(0, len(trues)+1, 1), minor=True)

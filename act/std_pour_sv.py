@@ -11,7 +11,8 @@ def GenSMStdPour(ct,l,sim):
   #sm.EventCallback= ct.SMCallback
 
   sm.l.theta_flowstart= 0.5*math.pi
-  sm.l.max_theta= 1.0*math.pi
+  sm.l.max_theta= 0.9*math.pi
+  # sm.l.max_theta= 1.0*math.pi
   charge_time = 5
 
   poured_action= TFSMConditionedAction()
@@ -108,9 +109,9 @@ def GenSMStdPour(ct,l,sim):
   sm['pour'].Actions[-1].Condition= lambda: sm.l.sensors.num_flow>0
   sm['pour'].Actions[-1].Action= lambda: ( sm.l.ChargeTimer(charge_time), sim.MoveDTheta(ct,sm.l,0.0), sim.GetSensor(ct,sm.l) )
   sm['pour'].Actions[-1].NextState= ORIGIN_STATE
-  # sm['pour'].NewAction()
-  # sm['pour'].Actions[-1].Condition= lambda: sm.l.sensors.time>sm.l.timer_tstop
-  # sm['pour'].Actions[-1].NextState= EXIT_STATE
+  sm['pour'].NewAction()
+  sm['pour'].Actions[-1].Condition= lambda: sm.l.sensors.time>sm.l.timer_tstop
+  sm['pour'].Actions[-1].NextState= EXIT_STATE
   sm['pour'].ElseAction.Condition= lambda: True
   sm['pour'].ElseAction.Action= lambda: (sim.MoveDTheta(ct,sm.l,sm.l.dtheta2), sim.GetSensor(ct,sm.l))
   sm['pour'].ElseAction.NextState= ORIGIN_STATE
