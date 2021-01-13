@@ -288,7 +288,8 @@ def Run(ct,*args):
     'gh_abs': SP('state',1),  #Gripper height (absolute value)
     'p_pour_trg0': SP('state',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position of preparation before pouring (x,z)
       #NOTE: we stopped to plan p_pour_trg0
-    'p_pour_trg': SP('action',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position (x,z)
+    # 'p_pour_trg': SP('action',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position (x,z)
+    'p_pour_trg': SP('action',2,min=[-0.1+0.6,0.31+0.202],max=[0.0+0.6,0.31+0.202]),  #Target pouring axis position (x,z)
     'dtheta1': SP('state',1,min=[0.01],max=[0.02]),  #Pouring skill parameter for all skills
     'dtheta2': SP('state',1,min=[0.002],max=[0.005]),  #Pouring skill parameter for 'std_pour'
     #'dtheta1': SP('state',1),  #Pouring skill parameter for all skills

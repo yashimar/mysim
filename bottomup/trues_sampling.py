@@ -66,7 +66,7 @@ def Run(ct,*args):
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  suff = "serch_extra_minima/first"+"/"
+  suff = "change2d/smsz_trgx/trgz031"+"/"
   # suff = "trues_sampling/MinimalChange/smsz/s4ep597/second"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #         + "bottomup/learn5/shake_A/nobouce_ketchup/random/first40/"
@@ -77,11 +77,11 @@ def Run(ct,*args):
   db_src = ""
   l.pour_skill = "std_pour"
 
-  n_episode = 1
+  n_episode = 400
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "ketchup"
-  l.custom_smsz_all = np.linspace(0.06, 0.06, n_episode)
+  l.custom_smsz_all = sum([[x]*20 for x in np.linspace(0.03, 0.08, 20)], [])
   l.delta_smsz = 0.0
   l.mtr_dir_name = l.custom_mtr
   
@@ -89,7 +89,8 @@ def Run(ct,*args):
     'gh_ratio': [SSA([0.5])]*n_episode,
     'p_pour_trg0': lambda pc_rcv: [SSA(Vec([-0.3,0.35])+Vec([pc_rcv[0],pc_rcv[2]]))]*n_episode,
     # 'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,z])) for x in np.linspace(0.44, 0.46, 20) for z in np.linspace(0.10, 0.12, 20)],
-    'p_pour_trg': lambda pc_rcv: [SSA(Vec([0.5,0.35]))]*n_episode,
+    'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,0.31+0.202])) for x in np.linspace(-0.1, 0.0, 20)]*20,
+    # 'p_pour_trg': lambda pc_rcv: [SSA(Vec([-0.1+0.6,0.15+0.202]))]*n_episode,
     'dtheta1': [SSA([0.014])]*n_episode,
     # 'dtheta2': [SSA([0.004])]*n_episode,
     'dtheta2': [SSA([0.002])]*n_episode,

@@ -82,14 +82,14 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "first"+"/"
-  # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
-  # model_dir = src_core + "models/"
-  # db_src = src_core + "database.yaml"
-  model_dir = ""
-  src_core = ""
-  db_src = ""
+  suff = "fixTip/fiveth"+"/"
+  src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+          + "bottomup/learn8/choose/ketchup/random/fixTip/fourth"+"/"
+  model_dir = src_core + "models/"
+  db_src = src_core + "database.yaml"
+  # model_dir = ""
+  # src_core = ""
+  # db_src = ""
   l.pour_skill = "choose"
 
   l.config_callback= ConfigCallback
@@ -103,7 +103,7 @@ def Run(ct,*args):
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 150,
+    'num_episodes': 200,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 

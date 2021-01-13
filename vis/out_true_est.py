@@ -62,11 +62,11 @@ def Run(ct, *args):
       ests["lp_pour_x"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[0].item())
       ests["lp_pour_z"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[2].item())
 
-  var_list = [ "lp_pour_x", "lp_pour_z"]
-  # var_list = ["da_spill2", "da_pour"]
+  # var_list = [ "lp_pour_x", "lp_pour_z"]
+  var_list = ["da_spill2", "da_pour"]
+  ep_block = 100
 
   if False:
-    ep_block = 50
     for i, var in enumerate(var_list):
       # smsz = 0.08
       fig = plt.figure(figsize=(20,4))
@@ -105,7 +105,6 @@ def Run(ct, *args):
       # plt.close()
 
   if True:
-    ep_block = 100
     for i, var in enumerate(var_list):
       # smsz = 0.08
       fig = plt.figure(figsize=(20,8))

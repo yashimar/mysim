@@ -3,7 +3,7 @@ SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
 from scipy.stats import zscore
 from matplotlib import pyplot as plt
-from matplotlib.ticker import PercentFormatter
+from matplotlib.ticker import *
 
 def Help():
   pass
@@ -18,6 +18,7 @@ def createDomain():
     'ps_rcv': SP('state',12),  #4 edge point positions (x,y,z)*4 of receiver
     'lp_pour': SP('state',3),  #Pouring axis position (x,y,z) in receiver frame
     "da_trg": SP("state",1),
+    "a_spill2": SP("state",1),
     "a_src": SP("state",1),
     'da_pour': SP('state',1),  #Amount poured in receiver (displacement)
     'da_spill2': SP('state',1),  #Amount spilled out (displacement)
@@ -30,20 +31,20 @@ def createDomain():
     'Fmvtopour2': [  #Move to pouring point
       ['p_pour_trg','size_srcmouth','shake_axis2'],
       ['da_pour','da_spill2'],None],
-    'Fflowc_tip10': [  #Flow control with tipping.
-      ['lp_pour','size_srcmouth'],
-      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
-    'Fflowc_shakeA10': [  #Flow control with shake_A.
-      ['lp_pour','size_srcmouth','shake_axis2'],
-      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_tip10': [  #Flow control with tipping.
-    #   ['lp_pour','size_srcmouth',
-    #     "da_trg","a_src"],
+    #   ['lp_pour','size_srcmouth'],
     #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeA10': [  #Flow control with shake_A.
-    #   ['lp_pour','size_srcmouth','shake_axis2',
-    #     "da_trg","a_src"],
+    #   ['lp_pour','size_srcmouth','shake_axis2'],
     #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    'Fflowc_tip10': [  #Flow control with tipping.
+      ['lp_pour','size_srcmouth',
+        "da_trg","a_src","a_spill2"],
+      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    'Fflowc_shakeA10': [  #Flow control with shake_A.
+      ['lp_pour','size_srcmouth','shake_axis2',
+        "da_trg","a_src","a_spill2"],
+      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     }
   return domain
 
@@ -80,9 +81,10 @@ def Run(ct, *args):
   mm.Init()
   predict_model = "Fflowc_tip10"
   # predict_model = "Fflowc_shakeA10"
+  # predict_model = "Fmvtopour2"
   model = mm.Models[predict_model][2]
-  model.Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=model.load_base_dir)
-  model.Init()
+  # model.Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=model.load_base_dir)
+  # model.Init()
 
   DataX = model.DataX
   DataY = model.DataY
@@ -137,27 +139,73 @@ def Run(ct, *args):
       trues.append(Y[idx])
       preds.append(pred.Y[idx])
 
-      if 0.5<t_da_spill2_mean:
+      if 0.045<=smsz<=0.055:
         print(i, list(X), t_da_pour_mean, t_da_spill2_mean, p_da_pour_mean, p_da_spill2_mean, p_da_pour_sdv, p_da_spill2_sdv)
 
     print(sum(diff)/len(diff))
 
     return trues, preds, diff
 
-  def smsz_hist():
-    smsz_list = []
+  def hist():
+    var_list = []
     for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
-      smsz = X[3]
+      var = X[3]
       da_pour = Y[0]
       da_spill2 = Y[1]
-      if da_spill2>0.5:
-        smsz_list.append(smsz)
+      if da_pour<0.3 and da_spill2<1.0:
+        var_list.append(var)
+    print(float(len(var_list))/len(model.DataX))
 
     fig = plt.figure(figsize=(5,5))
-    plt.title("failure sample's smsz histgram (da_spill2 > 0.5)"+"\n"+"selected model: "+predict_model)
-    plt.hist(smsz_list, bins=10, range=(0.03,0.08), weights=np.ones(len(smsz_list))/len(smsz_list))
+    # title = "failure sample's smsz histgram (bins=20)"+"\n"+"da_pour<0.3, lp_pour_z<0.17, episode>100"+"\n"+"selected model: "+predict_model
+    title = "failure sample's smsz histgram (bins=20)"+"\n"+"da_pour<0.3, episode>100"+"\n"+"selected model: "+predict_model
+    plt.title(title)
+    plt.hist(var_list, bins=20, 
+              # range=(0.03,0.08),
+              # range=(0.12,0.5) 
+              # weights=np.ones(len(var_list))/len(var_list)
+            )
+    plt.xlabel("lp_pour_z")
+    plt.ylabel("count")
     # plt.ylim(0,20)
-    plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    ax = plt.gca()
+    ax.yaxis.set_major_locator(MultipleLocator(1))
+    # plt.gca().yaxis.set_major_formatter(PercentFormatter(1))
+    plt.subplots_adjust(
+      # left=0.05, right=0.95, 
+      top=0.85, hspace=0.6)
+    plt.show()
+
+  def scatter():
+    x_list = []
+    y_list = []
+    colors = []
+    for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
+      da_pour = Y[0]
+      da_spill2 = Y[1]
+      smsz = X[3]
+      x, y = X[0], X[3]
+
+      if True:
+            
+        if da_pour>=0.3:  x, y = None, None
+
+        x_list.append(x)
+        y_list.append(y)
+        # if da_pour < 0.3:
+        #   if i >= 300:  color = "purple"
+        #   else:         color = "red"
+        # else:           color = "blue"
+        # color = "black"
+        colors.append(color)
+    
+    fig = plt.figure(figsize=(5,5))
+    plt.title("shake_axis2 scatter (0.045<smsz<0.05)")
+    for i in range(len(x_list)):
+      plt.scatter(x_list[i], y_list[i], c=colors[i])
+    plt.xlim(-0.1,0)
+    plt.ylim(0.03,0.08)
+    # plt.savefig("test_image",transparent=True)
     plt.show()
 
   def plot(out_var, trues, preds):
@@ -227,10 +275,12 @@ def Run(ct, *args):
   # plt.ylabel("|true - pred|")
   # plt.show()
 
-  trues, preds, diff = validate_model(0, do_print=True)
+  # trues, preds, diff = validate_model(0, do_print=True)
   # plot("da_pour", trues, preds)
 
   # trues, preds, diff = validate_model(1)
   # plot("da_spill2", trues, preds)
 
-  # smsz_hist()
+  # hist()
+
+  scatter()

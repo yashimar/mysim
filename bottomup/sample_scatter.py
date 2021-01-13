@@ -99,40 +99,40 @@ def Run(ct, *args):
     #   zorders.append(0)
     #   continue
 
-    # v = Y[0]
-    # # d = abs(Fflowc_tip10.Predict(X).Y[0] - Y[0])
-    # markers.append("o")
-    # # if d<0.05: 
-    # #   # colors.append([0,0,1,0.3])
-    # #   # zorders.append(-1)
-    # #   markers.append("o")
-    # # else: 
-    # #   # colors.append([1,0,0,1])
-    # #   # zorders.append(1)
-    # #   markers.append("*")
-    # if v>=0.3: 
-    #   colors.append([0,0,1,0.3])
-    #   zorders.append(-1)
-    # else: 
-    #   colors.append([1,0,0,1])
-    #   zorders.append(1)
-
-    v = round(Y[1],2)
-    # d = abs(Fflowc_tip10.Predict(X).Y[1] - Y[1])
-    # if d>=0.05:
-    #   markers.append("*")
-    # else:
-    #   markers.append("o")
+    v = Y[0]
+    # d = abs(Fflowc_tip10.Predict(X).Y[0] - Y[0])
     markers.append("o")
-    if v<0.5: 
+    # if d<0.05: 
+    #   # colors.append([0,0,1,0.3])
+    #   # zorders.append(-1)
+    #   markers.append("o")
+    # else: 
+    #   # colors.append([1,0,0,1])
+    #   # zorders.append(1)
+    #   markers.append("*")
+    if v>=0.3: 
       colors.append([0,0,1,0.3])
       zorders.append(-1)
-    # elif v==0.1:
-    #   colors.append([1,0.5,0.25,1])
-    #   zorders.append(1)
     else: 
       colors.append([1,0,0,1])
       zorders.append(1)
+
+    # v = round(Y[1],2)
+    # # d = abs(Fflowc_tip10.Predict(X).Y[1] - Y[1])
+    # # if d>=0.05:
+    # #   markers.append("*")
+    # # else:
+    # #   markers.append("o")
+    # markers.append("o")
+    # if v<0.5: 
+    #   colors.append([0,0,1,0.3])
+    #   zorders.append(-1)
+    # # elif v==0.1:
+    # #   colors.append([1,0.5,0.25,1])
+    # #   zorders.append(1)
+    # else: 
+    #   colors.append([1,0,0,1])
+    #   zorders.append(1)
 
     # if Y[1]>=0.1: markers.append("*")
     # else        : markers.append("o")
@@ -140,8 +140,8 @@ def Run(ct, *args):
     # else                        : miss_and_spills.append(False)
 
   fig = plt.figure(figsize=(20,4))
-  fig.suptitle("observed da_spill2 with sampled point")
-  ep_block = 100
+  fig.suptitle("observed da_pour with sampled point (std_pour)")
+  ep_block = 80
   for i in range(int(len(x1)/ep_block)):
     for j in np.linspace(ep_block*i, ep_block*(i+1)-1, ep_block):
       j = int(j)
@@ -150,8 +150,8 @@ def Run(ct, *args):
                         zorder=zorders[j],
                         marker=markers[j],
                       )
-    # plt.xlim(-0.3,0.45)
-    # plt.ylim(0.1,0.5)
+    plt.xlim(-0.3,0.45)
+    plt.ylim(0.1,0.5)
     # plt.title("episode " + str(i*ep_block) + "~" + str((i+1)*ep_block) )
     plt.title("episode " + str(i*ep_block) + "~" + str((i+1)*ep_block) +"\n"
               # + "spilled case: "+str(len(filter(lambda x: x=="*", markers[ep_block*i:ep_block*(i+1)])))+"/"+str(ep_block) +"\n"

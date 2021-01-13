@@ -42,7 +42,7 @@ def Execute(ct,l):
 
   with sim.TPause(ct):
     CPrint(2,'Node:','n0')
-    l.xs.n0= ObserveXSSA(l,None,obs_keys0+('da_trg',"a_src",))
+    l.xs.n0= ObserveXSSA(l,None,obs_keys0+('da_trg',"a_src","a_spill2",))
 
     pc_rcv= np.array(l.xs.n0['ps_rcv'].X).reshape(4,3).mean(axis=0)  #Center of ps_rcv
     l.xs.n0['gh_ratio']= SSA([0.5])
@@ -118,7 +118,7 @@ def Execute(ct,l):
         for key in l.xs.n2a.keys():
           if l.dpl.d.SpaceDefs[key].Type in ('action','select'):
             del l.xs.n2a[key]
-      InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',"a_src",)))
+      InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',"a_src","a_spill2",)))
       #TEST: Heuristic init guess
       #l.xs.n2a['skill']= SSA([1])
       if "n2a" in l.planning_node and repeated:
@@ -162,7 +162,7 @@ def Execute(ct,l):
       #Plan l.selected_skill from ('std_pour','shake_A','shake_B')
       CPrint(2,'Node:','n2c')
       l.xs.n2c= CopyXSSA(l.xs.prev)
-      InsertDict(l.xs.n2c, ObserveXSSA(l,l.xs.prev,obs_keys_before_flow))
+      InsertDict(l.xs.n2c, ObserveXSSA(l,l.xs.prev,obs_keys_before_flow+("a_spill2",)))
       #l.dpl.MM.Update('Fnone',l.xs.prev,l.xs.n2c, not_learn=l.not_learn)
       #res= l.dpl.Plan('n2c', l.xs.n2c)
       l.idb.n2c= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2c',xs=l.xs.n2c)
@@ -194,9 +194,10 @@ def Execute(ct,l):
         CPrint(2,'Node:','n4ti')
         l.xs.n4ti= CopyXSSA(l.xs.prev)
         InsertDict(l.xs.n4ti, ObserveXSSA(l,l.xs.prev,()))  #Observation is omitted since there is no change
-        #WARNING:NOTE: Famount4 uses 'lp_pour' as input, so here we use a trick:
+        #WARNING:NOTE: Famount4 uses 'lp_pour', "a_spill2" as input, so here we use a trick:
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
+        xs_in['a_spill2']= l.xs.n2c['a_spill2']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
         l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Fflowc_tip10',xs_in,l.xs.n4ti, not_learn=l.not_learn)
@@ -230,9 +231,10 @@ def Execute(ct,l):
         CPrint(2,'Node:','n4sa')
         l.xs.n4sa= CopyXSSA(l.xs.prev)
         InsertDict(l.xs.n4sa, ObserveXSSA(l,l.xs.prev,()))  #Observation is omitted since there is no change
-        #WARNING:NOTE: Famount4 uses 'lp_pour' as input, so here we use a trick:
+        #WARNING:NOTE: Famount4 uses 'lp_pour', "a_spill2" as input, so here we use a trick:
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
+        xs_in['a_spill2']= l.xs.n2c['a_spill2']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
         l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Fflowc_shakeA10',xs_in,l.xs.n4sa, not_learn=l.not_learn)

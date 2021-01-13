@@ -29,7 +29,7 @@ def Execute(ct,l,count):
     'grab'         : lambda a: ct.Run('mysim.act.grab_sv', a),
     'move_to_rcv'  : lambda a: ct.Run('mysim.act.move_to_rcv_sv', a),
     'move_to_pour' : lambda a: ct.Run('mysim.act.move_to_pour_sv', a),
-    'std_pour'     : lambda a: ct.Run('mysim.act.std_pour_sv', a),
+    'std_pour'     : lambda a: ct.Run('mysim.act.std_pour_sv_custom', a),
     'shake_A'      : lambda a: ct.Run('mysim.act.shake_A_5s_sv', a),
     }
 
@@ -145,8 +145,8 @@ def Execute(ct,l,count):
       l.xs.n2b= CopyXSSA(l.xs.prev)
       # l.xs.before_mvtopour = CopyXSSA(l.xs.prev)
       InsertDict(l.xs.n2b, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
-      # l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
-      # l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
+      l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
+      l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
       #res= l.dpl.Plan('n2b', l.xs.n2b)
       l.idb.n2b= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2b',xs=l.xs.n2b)
       l.xs.prev= l.xs.n2b
@@ -201,8 +201,8 @@ def Execute(ct,l,count):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
-        l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
-        l.dpl.MM.Update('Fmvtopour2',xs_in,l.xs.n4ti, not_learn=l.not_learn)
+        l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
+        l.dpl.MM.Update('Fflowc_tip10',xs_in,l.xs.n4ti, not_learn=l.not_learn)
         #res= l.dpl.Plan('n4ti', l.xs.n4ti)
         l.idb.n4ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4ti',xs=l.xs.n4ti)
         l.xs.prev= l.xs.n4ti
@@ -237,8 +237,8 @@ def Execute(ct,l,count):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
-        l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
-        l.dpl.MM.Update('Fmvtopour2',xs_in,l.xs.n4sa, not_learn=l.not_learn)
+        l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
+        l.dpl.MM.Update('Fflowc_shakeA10',xs_in,l.xs.n4sa, not_learn=l.not_learn)
         #res= l.dpl.Plan('n4sa', l.xs.n4sa)
         l.idb.n4sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sa',xs=l.xs.n4sa)
         l.xs.prev= l.xs.n4sa
@@ -338,9 +338,9 @@ def Run(ct,*args):
     # 'Fmvtopour2': [  #Move to pouring point
     #   ['ps_rcv','gh_abs','p_pour','p_pour_trg'],
     #   ['lp_pour'],None],
-    'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg', "size_srcmouth", "shake_axis2"],
-      ['da_pour','da_spill2'],None],
+    # 'Fmvtopour2': [  #Move to pouring point
+    #   ['p_pour_trg', "size_srcmouth", "shake_axis2"],
+    #   ['da_pour','da_spill2'],None],
     # 'Fflowc_tip10': [  #Flow control with tipping.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
     #    'da_trg','size_srcmouth','material2',
@@ -351,6 +351,15 @@ def Run(ct,*args):
     #    'da_trg','size_srcmouth','material2',
     #    'dtheta1','shake_spd','shake_axis2'],
     #   ['da_total','lp_flow','flow_var'],None],  #Removed 'p_pour'
+    'Fmvtopour2': [  #Move to pouring point
+      ['p_pour_trg'],
+      ['lp_pour'],None],
+    'Fflowc_tip10': [  #Flow control with tipping.
+      ['lp_pour','size_srcmouth'],
+      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    'Fflowc_shakeA10': [  #Flow control with shake_A.
+      ['lp_pour','size_srcmouth','shake_axis2'],
+      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     # 'Fflowc_shakeB10': [  #Flow control with shake_B.
     #   ['gh_abs','lp_pour',  #Removed 'p_pour_trg0','p_pour_trg'
     #    'da_trg','size_srcmouth','material2',
@@ -381,17 +390,17 @@ def Run(ct,*args):
   domain.Graph={
     'n0': TDynNode(None,'P1',('Fnone','n1')),
     'n1': TDynNode('n0','P1',('Fnone','n2a')),
-    'n2a': TDynNode('n1','P1',('Fnone','n2b')),
+    'n2a': TDynNode('n1','P1',('Fmvtopour2','n2b')),
     'n2b': TDynNode('n2a','P1',('Fnone','n2c')),
     # 'n2c': TDynNode('n2b','Pskill',('Fflowc_tip10','n3ti'),('Fflowc_shakeA10','n3sa')),
     "n2c": None, 
-    # "n2c": TDynNode('n2b','P1',('Fnone','n3sa')),
+    # 'n2c': TDynNode('n2b','Pskill',('Fnone','n3ti'),('Fnone','n3sa')),
     #Tipping:
     'n3ti': TDynNode('n2c','P1',('Fflowc_tip10','n4ti')),
     'n4ti': TDynNode('n3ti','P1',('Rdamount','n4tir')),
     'n4tir': TDynNode('n4ti'),
     #Shaking-A:
-    'n3sa': TDynNode('n2c','P1',('Fmvtopour2','n4sa')),
+    'n3sa': TDynNode('n2c','P1',('Fflowc_shakeA10','n4sa')),
     'n4sa': TDynNode('n3sa','P1',('Rdamount','n4sar')),
     'n4sar': TDynNode('n4sa'),
     }
