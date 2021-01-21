@@ -85,10 +85,10 @@ def Run(ct, *args):
   zorders = []
   markers = []
   miss_and_spills = []
-  DataX = Fflowc_tip10.DataX
-  DataY = Fflowc_tip10.DataY
-  # DataX = Fflowc_shakeA10.DataX
-  # DataY = Fflowc_shakeA10.DataY
+  # DataX = Fflowc_tip10.DataX
+  # DataY = Fflowc_tip10.DataY
+  DataX = Fflowc_shakeA10.DataX
+  DataY = Fflowc_shakeA10.DataY
   x1 = DataX[:,0]
   x2 = DataX[:,2]
 

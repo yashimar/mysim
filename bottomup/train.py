@@ -79,8 +79,8 @@ def Run(ct, *args):
   mm= TModelManager(domain.SpaceDefs, domain.Models)
   mm.Load(LoadYAML(model_path+'model_mngr.yaml'), model_path)
   mm.Init()
-  predict_model = "Fflowc_tip10"
-  # predict_model = "Fflowc_shakeA10"
+  # predict_model = "Fflowc_tip10"
+  predict_model = "Fflowc_shakeA10"
   # predict_model = "Fmvtopour2"
   model = mm.Models[predict_model][2]
   # model.Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=model.load_base_dir)
@@ -127,8 +127,8 @@ def Run(ct, *args):
       pred = model.Predict(x=X, x_var=0.0, with_var=True, with_grad=True)
       idx = out_idx
       smsz = X[3]
-      t_da_pour_mean = Y[0]
-      t_da_spill2_mean = Y[1]
+      t_da_pour = Y[0]
+      t_da_spill2 = Y[1]
       p_da_pour_mean = pred.Y[0].item()
       p_da_spill2_mean = pred.Y[1].item()
       p_da_pour_sdv = np.sqrt(pred.Var[0,0])
@@ -139,8 +139,8 @@ def Run(ct, *args):
       trues.append(Y[idx])
       preds.append(pred.Y[idx])
 
-      if 0.045<=smsz<=0.055:
-        print(i, list(X), t_da_pour_mean, t_da_spill2_mean, p_da_pour_mean, p_da_spill2_mean, p_da_pour_sdv, p_da_spill2_sdv)
+      if t_da_pour<0.3:
+        print(i, list(X), t_da_pour, t_da_spill2, p_da_pour_mean, p_da_spill2_mean, p_da_pour_sdv, p_da_spill2_sdv)
 
     print(sum(diff)/len(diff))
 
@@ -180,33 +180,59 @@ def Run(ct, *args):
     x_list = []
     y_list = []
     colors = []
+    preds = []
+    good =[]
+    bad = []
     for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
+      # pred = model.Predict(x=X, x_var=0.0, with_var=True, with_grad=True)
       da_pour = Y[0]
       da_spill2 = Y[1]
       smsz = X[3]
       x, y = X[0], X[3]
 
       if True:
-            
-        if da_pour>=0.3:  x, y = None, None
+        if not (-0.1<=x<=0 and round(X[4], 3)==0.028 and round(X[5], 3)==-1.22):
+          continue
 
         x_list.append(x)
         y_list.append(y)
-        # if da_pour < 0.3:
-        #   if i >= 300:  color = "purple"
-        #   else:         color = "red"
-        # else:           color = "blue"
+        if da_pour < 0.3:
+          if 0.30<X[2]<0.34:
+            color = [1,0,0,1]
+          else:
+            color = [1,0.5,0.25,1]
+          good.append(X[4])
+        else:
+          if 0.30<X[2]<0.34:
+            color = [0,1,0,0.3]
+          else:
+            color = [0,1,1,0.3]
+          bad.append(X[4])
         # color = "black"
         colors.append(color)
-    
+        # print(X, Y)
+
+    print(np.mean(good), np.std(good))
+    print(np.mean(bad), np.std(bad))
+    print(len(x_list))
+
     fig = plt.figure(figsize=(5,5))
-    plt.title("shake_axis2 scatter (0.045<smsz<0.05)")
+    # plt.title("da_pour scatter (0.032<p_pour_z<0.33)")
     for i in range(len(x_list)):
       plt.scatter(x_list[i], y_list[i], c=colors[i])
-    plt.xlim(-0.1,0)
+    plt.xlim(-0.1,-0.0)
     plt.ylim(0.03,0.08)
-    # plt.savefig("test_image",transparent=True)
-    plt.show()
+    # plt.axis("off")
+    plt.tick_params(bottom=False,
+               left=False,
+               right=False,
+               top=False)
+    plt.tick_params(labelbottom=False,
+               labelleft=False,
+               labelright=False,
+               labeltop=False)
+    # plt.show()
+    plt.savefig("/home/yashima/Pictures/tmp/img1",transparent=True)
 
   def plot(out_var, trues, preds):
     fig = plt.figure(figsize=(20,4))

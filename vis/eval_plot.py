@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from collections import defaultdict
 import yaml
+import joblib
 from core_tool import *
 
 def Help():
@@ -13,6 +14,7 @@ def Run(ct, *args):
   root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   log_path = root_path + name_log + "/dpl_est.dat"
   sl_path = root_path + name_log + "/sequence_list.yaml"
+  tree_path = root_path+name_log+"/best_est_trees/"
 
   data_list = []
   with open(log_path, "r") as log_data:
@@ -44,17 +46,46 @@ def Run(ct, *args):
     if "sa" in seq[4].keys()[0]: skills.append("shake_A")
     else:              skills.append("std_pour")
     evals["a_pour"].append(reward[-1][4][0]["a_pour"])
+    evals["da_pour"].append(reward[-1][3][0]["da_pour"])
     evals["a_spill2"].append(reward[-1][5][0]["a_spill2"])
+    evals["da_spill2"].append(reward[-1][2][0]["da_spill2"])
     evals["eval"].append(-100*max(0.3-evals["a_pour"][-1],0)**2 -1.0*max(evals["a_pour"][-1]-0.3,0)**2 -1.0*max(evals["a_spill2"][-1],0)**2)
-  
-  
-  lim_dict = {"a_pour":[0,0.6], "a_spill2":[0,1.5], "eval":[-1,0]}
-  for key in ["a_pour", "a_spill2", "eval"]:
+
+  ests = defaultdict(list)
+  ests_sdv = defaultdict(list)
+  for i in range(len(sl)):
+    with open(tree_path+"ep"+str(i)+"_n0.jb", mode="rb") as f:
+      tree = joblib.load(f)
+      skill = tree.Tree[TPair("n2c",0)].XS["skill"].X.item()
+      # if True:
+      if skill==0:
+        ests["da_spill2"].append(tree.Tree[TPair("n4tir",0)].XS["da_spill2"].X.item())
+        ests_sdv["da_spill2"].append(np.sqrt(tree.Tree[TPair("n4tir",0)].XS["da_spill2"].Cov.item()))
+        ests["da_pour"].append(tree.Tree[TPair("n4tir",0)].XS["da_pour"].X.item())
+        ests_sdv["da_pour"].append(np.sqrt(tree.Tree[TPair("n4tir",0)].XS["da_pour"].Cov.item()))
+      elif skill==1:
+        ests["da_spill2"].append(tree.Tree[TPair("n4sar",0)].XS["da_spill2"].X.item())
+        ests_sdv["da_spill2"].append(np.sqrt(tree.Tree[TPair("n4sar",0)].XS["da_spill2"].Cov.item()))
+        ests["da_pour"].append(tree.Tree[TPair("n4sar",0)].XS["da_pour"].X.item())
+        ests_sdv["da_pour"].append(np.sqrt(tree.Tree[TPair("n4sar",0)].XS["da_pour"].Cov.item()))
+      # ests["p_pour_x"].append(tree.Tree[TPair("n2a",0)].XS["p_pour"].X[0].item())
+      # ests["p_pour_z"].append(tree.Tree[TPair("n2a",0)].XS["p_pour"].X[2].item())
+      ests["lp_pour_x"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[0].item())
+      ests["lp_pour_z"].append(tree.Tree[TPair("n2b",0)].XS["lp_pour"].X[2].item())
+
+  # print(ests_sdv["da_pour"])
+  # print(len(ests_sdv["da_pour"]))
+  # print(ests["da_pour"])
+  # print(len(ests["da_pour"]))
+
+  lim_dict = {"da_pour":[0,0.6], "da_spill2":[0,1.5]}
+  for key in lim_dict.keys():
     fig = plt.figure(figsize=(20,3))
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title("observed "+key+", skill=sfd_pour")
     # ax.plot(np.linspace(0.03,0.08,len(evals[key])), evals[key], label=key)
     ax.plot(np.linspace(0,len(evals[key])-1,len(evals[key])), evals[key], label=key)
+    ax.errorbar(np.linspace(0,len(ests[key])+1, len(ests[key])), ests[key], label="est", c="pink", yerr=ests_sdv[key], fmt='*', markersize=4, zorder=-1)
     if key=="a_pour": ax.axhline(y=0.3, label="target amount", c="red")
     elif key=="a_spill2": ax.axhline(y=1.0, label="spilled_stop", c="red")
     # ax.set_xlim(0.03,0.08)

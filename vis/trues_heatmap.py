@@ -19,18 +19,19 @@ def Run(ct, *args):
   with open(sl_path, "r") as yml:
     sl = yaml.load(yml)
 
-  trues = [sl[ep]["reward"][1][2][0]["da_spill2"] for ep in range(len(sl))]
+  trues = [sl[ep]["reward"][1][2][0]["da_pour"] for ep in range(len(sl))]
   
-  x_values = np.linspace(0.42, 0.44, 20)
-  y_values = np.linspace(0.14, 0.16, 20)
+  x_values = np.linspace(-0.1, 0.0, 20)
+  y_values = np.linspace(0.03, 0.08, 20)
   trues = np.array(trues).reshape((len(x_values), len(y_values))).T
 
-  fig_title = "true nobounce's da_spill2 (s1) heatmap" + "<br>" \
+  fig_title = "true ketchup's da_pour heatmap" + "<br>" \
               + "min = " + str(round(trues.min(),2)) + ", max = " + str(round(trues.max(),2))
-  subtitle = "smsz = 0.03, shake_axis2 = (0.01, 0.0), " \
-             + "referenced p_pour_trg = (0.43, 0.15)"
+  # subtitle = "smsz = 0.03, shake_axis2 = (0.01, 0.0), " \
+  #            + "referenced p_pour_trg = (0.43, 0.15)"
+  subtitle = "lp_pour_z = 0.31"
   fig_xlabel = "lp_pour_x"
-  fig_ylabel = "lp_pour_z"
+  fig_ylabel = "smsz"
 
   fig = go.Figure()
   fig.add_trace(go.Heatmap(z=trues, x=x_values, y=y_values, colorscale='Oranges',

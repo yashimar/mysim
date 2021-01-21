@@ -20,11 +20,11 @@ def Run(ct, *args):
   model_path = root_path + args[0] + "/models/"
 
   #set target_model
-  target_model = "Fflowc_tip10"
-  # target_model = "Fflowc_shakeA10"
+  # target_model = "Fflowc_tip10"
+  target_model = "Fflowc_shakeA10"
 
   #set inputs
-  x_values = np.linspace(-0.2, 0.1, 100)    #lp_pour_x
+  x_values = np.linspace(-0.1, 0.0, 100)    #lp_pour_x
   y_values = np.linspace(0.03, 0.08, 100)[::-1]     #smsz
   # x_values = np.linspace(-0.3, 0.4, 100)    #lp_pour_x
   # y_values = np.linspace(0.1, 0.5, 100)[::-1]     #lp_pour_z
@@ -41,10 +41,10 @@ def Run(ct, *args):
         # y - 0.202,
         x,
         0,
-        0.315,
+        0.325,
         y,
-        # 0.01,
-        # 0,
+        0.028,
+        -1.22,
         # 0.3,
         # 0.55
         # 0.538 - 0.6,
@@ -59,7 +59,7 @@ def Run(ct, *args):
 
   #set fig params
   fig_title = "leran7 ketchup's da_pour estimation heatmap"
-  subtitle = "lp_pour_trg = 0.31" \
+  subtitle = "lp_pour_trg = 0.325" \
             #  + ", shake_axis2 = (0.01, 0)" \
             #  + "referenced p_pour_trg = (0.43, 0.15) and (0.45, 0.11)"
   fig_xlabel = "lp_pour_trg_x"
@@ -130,7 +130,7 @@ def Run(ct, *args):
     plt.subplots_adjust(left=0.05, right=0.95, top=0.8)
     plt.show()
 
-  if True:
+  if False:
     fig = go.Figure()
     fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values,
                               # colorscale='Oranges',
@@ -150,3 +150,75 @@ def Run(ct, *args):
     # fig.add_trace(go.Heatmap(z=preds["sdv"], x=x_values, y=y_values, colorscale='Oranges', zmin=0, zmax=0.2, zauto=False))
     # fig.update_layout(height=800, width=800, title_text=fig_title+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel})
     # fig.show()
+
+
+  if True:
+    name_list = []
+    preds = []
+    data = defaultdict(lambda: defaultdict(list))
+    for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
+      # pred = model.Predict(x=X, x_var=0.0, with_var=True, with_grad=True)
+      da_pour = Y[0]
+      da_spill2 = Y[1]
+      smsz = X[3]
+      x, y = X[0], X[3]
+      # print(X[2])
+
+      if True:
+            
+        if not (
+          -0.1<=x<=0 
+          # and 0.30<X[2]<0.32
+          # and 0.32<X[2]<0.33
+          # and i>len(model.DataX)-400
+        ):
+          continue
+
+        if da_pour < 0.3:
+          if 0.2 <= da_pour:
+            color = "rgba(255,0,255,1)"
+            name = "0.2 <= da_pour < 0.3"
+          elif 0.1 <= da_pour:
+            color = "rgba(0,0,255,1)"
+            name = "0.1 <= da_pour < 0.2"
+          else:
+            color = "rgba(0,0,0,1)"
+            name = "0 <= da_pour < 0.1"
+        else:
+          if da_pour < 0.4:
+            color = "rgba(255,127.5,63.75,1)"
+            name = "0.3<= da_opur < 0.4"
+          else:
+            color = "rgba(255,0,0,1)"
+            name = "0.4 <= da_pour <= 0.55"
+
+        data[name]["x"].append(x)
+        data[name]["y"].append(y)
+        data[name]["color"] = color
+        name_list.append(name)
+
+    fig = go.Figure()
+    for name in ["0.4 <= da_pour <= 0.55", "0.3<= da_opur < 0.4", "0.2 <= da_pour < 0.3", "0.1 <= da_pour < 0.2", "0 <= da_pour < 0.1"]:
+      fig.add_trace(go.Scatter(x=data[name]["x"], y=data[name]["y"],  marker_color=data[name]["color"], name=name,
+      mode='markers',
+      # c=colors[i]
+      ))
+    fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values,
+                              # colorscale='Oranges',
+                              colorscale=[
+                                [0.3, "rgb(1, 1, 1)"],
+                                # [0, "rgb(1, 0, 0)"],
+                                [0, "rgb(0, 0, 0)"],
+                                [0.6, "rgb(1, 0, 0)"],
+                                # [0.6, "rgb(1, 1, 1)"],
+                              ],
+                              zmin=0, zmax=0.6, zauto=False,
+                            ))
+    fig.update_layout(height=800, width=800, title_text=fig_title+"<br>"+"min = "+str(round(pred.min(),3))+", max = "+str(round(pred.max(),3))+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel},
+                        legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=1.15)
+                      )
+    fig.show()

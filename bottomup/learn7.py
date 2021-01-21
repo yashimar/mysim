@@ -50,6 +50,8 @@ def ConfigCallback(ct,l,sim):
       m_setup.SetMaterial(l, preset=l.custom_mtr)
     if l.custom_smsz=="random":
       l.config.SrcSize2H= Rand(0.03,0.08)
+    elif type(l.custom_smsz)==tuple:
+      l.config.SrcSize2H= Rand(l.custom_smsz[0], l.custom_smsz[1])
     else:
       l.config.SrcSize2H= l.custom_smsz
     l.latest_smsz = l.config.SrcSize2H
@@ -81,10 +83,10 @@ def Run(ct,*args):
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  # suff = ""
-  suff = "continue/tip/zoom/first"+"/"
+  # suff = "zoamount_return"+"/"
+  suff = "continue/shake/zoom/amount_retrun/third"+"/"
   src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-          + "bottomup/learn7/choose/ketchup/random/continue/tip/second"+"/"
+          + "bottomup/learn7/choose/ketchup/random/continue/shake/zoom/amount_retrun/second"+"/"
   model_dir = src_core + "models/"
   db_src = src_core + "database.yaml"
   # model_dir = ""
@@ -94,16 +96,19 @@ def Run(ct,*args):
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "ketchup" #random or any material or tuple material
-  l.custom_smsz = "random"    #random or 0.03~0.08
+  l.custom_smsz = "random"    #random or 0.03~0.08 or tuple smsz
   l.delta_smsz = 0.0
   l.mtr_dir_name = l.custom_mtr
   # l.mtr_dir_name = "_".join(l.custom_mtr)
+  l.smsz_dir_name = l.custom_smsz
+  # l.smsz_dir_name = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
+  # l.smsz_dir_name = "_".join([str(x).split(".")[0] + str(x).split(".")[1] for x in l.custom_smsz])
 
   l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 1,
+    'num_episodes': 300,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -111,7 +116,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "early_tip",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
+    'rwd_schedule': "only_shake_only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -142,9 +147,9 @@ def Run(ct,*args):
     # 'train_log_file': '{base}train/nn_log-{name}{code}.dat', 
     # "train_batch_loss_log_file": '{base}train/nn_batch_loss_log-{name}{code}.dat',
   }
-  if l.custom_smsz=="random": smsz_label="random"
-  else: smsz_label = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
-  l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + smsz_label + "/" + suff
+  # if l.custom_smsz=="random": smsz_label="random"
+  # else: smsz_label = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
+  l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + l.smsz_dir_name + "/" + suff
   print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
   if os.path.exists(l.logdir+"config_log.yaml")==False and os.path.exists(l.logdir+"dpl_est.dat")==False:

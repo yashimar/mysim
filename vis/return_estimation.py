@@ -85,13 +85,15 @@ def Run(ct, *args):
     else:              skills.append("std_pour")
 
   true = returns["true"]
-  vis_skill = "selected"
+  # vis_skill = "selected"
   # vis_skill = "std_pour_selected"
   # vis_skill = "shake_A_selected"
-  # vis_skill = "std_pour"
+  vis_skill = "std_pour"
   # vis_skill = "shake_A"
   est = r_est_mean[vis_skill]
   sdvs = r_est_sdv[vis_skill]
+
+  print(sdvs)
 
   if True:
     true = returns["true"]
@@ -101,19 +103,18 @@ def Run(ct, *args):
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title("true/est return", fontsize=15)
 
-    plt.ylabel("- return")
-    # ax.set_ylim(-1,0)
-    true = -1*np.array(true)
-    est = -1*np.array(est)
-    # diff = abs(true - est)
-    ax.set_yscale('log')
-    # plt.ylabel("log(-return)")
-    ax.set_ylim(0.0001,100)
+    # plt.ylabel("- return")
+    # true = -1*np.array(true)
+    # est = -1*np.array(est)
+    # ax.set_yscale('log')
+    # ax.set_ylim(0.0001,100)
+    plt.ylabel("return")
+    ax.set_ylim(-5,0)
 
     # ax.axhline(y=0.25, xmin=0, xmax=len(true), c="purple",linewidth=1,linestyle="dashed", label="return = -0.25")
     # ax.axhline(y=0.1, xmin=0, xmax=len(true), c="red",linewidth=1,linestyle="dashed", label="return = -0.1")
 
-    ax.plot(true, label="true", zorder=0)
+    # ax.plot(true, label="true", zorder=0)
     # ax.plot(est)
     ax.errorbar(np.linspace(0,len(est)+1, len(est)), est, label="est", c="pink", yerr=sdvs, fmt='*', markersize=4, zorder=-1)
     # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}

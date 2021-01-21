@@ -56,203 +56,203 @@ def Execute(ct,l):
     res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
     l.node_best_tree.append(res.PTree)
 
-    l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
-    l.xs.prev= l.xs.n0
-    l.idb.prev= l.idb.n0
+  #   l.idb.n0= l.dpl.DB.AddToSeq(parent=None,name='n0',xs=l.xs.n0)
+  #   l.xs.prev= l.xs.n0
+  #   l.idb.prev= l.idb.n0
   
-  gh_ratio= ToList(l.xs.n0['gh_ratio'].X)[0]
-  actions['grab']({'gh_ratio':gh_ratio})
+  # gh_ratio= ToList(l.xs.n0['gh_ratio'].X)[0]
+  # actions['grab']({'gh_ratio':gh_ratio})
 
-  with sim.TPause(ct):  #Pause during plan/learn
-    #Plan l.p_pour_trg0, l.theta_init
-    CPrint(2,'Node:','n1')
-    l.xs.n1= CopyXSSA(l.xs.prev)
-    InsertDict(l.xs.n1, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
-    # l.dpl.MM.Models['Fgrasp'][2].Options.update(l.nn_options)
-    # l.dpl.MM.Update('Fgrasp',l.xs.prev,l.xs.n1, not_learn=l.not_learn)
-    #res= l.dpl.Plan('n1', l.xs.n1)
-    l.idb.n1= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n1',xs=l.xs.n1)
-    l.xs.prev= l.xs.n1
-    l.idb.prev= l.idb.n1
+  # with sim.TPause(ct):  #Pause during plan/learn
+  #   #Plan l.p_pour_trg0, l.theta_init
+  #   CPrint(2,'Node:','n1')
+  #   l.xs.n1= CopyXSSA(l.xs.prev)
+  #   InsertDict(l.xs.n1, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
+  #   # l.dpl.MM.Models['Fgrasp'][2].Options.update(l.nn_options)
+  #   # l.dpl.MM.Update('Fgrasp',l.xs.prev,l.xs.n1, not_learn=l.not_learn)
+  #   #res= l.dpl.Plan('n1', l.xs.n1)
+  #   l.idb.n1= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n1',xs=l.xs.n1)
+  #   l.xs.prev= l.xs.n1
+  #   l.idb.prev= l.idb.n1
 
-  p_pour_trg0= ToList(l.xs.n1['p_pour_trg0'].X)
-  p_pour_trg= ToList(l.xs.n1['p_pour_trg'].X) #l.xs.n0['p_pour_trg'].X?
-  actions['move_to_rcv']({'p_pour_trg0':p_pour_trg0})
-  VizPP(l,[p_pour_trg0[0],0.0,p_pour_trg0[1]],[0.,1.,0.])
-  VizPP(l,[p_pour_trg[0],0.0,p_pour_trg[1]],[0.5,0.,1.])
+  # p_pour_trg0= ToList(l.xs.n1['p_pour_trg0'].X)
+  # p_pour_trg= ToList(l.xs.n1['p_pour_trg'].X) #l.xs.n0['p_pour_trg'].X?
+  # actions['move_to_rcv']({'p_pour_trg0':p_pour_trg0})
+  # VizPP(l,[p_pour_trg0[0],0.0,p_pour_trg0[1]],[0.,1.,0.])
+  # VizPP(l,[p_pour_trg[0],0.0,p_pour_trg[1]],[0.5,0.,1.])
 
-  with sim.TPause(ct):  #Pause during plan/learn
-    #Branch-1: reward
-    CPrint(2,'Node:','n1rcvmv')
-    l.xs.n1rcvmv= CopyXSSA(l.xs.prev)
-    InsertDict(l.xs.n1rcvmv, ObserveXSSA(l,l.xs.prev,('dps_rcv','v_rcv')))
-    # l.dpl.MM.Models['Fmvtorcv_rcvmv'][2].Options.update(l.nn_options)
-    # l.dpl.MM.Update('Fmvtorcv_rcvmv',l.xs.prev,l.xs.n1rcvmv, not_learn=l.not_learn)
-    #res= l.dpl.Plan('n1rcvmv', l.xs.n1rcvmv)
-    l.idb.n1rcvmv= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n1rcvmv',xs=l.xs.n1rcvmv)
+  # with sim.TPause(ct):  #Pause during plan/learn
+  #   #Branch-1: reward
+  #   CPrint(2,'Node:','n1rcvmv')
+  #   l.xs.n1rcvmv= CopyXSSA(l.xs.prev)
+  #   InsertDict(l.xs.n1rcvmv, ObserveXSSA(l,l.xs.prev,('dps_rcv','v_rcv')))
+  #   # l.dpl.MM.Models['Fmvtorcv_rcvmv'][2].Options.update(l.nn_options)
+  #   # l.dpl.MM.Update('Fmvtorcv_rcvmv',l.xs.prev,l.xs.n1rcvmv, not_learn=l.not_learn)
+  #   #res= l.dpl.Plan('n1rcvmv', l.xs.n1rcvmv)
+  #   l.idb.n1rcvmv= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n1rcvmv',xs=l.xs.n1rcvmv)
 
-    # CPrint(2,'Node:','n1rcvmvr')
-    # #Since we have 'Rrcvmv', we just use it to get the next XSSA
-    # l.xs.n1rcvmvr= l.dpl.Forward('Rrcvmv',l.xs.n1rcvmv)
-    # l.idb.n1rcvmvr= l.dpl.DB.AddToSeq(parent=l.idb.n1rcvmv,name='n1rcvmvr',xs=l.xs.n1rcvmvr)
+  #   # CPrint(2,'Node:','n1rcvmvr')
+  #   # #Since we have 'Rrcvmv', we just use it to get the next XSSA
+  #   # l.xs.n1rcvmvr= l.dpl.Forward('Rrcvmv',l.xs.n1rcvmv)
+  #   # l.idb.n1rcvmvr= l.dpl.DB.AddToSeq(parent=l.idb.n1rcvmv,name='n1rcvmvr',xs=l.xs.n1rcvmvr)
 
-    #Branch-2: main procedure
-    CPrint(2,'Node:','n2a','(update)')
-    l.xs.n2a= CopyXSSA(l.xs.prev)
-    InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
-    # l.dpl.MM.Models['Fmvtorcv'][2].Options.update(l.nn_options)
-    # l.dpl.MM.Update('Fmvtorcv',l.xs.prev,l.xs.n2a, not_learn=l.not_learn)
-
-
-
-  repeated= False  #For try-and-error learning
-  while True:  #Try-and-error starts from here.
-    #Three cases of parent of l.idb.n2a: l.idb.n1, l.idb.n4ti, l.idb.n4sa
-
-    with sim.TPause(ct):  #Pause during plan/learn
-      #Plan l.p_pour_trg
-      CPrint(2,'Node:','n2a','(plan)')
-      l.xs.n2a= CopyXSSA(l.xs.prev)
-      if repeated:
-        #Delete actions and selections (e.g. skill) to plan again from initial guess.
-        for key in l.xs.n2a.keys():
-          if l.dpl.d.SpaceDefs[key].Type in ('action','select'):
-            del l.xs.n2a[key]
-      InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',)))
-      #TEST: Heuristic init guess
-      #l.xs.n2a['skill']= SSA([1])
-      if "n2a" in l.planning_node:
-        res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
-        l.node_best_tree.append(res.PTree)
-      # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
-      # CPrint(2,"start node XS:",res.XS)
-      l.idb.n2a= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2a',xs=l.xs.n2a)
-      l.xs.prev= l.xs.n2a
-      l.idb.prev= l.idb.n2a
-
-    p_pour_trg= ToList(l.xs.n2a['p_pour_trg'].X)
-    actions['move_to_pour']({'p_pour_trg':p_pour_trg})
-    l.user_viz.pop()
-    VizPP(l,[p_pour_trg[0],0.0,p_pour_trg[1]],[1.,0.,1.])
+  #   #Branch-2: main procedure
+  #   CPrint(2,'Node:','n2a','(update)')
+  #   l.xs.n2a= CopyXSSA(l.xs.prev)
+  #   InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
+  #   # l.dpl.MM.Models['Fmvtorcv'][2].Options.update(l.nn_options)
+  #   # l.dpl.MM.Update('Fmvtorcv',l.xs.prev,l.xs.n2a, not_learn=l.not_learn)
 
 
-    with sim.TPause(ct):  #Pause during plan/learn
-      CPrint(2,'Node:','n2b')
-      l.xs.n2b= CopyXSSA(l.xs.prev)
-      InsertDict(l.xs.n2b, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
-      l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
-      l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
-      #res= l.dpl.Plan('n2b', l.xs.n2b)
-      l.idb.n2b= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2b',xs=l.xs.n2b)
-      l.xs.prev= l.xs.n2b
-      l.idb.prev= l.idb.n2b
 
-    #Branch-1: main procedure
-    #Just go to 'n2c'
+  # repeated= False  #For try-and-error learning
+  # while True:  #Try-and-error starts from here.
+  #   #Three cases of parent of l.idb.n2a: l.idb.n1, l.idb.n4ti, l.idb.n4sa
 
-    #Branch-2: reward
-    # CPrint(2,'Node:','n2br')
-    # #Since we have 'Rmvtopour', we just use it to get the next XSSA
-    # l.xs.n2br= l.dpl.Forward('Rmvtopour',l.xs.prev)
-    # l.idb.n2br= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2br',xs=l.xs.n2br)
+  #   with sim.TPause(ct):  #Pause during plan/learn
+  #     #Plan l.p_pour_trg
+  #     CPrint(2,'Node:','n2a','(plan)')
+  #     l.xs.n2a= CopyXSSA(l.xs.prev)
+  #     if repeated:
+  #       #Delete actions and selections (e.g. skill) to plan again from initial guess.
+  #       for key in l.xs.n2a.keys():
+  #         if l.dpl.d.SpaceDefs[key].Type in ('action','select'):
+  #           del l.xs.n2a[key]
+  #     InsertDict(l.xs.n2a, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab+('da_trg',)))
+  #     #TEST: Heuristic init guess
+  #     #l.xs.n2a['skill']= SSA([1])
+  #     if "n2a" in l.planning_node:
+  #       res= l.dpl.Plan('n2a', l.xs.n2a, l.interactive)
+  #       l.node_best_tree.append(res.PTree)
+  #     # CPrint(2,"max return estimation:",l.dpl.Value(res.PTree))
+  #     # CPrint(2,"start node XS:",res.XS)
+  #     l.idb.n2a= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2a',xs=l.xs.n2a)
+  #     l.xs.prev= l.xs.n2a
+  #     l.idb.prev= l.idb.n2a
 
-    with sim.TPause(ct):  #Pause during plan/learn
-      #Plan l.selected_skill from ('std_pour','shake_A','shake_B')
-      CPrint(2,'Node:','n2c')
-      l.xs.n2c= CopyXSSA(l.xs.prev)
-      InsertDict(l.xs.n2c, ObserveXSSA(l,l.xs.prev,obs_keys_before_flow))
-      #l.dpl.MM.Update('Fnone',l.xs.prev,l.xs.n2c, not_learn=l.not_learn)
-      #res= l.dpl.Plan('n2c', l.xs.n2c)
-      l.idb.n2c= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2c',xs=l.xs.n2c)
-      l.xs.prev= l.xs.n2c
-      l.idb.prev= l.idb.n2c
+  #   p_pour_trg= ToList(l.xs.n2a['p_pour_trg'].X)
+  #   actions['move_to_pour']({'p_pour_trg':p_pour_trg})
+  #   l.user_viz.pop()
+  #   VizPP(l,[p_pour_trg[0],0.0,p_pour_trg[1]],[1.,0.,1.])
 
-    if l.pour_skill=="std_pour": idx = 0
-    elif l.pour_skill=="shake_A": idx = 1
-    elif l.pour_skill=="choose": idx = int(l.xs.n2c['skill'].X[0])
+
+  #   with sim.TPause(ct):  #Pause during plan/learn
+  #     CPrint(2,'Node:','n2b')
+  #     l.xs.n2b= CopyXSSA(l.xs.prev)
+  #     InsertDict(l.xs.n2b, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
+  #     l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
+  #     l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
+  #     #res= l.dpl.Plan('n2b', l.xs.n2b)
+  #     l.idb.n2b= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2b',xs=l.xs.n2b)
+  #     l.xs.prev= l.xs.n2b
+  #     l.idb.prev= l.idb.n2b
+
+  #   #Branch-1: main procedure
+  #   #Just go to 'n2c'
+
+  #   #Branch-2: reward
+  #   # CPrint(2,'Node:','n2br')
+  #   # #Since we have 'Rmvtopour', we just use it to get the next XSSA
+  #   # l.xs.n2br= l.dpl.Forward('Rmvtopour',l.xs.prev)
+  #   # l.idb.n2br= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2br',xs=l.xs.n2br)
+
+  #   with sim.TPause(ct):  #Pause during plan/learn
+  #     #Plan l.selected_skill from ('std_pour','shake_A','shake_B')
+  #     CPrint(2,'Node:','n2c')
+  #     l.xs.n2c= CopyXSSA(l.xs.prev)
+  #     InsertDict(l.xs.n2c, ObserveXSSA(l,l.xs.prev,obs_keys_before_flow))
+  #     #l.dpl.MM.Update('Fnone',l.xs.prev,l.xs.n2c, not_learn=l.not_learn)
+  #     #res= l.dpl.Plan('n2c', l.xs.n2c)
+  #     l.idb.n2c= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n2c',xs=l.xs.n2c)
+  #     l.xs.prev= l.xs.n2c
+  #     l.idb.prev= l.idb.n2c
+
+  #   if l.pour_skill=="std_pour": idx = 0
+  #   elif l.pour_skill=="shake_A": idx = 1
+  #   elif l.pour_skill=="choose": idx = int(l.xs.n2c['skill'].X[0])
     
-    selected_skill= ('std_pour','shake_A')[idx]
+  #   selected_skill= ('std_pour','shake_A')[idx]
 
-    if selected_skill=='std_pour':
-      dtheta1= l.xs.n2c['dtheta1'].X[0,0]
-      dtheta2= l.xs.n2c['dtheta2'].X[0,0]
-      actions['std_pour']({'dtheta1':dtheta1, 'dtheta2':dtheta2})
+  #   if selected_skill=='std_pour':
+  #     dtheta1= l.xs.n2c['dtheta1'].X[0,0]
+  #     dtheta2= l.xs.n2c['dtheta2'].X[0,0]
+  #     actions['std_pour']({'dtheta1':dtheta1, 'dtheta2':dtheta2})
 
-      with sim.TPause(ct):  #Pause during plan/learn
-        CPrint(2,'Node:','n3ti')
-        l.xs.n3ti= CopyXSSA(l.xs.prev)
-        InsertDict(l.xs.n3ti, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
-        # l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
-        # l.dpl.MM.Update('Fflowc_tip10',l.xs.prev,l.xs.n3ti, not_learn=l.not_learn)
-        #res= l.dpl.Plan('n3ti', l.xs.n3ti)
-        l.idb.n3ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n3ti',xs=l.xs.n3ti)
-        l.xs.prev= l.xs.n3ti
-        l.idb.prev= l.idb.n3ti
+  #     with sim.TPause(ct):  #Pause during plan/learn
+  #       CPrint(2,'Node:','n3ti')
+  #       l.xs.n3ti= CopyXSSA(l.xs.prev)
+  #       InsertDict(l.xs.n3ti, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
+  #       # l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
+  #       # l.dpl.MM.Update('Fflowc_tip10',l.xs.prev,l.xs.n3ti, not_learn=l.not_learn)
+  #       #res= l.dpl.Plan('n3ti', l.xs.n3ti)
+  #       l.idb.n3ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n3ti',xs=l.xs.n3ti)
+  #       l.xs.prev= l.xs.n3ti
+  #       l.idb.prev= l.idb.n3ti
 
-        CPrint(2,'Node:','n4ti')
-        l.xs.n4ti= CopyXSSA(l.xs.prev)
-        InsertDict(l.xs.n4ti, ObserveXSSA(l,l.xs.prev,()))  #Observation is omitted since there is no change
-        #WARNING:NOTE: Famount4 uses 'lp_pour' as input, so here we use a trick:
-        xs_in= CopyXSSA(l.xs.prev)
-        xs_in['lp_pour']= l.xs.n2c['lp_pour']
-        #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
-        l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
-        l.dpl.MM.Update('Fflowc_tip10',xs_in,l.xs.n4ti, not_learn=l.not_learn)
-        #res= l.dpl.Plan('n4ti', l.xs.n4ti)
-        l.idb.n4ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4ti',xs=l.xs.n4ti)
-        l.xs.prev= l.xs.n4ti
-        l.idb.prev= l.idb.n4ti
+  #       CPrint(2,'Node:','n4ti')
+  #       l.xs.n4ti= CopyXSSA(l.xs.prev)
+  #       InsertDict(l.xs.n4ti, ObserveXSSA(l,l.xs.prev,()))  #Observation is omitted since there is no change
+  #       #WARNING:NOTE: Famount4 uses 'lp_pour' as input, so here we use a trick:
+  #       xs_in= CopyXSSA(l.xs.prev)
+  #       xs_in['lp_pour']= l.xs.n2c['lp_pour']
+  #       #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
+  #       l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
+  #       l.dpl.MM.Update('Fflowc_tip10',xs_in,l.xs.n4ti, not_learn=l.not_learn)
+  #       #res= l.dpl.Plan('n4ti', l.xs.n4ti)
+  #       l.idb.n4ti= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4ti',xs=l.xs.n4ti)
+  #       l.xs.prev= l.xs.n4ti
+  #       l.idb.prev= l.idb.n4ti
 
-        CPrint(2,'Node:','n4tir')
-        l.xs.n4tir= l.dpl.Forward('Rdamount',l.xs.prev)
-        l.idb.n4tir= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4tir',xs=l.xs.n4tir)
+  #       CPrint(2,'Node:','n4tir')
+  #       l.xs.n4tir= l.dpl.Forward('Rdamount',l.xs.prev)
+  #       l.idb.n4tir= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4tir',xs=l.xs.n4tir)
 
-    elif selected_skill=='shake_A':
-      dtheta1= l.xs.n2c['dtheta1'].X[0,0]
-      shake_spd= l.xs.n2c['shake_spd'].X[0,0]
-      shake_axis2= ToList(l.xs.n2c['shake_axis2'].X)
-      actions['shake_A']({'dtheta1':dtheta1, 'shake_spd':shake_spd, 'shake_axis2':shake_axis2})
+  #   elif selected_skill=='shake_A':
+  #     dtheta1= l.xs.n2c['dtheta1'].X[0,0]
+  #     shake_spd= l.xs.n2c['shake_spd'].X[0,0]
+  #     shake_axis2= ToList(l.xs.n2c['shake_axis2'].X)
+  #     actions['shake_A']({'dtheta1':dtheta1, 'shake_spd':shake_spd, 'shake_axis2':shake_axis2})
 
-      with sim.TPause(ct):  #Pause during plan/learn
-        CPrint(2,'Node:','n3sa')
-        l.xs.n3sa= CopyXSSA(l.xs.prev)
-        InsertDict(l.xs.n3sa, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
-        # l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
-        # l.dpl.MM.Update('Fflowc_shakeA10',l.xs.prev,l.xs.n3sa, not_learn=l.not_learn)
-        #res= l.dpl.Plan('n3sa', l.xs.n3sa)
-        l.idb.n3sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n3sa',xs=l.xs.n3sa)
-        l.xs.prev= l.xs.n3sa
-        l.idb.prev= l.idb.n3sa
+  #     with sim.TPause(ct):  #Pause during plan/learn
+  #       CPrint(2,'Node:','n3sa')
+  #       l.xs.n3sa= CopyXSSA(l.xs.prev)
+  #       InsertDict(l.xs.n3sa, ObserveXSSA(l,l.xs.prev,obs_keys_after_flow))
+  #       # l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
+  #       # l.dpl.MM.Update('Fflowc_shakeA10',l.xs.prev,l.xs.n3sa, not_learn=l.not_learn)
+  #       #res= l.dpl.Plan('n3sa', l.xs.n3sa)
+  #       l.idb.n3sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n3sa',xs=l.xs.n3sa)
+  #       l.xs.prev= l.xs.n3sa
+  #       l.idb.prev= l.idb.n3sa
 
-        CPrint(2,'Node:','n4sa')
-        l.xs.n4sa= CopyXSSA(l.xs.prev)
-        InsertDict(l.xs.n4sa, ObserveXSSA(l,l.xs.prev,()))  #Observation is omitted since there is no change
-        #WARNING:NOTE: Famount4 uses 'lp_pour' as input, so here we use a trick:
-        xs_in= CopyXSSA(l.xs.prev)
-        xs_in['lp_pour']= l.xs.n2c['lp_pour']
-        #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
-        l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
-        l.dpl.MM.Update('Fflowc_shakeA10',xs_in,l.xs.n4sa, not_learn=l.not_learn)
-        #res= l.dpl.Plan('n4sa', l.xs.n4sa)
-        l.idb.n4sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sa',xs=l.xs.n4sa)
-        l.xs.prev= l.xs.n4sa
-        l.idb.prev= l.idb.n4sa
+  #       CPrint(2,'Node:','n4sa')
+  #       l.xs.n4sa= CopyXSSA(l.xs.prev)
+  #       InsertDict(l.xs.n4sa, ObserveXSSA(l,l.xs.prev,()))  #Observation is omitted since there is no change
+  #       #WARNING:NOTE: Famount4 uses 'lp_pour' as input, so here we use a trick:
+  #       xs_in= CopyXSSA(l.xs.prev)
+  #       xs_in['lp_pour']= l.xs.n2c['lp_pour']
+  #       #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
+  #       l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
+  #       l.dpl.MM.Update('Fflowc_shakeA10',xs_in,l.xs.n4sa, not_learn=l.not_learn)
+  #       #res= l.dpl.Plan('n4sa', l.xs.n4sa)
+  #       l.idb.n4sa= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sa',xs=l.xs.n4sa)
+  #       l.xs.prev= l.xs.n4sa
+  #       l.idb.prev= l.idb.n4sa
 
-        CPrint(2,'Node:','n4sar')
-        l.xs.n4sar= l.dpl.Forward('Rdamount',l.xs.prev)
-        l.idb.n4sar= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sar',xs=l.xs.n4sar)
+  #       CPrint(2,'Node:','n4sar')
+  #       l.xs.n4sar= l.dpl.Forward('Rdamount',l.xs.prev)
+  #       l.idb.n4sar= l.dpl.DB.AddToSeq(parent=l.idb.prev,name='n4sar',xs=l.xs.n4sar)
 
-    if "n2a" in l.planning_node:
-      # Conditions to break the try-and-error loop
-      if l.IsPoured():
-        break
-      if l.IsTimeout() or l.IsEmpty():  # or l.IsSpilled()
-        break
-      if not IsSuccess(l.exec_status):
-        break
-      repeated= True
-    else:
-      break
+  #   if "n2a" in l.planning_node:
+  #     # Conditions to break the try-and-error loop
+  #     if l.IsPoured():
+  #       break
+  #     if l.IsTimeout() or l.IsEmpty():  # or l.IsSpilled()
+  #       break
+  #     if not IsSuccess(l.exec_status):
+  #       break
+  #     repeated= True
+  #   else:
+  #     break
 
 
 
@@ -297,7 +297,7 @@ def Run(ct,*args):
     'shake_spd': SP('state',1,min=[0.7],max=[0.9]),  #Pouring skill parameter for 'shake_A'
     #'shake_spd': SP('state',1),  #Pouring skill parameter for 'shake_A'
     #'shake_axis': SP('action',2,min=[0.0,0.0],max=[0.1,0.1]),  #Pouring skill parameter for 'shake_A'
-    'shake_axis2': SP('action',2,min=[0.028,-1.22],max=[0.028,-1.22]),  #Pouring skill parameter for 'shake_A'
+    'shake_axis2': SP('action',2,min=[0.01,-0.5*math.pi],max=[0.1,0.5*math.pi]),  #Pouring skill parameter for 'shake_A'
     #'shake_axis2': SP('state',2),  #Pouring skill parameter for 'shake_A'
     'shake_spd_B': SP('state',1,min=[2.0],max=[8.0]),  #Pouring skill parameter for 'shake_B'
     "shake_range" : SP('state',1,min=[0.02],max=[0.06]),  #Pouring skill parameter for 'shake_B'
