@@ -83,8 +83,8 @@ def Run(ct,*args):
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  # suff = "zoamount_return"+"/"
-  suff = "search/amount_return/modified_rdamount/nodb"+"/"
+  suff = "plan/test"+"/"
+  # suff = "continue/tip/zoom/new/first"+"/"
   src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
           + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
   model_dir = src_core + "models/"
@@ -107,8 +107,8 @@ def Run(ct,*args):
   l.type = "dnn"
   l.opt_conf={
     'interactive': False,
-    'not_learn': True,      ###############!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########################
-    'num_episodes': 20,
+    'not_learn': True,
+    'num_episodes': 1,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -116,7 +116,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "only_tip_only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"      ###############!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########################
+    'rwd_schedule': "only_tip_only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -126,12 +126,17 @@ def Run(ct,*args):
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
           # 'ptree_num': 40, #default auto
-          'db_init_ratio': 0.0, #default 0.5    ###############!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########################
+          # 'db_init_ratio': 1.0, #default 0.5
           'db_init_R_min': -1.0, #default -1.0
           'grad_max_bounce': 10, #default 10
           'prob_update_best': 0.4, #default 0.4
           'prob_update_rand': 0.3, #default 0.3
-          'max_total_iter': 2000, #default 2000 
+          'max_total_iter': 2000, #default 2000
+
+          'num_finished': 5, #default 20
+          'num_proc': 1, #default 12
+          'max_total_iter': 2000, #default 2000
+
           "grad_max_iter": 50,  #default 50
           'gd_alpha': 0.03 #default 0.03
         },
@@ -164,4 +169,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn7_main_zoom", l)
+  ct.Run("mysim.bottomup.plan_main", l)

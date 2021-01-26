@@ -448,6 +448,8 @@ def Run(ct,*args):
       else:         l.mtr_smsz = l.org_mtr_smsz
     else:
       raise(Exception("Invalid mtr_schedule"))
+
+    l.dpl.d.Models['Rdamount'][2].Load(data={"options": {"tune_h": True, "maxd1": 1e10, "maxd2": 1e10}})
       
 
   def LogDPL(l, count):

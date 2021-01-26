@@ -47,16 +47,22 @@ def createDomain():
       ['lp_pour','size_srcmouth','shake_axis2',
         "da_trg","a_src","a_spill2"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
-    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    #               TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)],
     # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
     #               TLocalQuad(3,lambda y:-10.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)],
-    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-    #               TLocalQuad(3,lambda y:-1.0*(y[1]-y[0])**2)],
-    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2',"skill"],[REWARD_KEY],
+    #               TLocalQuad(3,lambda y:-10.0*(0.3-y[0])**2)],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2',"skill"],[REWARD_KEY],
     #               TLocalQuad(3,lambda y:-10.0*y[0]**2)],
-    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2',"skill"],[REWARD_KEY],
     #               TLocalQuad(3,lambda y:np.cos(y[0]))],
+    # 'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+    #              TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - (200.0 if y[3]!=0 else 0.0))]
+    'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+                 TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - (10 if y[3]!=0 else 0.0))]
+    # 'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+    #              TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)]
     }
   return domain
 
@@ -76,12 +82,14 @@ def Run(ct, *args):
   Fflowc_tip10 = mm.Models["Fflowc_tip10"][2]
   Fflowc_shakeA10 = mm.Models["Fflowc_shakeA10"][2]
   Rdamount = mm.Models["Rdamount"][2]
-  # Rdamount.Load(data={"options": {"h": 0.1, "maxd1": 1e5, "maxd2": 1e5}})
+  print(Rdamount.Options)
+  h = 0.01
+  Rdamount.Load(data={"options": {"h": h, "maxd1": 1e10, "maxd2": 1e10, "tune_h": True}})
 
   if False:
-    x = [0.2, 0.3, 0.0]
-    res = TaylorExp2(Rdamount.MF, x, h=0.1, maxd1=1e5, maxd2=1e5)
-    # res = TaylorExp2(Rdamount.MF, x)
+    x = [0.3, 0.3, 0.0, 0]
+    # res = TaylorExp2(Rdamount.MF, x, h=0.1, maxd1=1e10, maxd2=1e10)
+    res = TaylorExp2(Rdamount.MF, x)
     print("y: ")
     print(res[0])
     print("dy: ")
@@ -99,7 +107,7 @@ def Run(ct, *args):
     print(lp_pour.Var)
     print("")
 
-    out = Fflowc_tip10.Predict(x=np.array([-7.5877912e-02, 1.3140289e-04, 3.2464308e-01, 0.07]), x_var=np.array([3.1740514e-05,6.5526571e-08,4.3731752e-06,0.0]), with_var=True)
+    out = Fflowc_tip10.Predict(x=np.array([lp_pour.Y[0], lp_pour.Y[1], lp_pour.Y[2], 0.07]), x_var=np.array([lp_pour.Var[0,0],0.0,lp_pour.Var[2,2],0.0]), with_var=True)
     print("out")
     print("Y:")
     print(out.Y)
@@ -108,24 +116,27 @@ def Run(ct, *args):
     print("")
 
     # r = Rdamount.Predict(x=np.array([out.Y[0], 0.3, out.Y[1]]), x_var=np.array([out.Var[0,0], 0.0, 0.0]), with_var=True)
-    r = Rdamount.Predict(x=np.array([out.Y[0], 0.3, out.Y[1]]), x_var=np.array([0.0, 0.0, 0.0]), with_var=True)
+    # r = Rdamount.Predict(x=np.array([out.Y[0], 0.3, out.Y[1]]), x_var=np.array([0.0, 0.0, 0.0]), with_var=True)
+    r = Rdamount.Predict(x=np.array([out.Y[0], 0.3, out.Y[1], 0]), x_var=np.array([out.Var[0,0], 0.0, out.Var[1,1], 0.0]), with_var=True)
+    # r = Rdamount.Predict(x=np.array([0.38343143463134766, 0.3, 0.7967915534973145, 0.0]), x_var=np.array([0.010406531393527985, 0.0, 0.14846406877040863, 0.0]), with_var=True)
     print("r")
     print("Y:")
     print(r.Y)
     print("Var:")
     print(r.Var)
 
-  with open(tree_path+"ep"+str(619)+"_n0.jb", mode="rb") as f:
-    tree = joblib.load(f)
-  for key in tree.Tree.keys():
-    print(key.A)
-    print(tree.Tree[key].XS)
+  if True:
+    with open(tree_path+"ep"+str(619)+"_n0.jb", mode="rb") as f:
+      tree = joblib.load(f)
+    for key in tree.Tree.keys():
+      print(key.A)
+      print(tree.Tree[key].XS)
 
   if False:
     ppour_list = np.linspace(0.0,0.55,100)
-    x_list = [np.array([ppour, 0.3, 0]) for ppour in ppour_list]
-    # x_var_list = np.array([0.0, 0.05, 0.10, 0.15, 0.20])**2
-    x_var_list = np.array([0.1])**2
+    x_list = [np.array([ppour, 0.3, 0, 0]) for ppour in ppour_list]
+    x_var_list = np.array([0.0, 0.05, 0.10, 0.15, 0.20])**2
+    # x_var_list = np.array([0.1])**2
     y_list_meta = []
     y_var_list_meta = []
     max_list = []
@@ -134,7 +145,7 @@ def Run(ct, *args):
       y_list = []
       y_var_list = []
       for x in x_list:
-        pred = Rdamount.Predict(x=x, x_var=[x_var, 0.0, 0.0], with_var=True)
+        pred = Rdamount.Predict(x=x, x_var=[x_var, 0.0, 0.0, 0.0], with_var=True)
         mean = pred.Y.item()
         var = pred.Var.item()
         y_list.append(mean)
@@ -147,13 +158,22 @@ def Run(ct, *args):
     
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    for i, (y_list, y_var_list) in enumerate(zip(y_list_meta, y_var_list_meta)):
-      ax.errorbar(ppour_list, y_list, yerr=np.sqrt(y_var_list), zorder=-i)
+    ax.set_title("h="+str(h))
+    for i, (x_var, y_list, y_var_list) in enumerate(zip(x_var_list, y_list_meta, y_var_list_meta)):
+      ax.plot(ppour_list, y_list, label=str(np.sqrt(x_var))+"**2")
+      # ax.errorbar(ppour_list, y_list, yerr=np.sqrt(y_var_list), zorder=-i)
     # for v in max_list:
     #   ax.axhline(v)
-    ax.set_ylim(-1.0, 0)
+    ax.axvline(0.3, linestyle="dashed", c="gray")
+    ax.set_ylim(-1, 0)
+    ax.set_xlabel("da_pour")
+    ax.set_ylabel("reward")
     # ax.set_yscale('symlog')
     # ax.yaxis.set_major_formatter(ScalarFormatter())
+    plt.legend()
     plt.show()
+    # plt.savefig("/home/yashima/Pictures/tmp/tmp4/0"+str(h).split(".")[1]+".png")
+    ## plt.savefig("/home/yashima/Pictures/tmp/tmp4/020.png")
+    # plt.close()
     print(max_list)
     print(max_var_list)

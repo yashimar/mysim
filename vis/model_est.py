@@ -1,6 +1,8 @@
 from core_tool import *
+from scipy.stats.stats import mode
 SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
+import joblib
 import seaborn as sns
 from matplotlib import pyplot as plt
 import plotly.graph_objects as go
@@ -17,15 +19,19 @@ def Run(ct, *args):
 
   #set model_path
   root_path = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
-  model_path = root_path + args[0] + "/models/"
+  name_log = args[0]
+  model_path = root_path + name_log + "/models/"
+  tree_path = root_path+name_log+"/best_est_trees/"
 
   #set target_model
-  # target_model = "Fflowc_tip10"
-  target_model = "Fflowc_shakeA10"
+  # target_model = "Fmvtopour2"
+  target_model = "Fflowc_tip10"
+  # target_model = "Fflowc_shakeA10"
+  # target_model = "Rdamoount"
 
   #set inputs
-  x_values = np.linspace(-0.1, 0.0, 100)    #lp_pour_x
-  y_values = np.linspace(0.03, 0.08, 100)[::-1]     #smsz
+  x_values = np.linspace(-0.1,0.0 , 100)    #lp_pour_x
+  y_values = np.linspace(0.07, 0.07, 1)[::-1]     #smsz
   # x_values = np.linspace(-0.3, 0.4, 100)    #lp_pour_x
   # y_values = np.linspace(0.1, 0.5, 100)[::-1]     #lp_pour_z
   # x_values = np.linspace(0.35, 0.6, 100)    #p_pour_trg_x
@@ -39,12 +45,14 @@ def Run(ct, *args):
         # x - 0.6,
         # 0,
         # y - 0.202,
+        # x + 0.6,
+        # 0.32476305961608887 + 0.202,
         x,
         0,
-        0.325,
+        0.32476305961608887,
         y,
-        0.028,
-        -1.22,
+        # 0.028,
+        # -1.22,
         # 0.3,
         # 0.55
         # 0.538 - 0.6,
@@ -81,12 +89,12 @@ def Run(ct, *args):
     'size_srcmouth': SP('state',1),  #Size of mouth of the source container
     }
   domain.Models={
-    # 'Fmvtopour2': [  #Move to pouring point
-    #   ['p_pour_trg'],
-    #   ['lp_pour'],None],
     'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg','size_srcmouth','shake_axis2'],
-      ['da_pour','da_spill2'],None],
+      ['p_pour_trg'],
+      ['lp_pour'],None],
+    # 'Fmvtopour2': [  #Move to pouring point
+    #   ['p_pour_trg','size_srcmouth','shake_axis2'],
+    #   ['da_pour','da_spill2'],None],
     'Fflowc_tip10': [  #Flow control with tipping.
       ['lp_pour','size_srcmouth'],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
@@ -101,6 +109,8 @@ def Run(ct, *args):
     #   ['lp_pour','size_srcmouth','shake_axis2',
     #     "da_trg","a_src"],
     #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+     'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+                 TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - (200 if y[3]!=0 else 0.0))]
     }
   
 
@@ -114,15 +124,29 @@ def Run(ct, *args):
 
   preds = defaultdict(list)
   for in_x in inputs:
-    pred = model.Predict(in_x, with_var=True)
-    preds["mean"].append(pred.Y[output_var_idx])
-    preds["sdv"].append(pred.Var[output_var_idx,output_var_idx])
-  preds["mean"] = np.array(preds["mean"]).reshape(len(y_values), len(x_values))
-  preds["sdv"] = np.sqrt(np.array(preds["sdv"]).reshape(len(y_values), len(x_values)))
+    # pred = model.Predict(x=in_x, x_var=[0.0, 0.0], with_var=True)
+    lppourx_var = mm.Models["Fmvtopour2"][2].Predict(x=[in_x[0]+0.6,in_x[2]+0.202], with_var=True).Var[0,0]
+    pred = model.Predict(x=in_x, x_var=[lppourx_var, 0.0, 0.0, 0.0], with_var=True)
+    y = pred.Y[output_var_idx]
+    y_var = pred.Var[output_var_idx,output_var_idx]
+    preds["mean"].append(y)
+    preds["sdv"].append(np.sqrt(y_var))
+    preds["da_pour"].append(pred.Y[0])
+    preds["da_pour_sdv"].append(np.sqrt(pred.Var[0,0]))
+
+    Rdamount = mm.Models["Rdamount"][2]
+    Rdamount.Load(data={"options": {"tune_h": True, "maxd1": 1e10, "maxd2": 1e10}})
+    r = Rdamount.Predict(x=[pred.Y[0], 0.3, pred.Y[1], 0], x_var=[pred.Var[0,0], 0.0, pred.Var[1,1], 0.0], with_var=True)
+    preds["r"].append(r.Y.item())
+    preds["r_sdv"].append(np.sqrt(r.Var.item()))
+
+  for key in ["mean", "sdv", "da_pour", "da_pour_sdv", "r", "r_sdv"]:
+    preds[key] = np.array(preds[key]).reshape(len(y_values), len(x_values))
   # print(preds)
 
-  pred = preds["mean"]
+  # pred = preds["mean"]
   # pred = preds["sdv"]
+  pred = preds["r"]
 
   if False:
     fig = plt.figure(figsize=(20,4))
@@ -134,14 +158,14 @@ def Run(ct, *args):
     fig = go.Figure()
     fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values,
                               # colorscale='Oranges',
-                              colorscale=[
-                                [0.3, "rgb(1, 1, 1)"],
-                                # [0, "rgb(1, 0, 0)"],
-                                [0, "rgb(0, 0, 0)"],
-                                [0.6, "rgb(1, 0, 0)"],
-                                # [0.6, "rgb(1, 1, 1)"],
-                              ],
-                              zmin=0, zmax=0.6, zauto=False
+                              # colorscale=[
+                              #   [0.3, "rgb(1, 1, 1)"],
+                              #   # [0, "rgb(1, 0, 0)"],
+                              #   [0, "rgb(0, 0, 0)"],
+                              #   [0.6, "rgb(1, 0, 0)"],
+                              #   # [0.6, "rgb(1, 1, 1)"],
+                              # ],
+                              # zmin=0, zmax=0.6, zauto=False
                             ))
     fig.update_layout(height=800, width=800, title_text=fig_title+"<br>"+"min = "+str(round(pred.min(),3))+", max = "+str(round(pred.max(),3))+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel})
     fig.show()
@@ -152,7 +176,7 @@ def Run(ct, *args):
     # fig.show()
 
 
-  if True:
+  if False:
     name_list = []
     preds = []
     data = defaultdict(lambda: defaultdict(list))
@@ -168,11 +192,14 @@ def Run(ct, *args):
             
         if not (
           -0.1<=x<=0 
+          and round(X[2],3)==0.325
+          and round(smsz,2)==0.07
           # and 0.30<X[2]<0.32
           # and 0.32<X[2]<0.33
           # and i>len(model.DataX)-400
         ):
           continue
+        print(X[0])
 
         if da_pour < 0.3:
           if 0.2 <= da_pour:
@@ -205,14 +232,14 @@ def Run(ct, *args):
       ))
     fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values,
                               # colorscale='Oranges',
-                              colorscale=[
-                                [0.3, "rgb(1, 1, 1)"],
-                                # [0, "rgb(1, 0, 0)"],
-                                [0, "rgb(0, 0, 0)"],
-                                [0.6, "rgb(1, 0, 0)"],
-                                # [0.6, "rgb(1, 1, 1)"],
-                              ],
-                              zmin=0, zmax=0.6, zauto=False,
+                              # colorscale=[
+                              #   [0.3, "rgb(1, 1, 1)"],
+                              #   # [0, "rgb(1, 0, 0)"],
+                              #   [0, "rgb(0, 0, 0)"],
+                              #   [0.6, "rgb(1, 0, 0)"],
+                              #   # [0.6, "rgb(1, 1, 1)"],
+                              # ],
+                              zmin=-2, zmax=0, zauto=False,
                             ))
     fig.update_layout(height=800, width=800, title_text=fig_title+"<br>"+"min = "+str(round(pred.min(),3))+", max = "+str(round(pred.max(),3))+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel},
                         legend=dict(
@@ -222,3 +249,142 @@ def Run(ct, *args):
                                 x=1.15)
                       )
     fig.show()
+
+  if False:
+    ests = defaultdict(list)
+    for i in range(len(mm.Models["Fmvtopour2"][2].DataX)):
+      with open(tree_path+"ep"+str(i)+"_n0.jb", mode="rb") as f:
+        tree = joblib.load(f)
+        node = None
+        for key in tree.Tree.keys():
+          if (target_model=="Fflowc_tip10" and key.A=="n4tir") or (target_model=="Fflowc_shakeA10" and key.A=="n4sar"):
+            node = key
+            # print(node)
+            break
+        # print(i)
+        # print(tree.Tree[node].XS)
+        smsz = tree.Tree[node].XS["size_srcmouth"].X.item()
+        lp_pour_x = tree.Tree[node].XS["lp_pour"].X[0].item()
+        r = tree.Tree[node].XS[".r"].X.item()
+        ests["smsz"].append(smsz)
+        ests["lp_pour_x"].append(lp_pour_x)
+        ests["r"].append(r)
+
+    name_list = []
+    preds = []
+    data = defaultdict(lambda: defaultdict(list))
+    for i in range(len(mm.Models["Fmvtopour2"][2].DataX)):
+
+      if True:
+            
+        if not (
+          i>=len(mm.Models["Fmvtopour2"][2].DataX)-10
+          # and 0.30<X[2]<0.32
+          # and 0.32<X[2]<0.33
+          # and i>len(model.DataX)-400
+        ):
+          continue
+
+        name = "optimized point"
+        x = ests["lp_pour_x"][i]
+        y = ests["smsz"][i]
+        color = "black"
+        data[name]["x"].append(x)
+        data[name]["y"].append(y)
+        data[name]["color"] = color
+
+    fig = go.Figure()
+    for name in ["optimized point"]:
+      fig.add_trace(go.Scatter(x=data[name]["x"], y=data[name]["y"],  marker_color=data[name]["color"], name=name,
+      mode='markers',
+      # c=colors[i]
+      ))
+    fig.add_trace(go.Heatmap(z=pred, x=x_values, y=y_values,
+                              # colorscale='Oranges',
+                              colorscale=[
+                                [0.3, "rgb(1, 1, 1)"],
+                                # [0, "rgb(1, 0, 0)"],
+                                [0, "rgb(0, 0, 0)"],
+                                [0.6, "rgb(1, 0, 0)"],
+                                # [0.6, "rgb(1, 1, 1)"],
+                              ],
+                              zmin=0.0, zmax=0.6, zauto=False,
+                            ))
+    fig.update_layout(height=800, width=800, title_text=fig_title+"<br>"+"min = "+str(round(pred.min(),3))+", max = "+str(round(pred.max(),3))+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel},
+                        legend=dict(
+                                yanchor="top",
+                                y=0.99,
+                                xanchor="left",
+                                x=1.15)
+                      )
+    fig.show()
+
+  if True:
+    ests = defaultdict(list)
+    for i in range(len(mm.Models["Fmvtopour2"][2].DataX)):
+      with open(tree_path+"ep"+str(i)+"_n0.jb", mode="rb") as f:
+        tree = joblib.load(f)
+        node = None
+        for key in tree.Tree.keys():
+          if (target_model=="Fflowc_tip10" and key.A=="n4tir") or (target_model=="Fflowc_shakeA10" and key.A=="n4sar"):
+            node = key
+            # print(node)
+            break
+        # print(i)
+        # print(tree.Tree[node].XS)
+        smsz = tree.Tree[node].XS["size_srcmouth"].X.item()
+        lp_pour_x = tree.Tree[node].XS["lp_pour"].X[0].item()
+        da_pour = tree.Tree[node].XS["da_pour"]
+        r = tree.Tree[node].XS[".r"]
+        ests["smsz"].append(smsz)
+        ests["lp_pour_x"].append(lp_pour_x)
+        ests["da_pour"].append(da_pour.X.item())
+        ests["da_pour_sdv"].append(np.sqrt(da_pour.Cov.item()))
+        ests["r"].append(r.X.item())
+        ests["r_sdv"].append(np.sqrt(r.Cov.item()))
+
+    x_list = []
+    y_list = []
+    y_list2 = []
+    y_list3 = []
+    data = defaultdict(lambda: defaultdict(list))
+    for i in range(len(mm.Models["Fmvtopour2"][2].DataX)):
+          
+      if True:
+            
+        if not (
+          i>=len(mm.Models["Fmvtopour2"][2].DataX)-10
+          # and 0.30<X[2]<0.32
+          # and 0.32<X[2]<0.33
+          # and i>len(model.DataX)-400
+        ):
+          continue
+
+        x_list.append(ests["lp_pour_x"][i])
+        y_list.append(ests["r"][i])
+        y_list2.append(ests["r_sdv"][i])
+        y_list3.append(ests["da_pour"][i])
+
+    fig = plt.figure(figsize=(5.5,7))
+    ax1 = fig.add_subplot(3,1,1)
+    ax1.set_ylabel("E[r] +/- Std[r]")
+    ax1.errorbar(x_values, preds["r"].reshape(-1,), yerr=preds["r_sdv"].reshape(-1,))
+    ax1.scatter(x_list, y_list, color="orange")
+    ax1.set_ylim(-6,0.1)
+
+    ax2 = fig.add_subplot(3,1,2, sharex=ax1)
+    ax2.plot(x_values, preds["r_sdv"].reshape(-1,))
+    ax2.scatter(x_list, y_list2, color="orange")
+    ax2.set_ylabel("Std[r]")
+    ax2.set_yscale("log")
+
+    ax3 = fig.add_subplot(3,1,3, sharex=ax1)
+    ax3.set_ylabel("E[da_pour]")
+    ax3.errorbar(x_values, preds["da_pour"].reshape(-1,), yerr=preds["da_pour_sdv"].reshape(-1,), zorder=-1)
+    ax3.scatter(x_list, y_list3, color="orange", zorder=0)
+    ax3.set_xlabel("lp_pour_x")
+
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    plt.setp(ax2.get_xticklabels(), visible=False)
+    plt.subplots_adjust(top=0.95, right=0.95)
+    plt.show()

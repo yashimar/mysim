@@ -79,8 +79,8 @@ def Run(ct, *args):
   mm= TModelManager(domain.SpaceDefs, domain.Models)
   mm.Load(LoadYAML(model_path+'model_mngr.yaml'), model_path)
   mm.Init()
-  # predict_model = "Fflowc_tip10"
-  predict_model = "Fflowc_shakeA10"
+  predict_model = "Fflowc_tip10"
+  # predict_model = "Fflowc_shakeA10"
   # predict_model = "Fmvtopour2"
   model = mm.Models[predict_model][2]
   # model.Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=model.load_base_dir)
@@ -181,8 +181,6 @@ def Run(ct, *args):
     y_list = []
     colors = []
     preds = []
-    good =[]
-    bad = []
     for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
       # pred = model.Predict(x=X, x_var=0.0, with_var=True, with_grad=True)
       da_pour = Y[0]
@@ -191,9 +189,9 @@ def Run(ct, *args):
       x, y = X[0], X[3]
 
       if True:
-        if not (-0.1<=x<=0 and round(X[4], 3)==0.028 and round(X[5], 3)==-1.22):
+        if not (-0.1<=x<=0 and round(X[2],3)==0.325 and round(smsz,2)==0.07):
           continue
-
+        print(i)
         x_list.append(x)
         y_list.append(y)
         if da_pour < 0.3:
@@ -201,20 +199,15 @@ def Run(ct, *args):
             color = [1,0,0,1]
           else:
             color = [1,0.5,0.25,1]
-          good.append(X[4])
         else:
           if 0.30<X[2]<0.34:
             color = [0,1,0,0.3]
           else:
             color = [0,1,1,0.3]
-          bad.append(X[4])
         # color = "black"
         colors.append(color)
         # print(X, Y)
 
-    print(np.mean(good), np.std(good))
-    print(np.mean(bad), np.std(bad))
-    print(len(x_list))
 
     fig = plt.figure(figsize=(5,5))
     # plt.title("da_pour scatter (0.032<p_pour_z<0.33)")
