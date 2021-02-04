@@ -83,7 +83,7 @@ def Run(ct,*args):
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  suff = "plan/test"+"/"
+  suff = "plan/nn_reward"+"/"
   # suff = "continue/tip/zoom/new/first"+"/"
   src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
           + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
@@ -94,21 +94,25 @@ def Run(ct,*args):
   # db_src = ""
   l.pour_skill = "std_pour"
 
+  n_episode = 200
+
   l.config_callback= ConfigCallback
   l.custom_mtr = "ketchup" #random or any material or tuple material
-  l.custom_smsz = 0.07    #random or 0.03~0.08 or tuple smsz
+  # l.custom_smsz = 0.07    #random or 0.03~0.08 or tuple smsz
+  l.custom_smsz_all = sum([[x]*20 for x in np.linspace(0.03, 0.08, 10)], [])
   l.delta_smsz = 0.0
   l.mtr_dir_name = l.custom_mtr
   # l.mtr_dir_name = "_".join(l.custom_mtr)
+  l.smsz_dir_name = "divided_in_six"
   # l.smsz_dir_name = l.custom_smsz
-  l.smsz_dir_name = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
+  # l.smsz_dir_name = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
   # l.smsz_dir_name = "_".join([str(x).split(".")[0] + str(x).split(".")[1] for x in l.custom_smsz])
 
   l.type = "dnn"
   l.opt_conf={
     'interactive': False,
     'not_learn': True,
-    'num_episodes': 1,
+    'num_episodes': n_episode,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -116,7 +120,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "only_tip_only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
+    'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -133,8 +137,8 @@ def Run(ct,*args):
           'prob_update_rand': 0.3, #default 0.3
           'max_total_iter': 2000, #default 2000
 
-          'num_finished': 5, #default 20
-          'num_proc': 1, #default 12
+          'num_finished': 20, #default 20
+          'num_proc': 12, #default 12
           'max_total_iter': 2000, #default 2000
 
           "grad_max_iter": 50,  #default 50

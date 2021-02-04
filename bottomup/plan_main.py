@@ -18,7 +18,25 @@ def Delta1(dim,s):
   p[int(s)]= 1.0
   return p
 
-def Execute(ct,l):
+def RwdModel():
+  modeldir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
+            +'reward_model'+"/"
+  FRwd= TNNRegression()
+  prefix= modeldir+'p1_model/FRwd3'
+  FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+  FRwd.Init()
+
+  return FRwd
+
+def PrintEstTree(l):
+  tree = l.node_best_tree[-1]
+  for key in tree.Tree.keys():
+    print(key.A)
+    print(tree.Tree[key].XS)
+
+def Execute(ct,l, count):
+  l.custom_smsz = l.custom_smsz_all[count]
+
   ct.Run('mysim.setup.setup_sv', l)
   sim= ct.sim
   #l= ct.sim_local
@@ -43,6 +61,11 @@ def Execute(ct,l):
     l.xs.n0['dtheta2']= SSA([0.002])
     l.xs.n0['shake_spd']= SSA([0.8])
     # l.xs.n0['shake_axis2']= SSA([0.08,0.0])
+
+    if l.pour_skill=="std_pour":
+      l.xs.n0['skill']= SSA([0])
+    elif l.pour_skill=="shake_A":
+      l.xs.n0['skill']= SSA([1])
     
     # planed result into l.xs.n0
     res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
@@ -159,8 +182,10 @@ def Run(ct,*args):
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - math.log(1.0+max(0.0,y[2])))],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - max(0.0,y[2])**2)],
-    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    #               TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    'Rdamount':  [['da_pour'],[REWARD_KEY],
+                  RwdModel()],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 10.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
     'P1': [[],[PROB_KEY], TLocalLinear(0,1,lambda x:[1.0],lambda x:[0.0])],
@@ -185,9 +210,11 @@ def Run(ct,*args):
     'n4sar': TDynNode('n4sa'),
     }
   # if l.pour_skill=="std_pour":
-  #   domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3ti'))})
+  #   domain.SpaceDefs.update({'skill': SP('state',num=2)})
+    # domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3ti'))})
   # elif l.pour_skill=="shake_A":
-  #   domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3sa'))})
+  #   domain.SpaceDefs.update({'skill': SP('state',num=2)})
+    # domain.Graph.update({'n2c': TDynNode('n2b','P1',('Fnone','n3sa'))})
   # elif l.pour_skill=="choose":
   #   domain.Graph.update({'n2c': TDynNode('n2b','Pskill',('Fnone','n3ti'),('Fnone','n3sa'))})
   
@@ -195,6 +222,8 @@ def Run(ct,*args):
   def EpisodicCallback(l,count):
     Rdamount_default= [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
           TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)]
+    Rdamount_amount= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+          TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)]
     Rdamount_early_tip= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
           TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2 - (200.0 if y[3]!=0 else 0.0))]
     Rdamount_early_shakeA= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
@@ -224,6 +253,7 @@ def Run(ct,*args):
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
     elif l.rwd_schedule=="only_tip_only_amount": l.dpl.d.Models['Rdamount']= Rdamount_tip_amount
     elif l.rwd_schedule=="only_shake_only_amount": l.dpl.d.Models['Rdamount']= Rdamount_shakeA_amount
+    elif l.rwd_schedule=="only_amount": l.dpl.d.Models['Rdamount']= Rdamount_amount
 
     if l.mtr_schedule==None:
       pass
@@ -242,7 +272,9 @@ def Run(ct,*args):
     else:
       raise(Exception("Invalid mtr_schedule"))
     
-    l.dpl.d.Models['Rdamount'][2].Load(data={"options": {"tune_h": True, "maxd1": 1e10, "maxd2": 1e10}})
+    # l.dpl.d.Models['Rdamount'][2].Load(data={"options": {"tune_h": True, "maxd1": 1e10, "maxd2": 1e10}})
+    # l.dpl.d.Models['Rdamount'] = [['da_pour'],[REWARD_KEY],RwdModel()]
+
 
 
   # if l.interactive and 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
@@ -302,7 +334,7 @@ def Run(ct,*args):
         l.priority_sampling = False
 
     try:
-      Execute(ct,l)
+      Execute(ct,l,count)
     finally:
       ct.sim.StopPubSub(ct,l)
       ct.sim_local.sensor_callback= None
@@ -310,7 +342,18 @@ def Run(ct,*args):
     #l.sm_logfp.close()
     l.dpl.EndEpisode()
 
-    break
+    PrintEstTree(l)
+
+    if not os.path.exists(l.logdir+"best_est_trees"): 
+      os.mkdir(l.logdir+"best_est_trees")
+    for i,tree in enumerate(l.node_best_tree):
+      if i==0: joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.dpl.DB.Entry)-1)+"_n0.jb")
+      else: joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.dpl.DB.Entry)-1)+"_n2a_"+str(i)+".jb")
+
+    CPrint(2,'========== End %4i =========='%count)
+
+    count += 1
+    if count>=l.num_episodes:  break
 
   l= None
   return True

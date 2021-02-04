@@ -84,7 +84,7 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = "zoamount_return"+"/"
-  suff = "search/amount_return/modified_rdamount/nodb"+"/"
+  suff = "nn_reward/first"+"/"
   src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
           + "bottomup/learn7/choose/ketchup/random/fourth"+"/"
   model_dir = src_core + "models/"
@@ -96,19 +96,19 @@ def Run(ct,*args):
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "ketchup" #random or any material or tuple material
-  l.custom_smsz = 0.07    #random or 0.03~0.08 or tuple smsz
+  l.custom_smsz = "random"    #random or 0.03~0.08 or tuple smsz
   l.delta_smsz = 0.0
   l.mtr_dir_name = l.custom_mtr
   # l.mtr_dir_name = "_".join(l.custom_mtr)
-  # l.smsz_dir_name = l.custom_smsz
-  l.smsz_dir_name = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
+  l.smsz_dir_name = l.custom_smsz
+  # l.smsz_dir_name = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
   # l.smsz_dir_name = "_".join([str(x).split(".")[0] + str(x).split(".")[1] for x in l.custom_smsz])
 
   l.type = "dnn"
   l.opt_conf={
     'interactive': False,
-    'not_learn': True,      ###############!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########################
-    'num_episodes': 20,
+    'not_learn': False,
+    'num_episodes': 10,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -116,7 +116,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "only_tip_only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"      ###############!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########################
+    'rwd_schedule': "only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'
@@ -126,7 +126,7 @@ def Run(ct,*args):
       'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  #'{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
       "ddp_sol":{
           # 'ptree_num': 40, #default auto
-          'db_init_ratio': 0.0, #default 0.5    ###############!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!###########################
+          'db_init_ratio': 0.5, #default 0.5
           'db_init_R_min': -1.0, #default -1.0
           'grad_max_bounce': 10, #default 10
           'prob_update_best': 0.4, #default 0.4
@@ -164,4 +164,4 @@ def Run(ct,*args):
   else:
     pass
 
-  ct.Run("mysim.bottomup.learn7_main_zoom", l)
+  ct.Run("mysim.bottomup.learn7_main", l)

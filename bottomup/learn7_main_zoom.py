@@ -18,6 +18,16 @@ def Delta1(dim,s):
   p[int(s)]= 1.0
   return p
 
+def RwdModel():
+  modeldir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
+            +'reward_model'+"/"
+  FRwd= TNNRegression()
+  prefix= modeldir+'p1_model/FRwd3'
+  FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+  FRwd.Init()
+
+  return FRwd
+
 def Execute(ct,l):
   ct.Run('mysim.setup.setup_sv', l)
   sim= ct.sim
@@ -366,10 +376,11 @@ def Run(ct,*args):
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - math.log(1.0+max(0.0,y[2])))],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - max(0.0,y[2])**2)],
-    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    #               TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 10.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    "Rdamount" : [['da_pour'],[REWARD_KEY],RwdModel()], 
     'P1': [[],[PROB_KEY], TLocalLinear(0,1,lambda x:[1.0],lambda x:[0.0])],
     'P2':  [[],[PROB_KEY], TLocalLinear(0,2,lambda x:[1.0]*2,lambda x:[0.0]*2)],
     'Pskill': [['skill'],[PROB_KEY], TLocalLinear(0,2,lambda s:Delta1(2,s[0]),lambda s:[0.0]*2)],
@@ -431,6 +442,7 @@ def Run(ct,*args):
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
     elif l.rwd_schedule=="only_tip_only_amount": l.dpl.d.Models['Rdamount']= Rdamount_tip_amount
     elif l.rwd_schedule=="only_shake_only_amount": l.dpl.d.Models['Rdamount']= Rdamount_shakeA_amount
+    elif l.rwd_schedule=="only_amount": l.dpl.d.Models['Rdamount']= [['da_pour'],[REWARD_KEY],RwdModel()]
 
     if l.mtr_schedule==None:
       pass
@@ -449,7 +461,7 @@ def Run(ct,*args):
     else:
       raise(Exception("Invalid mtr_schedule"))
 
-    l.dpl.d.Models['Rdamount'][2].Load(data={"options": {"tune_h": True, "maxd1": 1e10, "maxd2": 1e10}})
+    # l.dpl.d.Models['Rdamount'][2].Load(data={"options": {"tune_h": True, "maxd1": 1e10, "maxd2": 1e10}})
       
 
   def LogDPL(l, count):

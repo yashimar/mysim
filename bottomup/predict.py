@@ -10,6 +10,16 @@ from matplotlib.ticker import *
 def Help():
   pass
 
+def RwdModel():
+  modeldir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
+            +'reward_model'+"/"
+  FRwd= TNNRegression()
+  prefix= modeldir+'p1_model/FRwd3'
+  FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+  FRwd.Init()
+
+  return FRwd
+
 def createDomain():
   domain= TGraphDynDomain()
   SP= TCompSpaceDef
@@ -47,8 +57,8 @@ def createDomain():
       ['lp_pour','size_srcmouth','shake_axis2',
         "da_trg","a_src","a_spill2"],
       ['da_pour','da_spill2'],None],  #Removed 'p_pour'
-    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-    #               TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)],
+    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)],
     # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
     #               TLocalQuad(3,lambda y:-10.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)],
     # 'Rdamount':  [['da_pour','da_trg','da_spill2',"skill"],[REWARD_KEY],
@@ -59,10 +69,11 @@ def createDomain():
     #               TLocalQuad(3,lambda y:np.cos(y[0]))],
     # 'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
     #              TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - (200.0 if y[3]!=0 else 0.0))]
-    'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
-                 TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - (10 if y[3]!=0 else 0.0))]
+    # 'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+    #              TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - (10 if y[3]!=0 else 0.0))]
     # 'Rdamount': [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
     #              TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)]
+    # "Rdamount" : [['da_pour'],[REWARD_KEY],RwdModel()]
     }
   return domain
 
@@ -82,9 +93,9 @@ def Run(ct, *args):
   Fflowc_tip10 = mm.Models["Fflowc_tip10"][2]
   Fflowc_shakeA10 = mm.Models["Fflowc_shakeA10"][2]
   Rdamount = mm.Models["Rdamount"][2]
-  print(Rdamount.Options)
-  h = 0.01
-  Rdamount.Load(data={"options": {"h": h, "maxd1": 1e10, "maxd2": 1e10, "tune_h": True}})
+  # print(Rdamount.Options)
+  # h = 0.01
+  # Rdamount.Load(data={"options": {"h": h, "maxd1": 1e10, "maxd2": 1e10, "tune_h": True}})
 
   if False:
     x = [0.3, 0.3, 0.0, 0]
@@ -97,7 +108,7 @@ def Run(ct, *args):
     print("ddy: ")
     print(res[2])
 
-  if True:
+  if False:
     p_pour_trg = Fmvtopour2.DataX[-1]
     lp_pour = Fmvtopour2.Predict(x=p_pour_trg, x_var=0.0, with_var=True)
     print("lp_pour")
@@ -125,17 +136,18 @@ def Run(ct, *args):
     print("Var:")
     print(r.Var)
 
-  if True:
+  if False:
     with open(tree_path+"ep"+str(619)+"_n0.jb", mode="rb") as f:
       tree = joblib.load(f)
     for key in tree.Tree.keys():
       print(key.A)
       print(tree.Tree[key].XS)
 
-  if False:
+  if True:
     ppour_list = np.linspace(0.0,0.55,100)
-    x_list = [np.array([ppour, 0.3, 0, 0]) for ppour in ppour_list]
-    x_var_list = np.array([0.0, 0.05, 0.10, 0.15, 0.20])**2
+    x_list = [np.array([ppour, 0.3, 0]) for ppour in ppour_list]
+    x_var_list = np.array([0.0, 0.10, 0.20])**2
+    color_list = ["skyblue","green","purple"]
     # x_var_list = np.array([0.1])**2
     y_list_meta = []
     y_var_list_meta = []
@@ -145,7 +157,7 @@ def Run(ct, *args):
       y_list = []
       y_var_list = []
       for x in x_list:
-        pred = Rdamount.Predict(x=x, x_var=[x_var, 0.0, 0.0, 0.0], with_var=True)
+        pred = Rdamount.Predict(x=x, x_var=[x_var, 0.0, 0.0], with_var=True)
         mean = pred.Y.item()
         var = pred.Var.item()
         y_list.append(mean)
@@ -158,16 +170,17 @@ def Run(ct, *args):
     
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    ax.set_title("h="+str(h))
+    ax.set_title("f(x)=-100*max(0,0.3-x)**2 -1.0*max(0,x-0.3)**2")
     for i, (x_var, y_list, y_var_list) in enumerate(zip(x_var_list, y_list_meta, y_var_list_meta)):
-      ax.plot(ppour_list, y_list, label=str(np.sqrt(x_var))+"**2")
+      ax.plot(ppour_list, y_list, label="Std[x]="+str(np.sqrt(x_var))+" (Taylor exp)", c=color_list[i])
       # ax.errorbar(ppour_list, y_list, yerr=np.sqrt(y_var_list), zorder=-i)
     # for v in max_list:
     #   ax.axhline(v)
-    ax.axvline(0.3, linestyle="dashed", c="gray")
-    ax.set_ylim(-1, 0)
-    ax.set_xlabel("da_pour")
-    ax.set_ylabel("reward")
+    # ax.axvline(0.3, linestyle="dashed", c="gray")
+    ax.set_ylim(-1, 0.1)
+    ax.set_xlabel("x")
+    ax.set_ylabel("E[f]")
+    plt.grid(linestyle="dashed")
     # ax.set_yscale('symlog')
     # ax.yaxis.set_major_formatter(ScalarFormatter())
     plt.legend()

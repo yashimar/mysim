@@ -18,6 +18,16 @@ def Delta1(dim,s):
   p[int(s)]= 1.0
   return p
 
+def RwdModel():
+  modeldir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
+            +'reward_model'+"/"
+  FRwd= TNNRegression()
+  prefix= modeldir+'p1_model/FRwd3'
+  FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+  FRwd.Init()
+
+  return FRwd
+
 def Execute(ct,l):
   ct.Run('mysim.setup.setup_sv', l)
   sim= ct.sim
@@ -52,6 +62,11 @@ def Execute(ct,l):
     l.xs.n0['shake_spd']= SSA([0.8])
     # l.xs.n0['shake_axis2']= SSA([0.08,0.0])
     
+    if l.pour_skill=="std_pour":
+          l.xs.n0['skill']= SSA([0])
+    elif l.pour_skill=="shake_A":
+      l.xs.n0['skill']= SSA([1])
+
     # planed result into l.xs.n0
     res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
     l.node_best_tree.append(res.PTree)
@@ -365,10 +380,11 @@ def Run(ct,*args):
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - math.log(1.0+max(0.0,y[2])))],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - max(0.0,y[2])**2)],
-    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    #               TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 10.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    "Rdamount" : [['da_pour'],[REWARD_KEY],RwdModel()], 
     'P1': [[],[PROB_KEY], TLocalLinear(0,1,lambda x:[1.0],lambda x:[0.0])],
     'P2':  [[],[PROB_KEY], TLocalLinear(0,2,lambda x:[1.0]*2,lambda x:[0.0]*2)],
     'Pskill': [['skill'],[PROB_KEY], TLocalLinear(0,2,lambda s:Delta1(2,s[0]),lambda s:[0.0]*2)],
@@ -401,6 +417,8 @@ def Run(ct,*args):
   def EpisodicCallback(l,count):
     Rdamount_default= [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
           TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)]
+    Rdamount_amount= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
+          TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2)]
     Rdamount_early_tip= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
           TLocalQuad(4,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2 - (200.0 if y[3]!=0 else 0.0))]
     Rdamount_early_shakeA= [['da_pour','da_trg','da_spill2','skill'],[REWARD_KEY],
@@ -424,6 +442,7 @@ def Run(ct,*args):
       else:             l.dpl.d.Models['Rdamount']= Rdamount_default
     elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
     elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+    elif l.rwd_schedule=="only_amount": l.dpl.d.Models['Rdamount']= Rdamount_amount
 
     if l.mtr_schedule==None:
       pass
