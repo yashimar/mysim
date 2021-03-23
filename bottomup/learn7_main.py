@@ -427,22 +427,24 @@ def Run(ct,*args):
     if l.rwd_schedule is None:
       #No reward scheduling
       pass
-    elif l.rwd_schedule=='early_tip':
-      #Reward scheduling (FOR EARLY TIPPING)
-      if count<200:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
-      else:         l.dpl.d.Models['Rdamount']= Rdamount_default
-    elif l.rwd_schedule=='early_shakeA':
-      #Reward scheduling (FOR EARLY SHAKING-A)
-      if count<200:  l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
-      else:         l.dpl.d.Models['Rdamount']= Rdamount_default
-    elif l.rwd_schedule=='early_tip_and_shakeA':
-      if count<100:
-        if count%2==0:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
-        else:           l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
-      else:             l.dpl.d.Models['Rdamount']= Rdamount_default
-    elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
-    elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
-    elif l.rwd_schedule=="only_amount": l.dpl.d.Models['Rdamount']= Rdamount_amount
+    else:
+      raise(Exception)
+    # elif l.rwd_schedule=='early_tip':
+    #   #Reward scheduling (FOR EARLY TIPPING)
+    #   if count<200:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
+    #   else:         l.dpl.d.Models['Rdamount']= Rdamount_default
+    # elif l.rwd_schedule=='early_shakeA':
+    #   #Reward scheduling (FOR EARLY SHAKING-A)
+    #   if count<200:  l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+    #   else:         l.dpl.d.Models['Rdamount']= Rdamount_default
+    # elif l.rwd_schedule=='early_tip_and_shakeA':
+    #   if count<100:
+    #     if count%2==0:  l.dpl.d.Models['Rdamount']= Rdamount_early_tip
+    #     else:           l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+    #   else:             l.dpl.d.Models['Rdamount']= Rdamount_default
+    # elif l.rwd_schedule=='only_tip': l.dpl.d.Models['Rdamount']= Rdamount_early_tip
+    # elif l.rwd_schedule=='only_shakeA': l.dpl.d.Models['Rdamount']= Rdamount_early_shakeA
+    # elif l.rwd_schedule=="only_amount": l.dpl.d.Models['Rdamount']= Rdamount_amount
 
     if l.mtr_schedule==None:
       pass

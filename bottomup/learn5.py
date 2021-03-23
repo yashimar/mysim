@@ -67,9 +67,10 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "modifiedStdPour/third"+"/"
+  suff = ""+"/"
+  # suff = "plan_test"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-  #         + "bottomup/learn5/shake_A/nobounce/random/modifiedStdPour/ShakeSecondTest"+"/"
+  #         + "bottomup/learn5/choose/nobounce/random/modifiedStdPour/third"+"/"
   # model_dir = src_core + "models/"
   # db_src = src_core + "database.yaml"
   model_dir = ""
@@ -78,11 +79,11 @@ def Run(ct,*args):
   l.pour_skill = "choose"
 
   l.config_callback= ConfigCallback
-  l.custom_mtr = "nobounce"
-  # l.custom_smsz = 0.065    #random or 0.03~0.08
+  l.custom_mtr = "bounce"
   l.custom_smsz = "random"    #random or 0.03~0.08
+  # l.custom_smsz = "random"    #random or 0.03~0.08
   l.delta_smsz = 0.0
-  l.mtr_dir_name = "nobounce"
+  l.mtr_dir_name = "bounce"
 
   l.type = "dnn"
   l.opt_conf={
@@ -96,7 +97,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "early_tip_and_shakeA",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
+    'rwd_schedule': None,  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
     'mtr_schedule': None,  #None, "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'

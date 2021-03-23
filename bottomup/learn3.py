@@ -66,7 +66,7 @@ def Run(ct,*args):
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
   # suff = ""
-  suff = "graphModel/first"+"/"
+  suff = "graphModel/third"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #           + "bottomup/learn3/shake_A/nobounce/random/oneModel/first/"
   # model_dir = src_core + "models/"
@@ -78,8 +78,8 @@ def Run(ct,*args):
 
   l.config_callback= ConfigCallback
   l.custom_mtr = "nobounce"
-  # l.custom_smsz = 0.065    #random or 0.03~0.08
-  l.custom_smsz = "random"    #random or 0.03~0.08
+  l.custom_smsz = 0.055    #random or 0.03~0.08
+  # l.custom_smsz = "random"    #random or 0.03~0.08
   l.delta_smsz = 0.0
   l.mtr_dir_name = "nobounce"
 
@@ -87,7 +87,7 @@ def Run(ct,*args):
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 1,
+    'num_episodes': 50,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 

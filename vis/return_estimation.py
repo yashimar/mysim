@@ -1,3 +1,4 @@
+from pickle import FALSE
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -43,11 +44,18 @@ def Run(ct, *args):
   for i in range(len(data_list)):
     with open(tree_path+"ep"+str(i)+"_n0.jb", mode="rb") as f:
       tree = joblib.load(f)
-      skill = tree.Tree[TPair("n0",0)].XS["skill"].X
-      r_ti_x = tree.Tree[TPair("n4tir",0)].XS[".r"].X.item()
-      r_sa_x = tree.Tree[TPair("n4sar",0)].XS[".r"].X.item()
-      r_ti_sdv = np.sqrt(tree.Tree[TPair("n4tir",0)].XS[".r"].Cov.item())
-      r_sa_sdv = np.sqrt(tree.Tree[TPair("n4sar",0)].XS[".r"].Cov.item())
+      skill = 0
+      # print(tree.Tree.keys())
+      for key in tree.Tree.keys():
+        if key.A == "n0":
+          skill = tree.Tree[key].XS["skill"].X
+          # pass
+        elif key.A == "n4tir":
+          r_ti_x = tree.Tree[key].XS[".r"].X.item()
+          r_ti_sdv = np.sqrt(tree.Tree[key].XS[".r"].Cov.item())
+        elif key.A == "n4sar":
+          r_sa_x = tree.Tree[key].XS[".r"].X.item()
+          r_sa_sdv = np.sqrt(tree.Tree[key].XS[".r"].Cov.item())
       if skill==0:
         r_est_mean["selected"].append(r_ti_x)
         r_est_mean["shake_A_selected"].append(None)
@@ -85,15 +93,42 @@ def Run(ct, *args):
     else:              skills.append("std_pour")
 
   true = returns["true"]
-  # vis_skill = "selected"
+  vis_skill = "selected"
   # vis_skill = "std_pour_selected"
   # vis_skill = "shake_A_selected"
-  vis_skill = "std_pour"
+  # vis_skill = "std_pour"
   # vis_skill = "shake_A"
   est = r_est_mean[vis_skill]
   sdvs = r_est_sdv[vis_skill]
 
-  print(sdvs)
+
+  if False:
+    true = returns["true"]
+    est = returns["est_n0"]
+
+    fig = plt.figure(figsize=(20,4))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title("true/est return", fontsize=15)
+
+    plt.ylabel("- return")
+    true = -1*np.array(true)
+    est = -1*np.array(est)
+    ax.set_yscale('log')
+    ax.set_ylim(1e-4,1e2)
+    # plt.ylabel("return")
+    # ax.set_ylim(-5,0)
+    ax.plot(true, label="true", zorder=0)
+    ax.plot(est, label="estimation")
+
+    ax.set_xlim(0,len(true))
+    ax.set_xticks(np.arange(0, len(true)+1, 10))
+    ax.set_xticks(np.arange(0, len(true)+1, 1), minor=True)
+    ax.grid(which='minor', alpha=0.4, linestyle='dotted') 
+    ax.grid(which='major', alpha=0.9, linestyle='dotted') 
+    plt.xlabel("episode")
+    plt.legend()
+    plt.subplots_adjust(left=0.05, right=0.95)
+    plt.show()
 
   if True:
     true = returns["true"]
@@ -103,20 +138,20 @@ def Run(ct, *args):
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title("true/est return", fontsize=15)
 
-    # plt.ylabel("- return")
-    # true = -1*np.array(true)
-    # est = -1*np.array(est)
-    # ax.set_yscale('log')
-    # ax.set_ylim(0.0001,100)
-    plt.ylabel("return")
-    ax.set_ylim(-5,0)
+    plt.ylabel("- return")
+    true = -1*np.array(true)
+    est = -1*np.array(est)
+    ax.set_yscale('log')
+    ax.set_ylim(1e-4,1e2)
+    # plt.ylabel("return")
+    # ax.set_ylim(-5,0)
 
     # ax.axhline(y=0.25, xmin=0, xmax=len(true), c="purple",linewidth=1,linestyle="dashed", label="return = -0.25")
     # ax.axhline(y=0.1, xmin=0, xmax=len(true), c="red",linewidth=1,linestyle="dashed", label="return = -0.1")
 
-    # ax.plot(true, label="true", zorder=0)
-    # ax.plot(est)
-    ax.errorbar(np.linspace(0,len(est)+1, len(est)), est, label="est", c="pink", yerr=sdvs, fmt='*', markersize=4, zorder=-1)
+    ax.plot(true, label="true", zorder=0)
+    ax.plot(est, label="estimation")
+    # ax.errorbar(np.linspace(0,len(est)+1, len(est)), est, label="est", c="pink", yerr=sdvs, fmt='*', markersize=4, zorder=-1)
     # c_dict = {"bounce":"purple","nobounce":"green","natto":"orange","ketchup":"red"}
     # for mtr in list(set(envs["mtr"])):
     #   mtr_ids = [i for i, x in enumerate(envs["mtr"]) if x==mtr]

@@ -108,7 +108,7 @@ def Run(ct,*args):
   l.opt_conf={
     'interactive': False,
     'not_learn': False,
-    'num_episodes': 10,
+    'num_episodes': 99,
     'max_priority_sampling': 0, 
     # "sampling_mode": "random", #random, bo(bayesian optimization)
     "return_epsiron": -100.0, 
@@ -116,7 +116,7 @@ def Run(ct,*args):
     'rcv_size': 'static',  #'static', 'random'
     'mtr_smsz': 'custom',  #'fixed', 'fxvs1', 'random', 'viscous', custom
     "planning_node": ["n0"], #"n0","n2a"
-    'rwd_schedule': "only_amount",  #None, 'early_tip', 'early_shakeA', "early_tip_and_shakeA", "only_tip", "only_shakeA"
+    'rwd_schedule': None,  #None
     'mtr_schedule': None,  #None, "early_nobounce", "early_bounce", "early_ketchup", "early_natto"
     'model_dir': model_dir,
     'model_dir_persistent': False,  #If False, models are saved in l.logdir, i.e. different one from 'model_dir'

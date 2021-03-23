@@ -18,6 +18,16 @@ def Delta1(dim,s):
   p[int(s)]= 1.0
   return p
 
+def RwdModel():
+  modeldir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
+            +'reward_model'+"/"
+  FRwd= TNNRegression()
+  prefix= modeldir+'p1_model/FRwdDefault'
+  FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+  FRwd.Init()
+
+  return FRwd
+
 def Execute(ct,l):
   ct.Run('mysim.setup.setup_sv', l)
   sim= ct.sim
@@ -27,7 +37,7 @@ def Execute(ct,l):
     'grab'         : lambda a: ct.Run('mysim.act.grab_sv', a),
     'move_to_rcv'  : lambda a: ct.Run('mysim.act.move_to_rcv_sv', a),
     'move_to_pour' : lambda a: ct.Run('mysim.act.move_to_pour_sv', a),
-    'std_pour'     : lambda a: ct.Run('mysim.act.std_pour_sv', a),
+    'std_pour'     : lambda a: ct.Run('mysim.act.std_pour_sv_custom', a),
     'shake_A'      : lambda a: ct.Run('mysim.act.shake_A_5s_sv', a),
     }
 
@@ -330,10 +340,11 @@ def Run(ct,*args):
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - math.log(1.0+max(0.0,y[2])))],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*(y[1]-y[0])*(y[1]-y[0]) - max(0.0,y[2])**2)],
-    'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
-                  TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    # 'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
+    #               TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 1.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
     #'Rdamount':  [['da_pour','da_trg','da_spill2'],[REWARD_KEY],
                   #TLocalQuad(3,lambda y:-100.0*max(0.0,y[1]-y[0])**2 - 10.0*max(0.0,y[0]-y[1])**2 - 1.0*max(0.0,y[2])**2)],
+    "Rdamount" : [['da_pour'],[REWARD_KEY],RwdModel()], 
     'P1': [[],[PROB_KEY], TLocalLinear(0,1,lambda x:[1.0],lambda x:[0.0])],
     'P2':  [[],[PROB_KEY], TLocalLinear(0,2,lambda x:[1.0]*2,lambda x:[0.0]*2)],
     'Pskill': [['skill'],[PROB_KEY], TLocalLinear(0,2,lambda s:Delta1(2,s[0]),lambda s:[0.0]*2)],

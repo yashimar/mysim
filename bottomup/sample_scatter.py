@@ -60,22 +60,22 @@ def Run(ct, *args):
     #   ['p_pour_trg'],
     #   ['lp_pour'],None],
     'Fmvtopour2': [  #Move to pouring point
-      ['p_pour_trg'],
+      ['p_pour_trg',"size_srcmouth","shake_axis2"],
       ['da_pour','da_spill2'],None],
-    'Fflowc_tip10': [  #Flow control with tipping.
-      ['lp_pour','size_srcmouth'],
-      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
-    'Fflowc_shakeA10': [  #Flow control with shake_A.
-      ['lp_pour','size_srcmouth','shake_axis2'],
-      ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    # 'Fflowc_tip10': [  #Flow control with tipping.
+    #   ['lp_pour','size_srcmouth'],
+    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
+    # 'Fflowc_shakeA10': [  #Flow control with shake_A.
+    #   ['lp_pour','size_srcmouth','shake_axis2'],
+    #   ['da_pour','da_spill2'],None],  #Removed 'p_pour'
     }
   
   mm= TModelManager(domain.SpaceDefs, domain.Models)
   mm.Load(LoadYAML(model_path+'model_mngr.yaml'), model_path)
   mm.Init()
   Fmvtopour2 = mm.Models["Fmvtopour2"][2]
-  Fflowc_shakeA10 = mm.Models["Fflowc_shakeA10"][2]
-  Fflowc_tip10 = mm.Models["Fflowc_tip10"][2]
+  # Fflowc_shakeA10 = mm.Models["Fflowc_shakeA10"][2]
+  # Fflowc_tip10 = mm.Models["Fflowc_tip10"][2]
 
   # x1 = Fmvtopour2.DataX[:,0]
   # x2 = Fmvtopour2.DataX[:,1]
@@ -85,12 +85,15 @@ def Run(ct, *args):
   zorders = []
   markers = []
   miss_and_spills = []
+  DataX = Fmvtopour2.DataX
+  DataY = Fmvtopour2.DataY
   # DataX = Fflowc_tip10.DataX
   # DataY = Fflowc_tip10.DataY
-  DataX = Fflowc_shakeA10.DataX
-  DataY = Fflowc_shakeA10.DataY
+  # DataX = Fflowc_shakeA10.DataX
+  # DataY = Fflowc_shakeA10.DataY
   x1 = DataX[:,0]
-  x2 = DataX[:,2]
+  # x2 = DataX[:,2]
+  x2 = DataX[:,1]
 
   for i,(X,Y) in enumerate(zip(DataX, DataY)):
     # if len(X)!=4:
@@ -99,40 +102,40 @@ def Run(ct, *args):
     #   zorders.append(0)
     #   continue
 
-    v = Y[0]
-    # d = abs(Fflowc_tip10.Predict(X).Y[0] - Y[0])
-    markers.append("o")
-    # if d<0.05: 
-    #   # colors.append([0,0,1,0.3])
-    #   # zorders.append(-1)
-    #   markers.append("o")
-    # else: 
-    #   # colors.append([1,0,0,1])
-    #   # zorders.append(1)
-    #   markers.append("*")
-    if v>=0.3: 
-      colors.append([0,0,1,0.3])
-      zorders.append(-1)
-    else: 
-      colors.append([1,0,0,1])
-      zorders.append(1)
-
-    # v = round(Y[1],2)
-    # # d = abs(Fflowc_tip10.Predict(X).Y[1] - Y[1])
-    # # if d>=0.05:
-    # #   markers.append("*")
-    # # else:
-    # #   markers.append("o")
+    # v = Y[0]
+    # # d = abs(Fflowc_tip10.Predict(X).Y[0] - Y[0])
     # markers.append("o")
-    # if v<0.5: 
+    # # if d<0.05: 
+    # #   # colors.append([0,0,1,0.3])
+    # #   # zorders.append(-1)
+    # #   markers.append("o")
+    # # else: 
+    # #   # colors.append([1,0,0,1])
+    # #   # zorders.append(1)
+    # #   markers.append("*")
+    # if v>=0.3: 
     #   colors.append([0,0,1,0.3])
     #   zorders.append(-1)
-    # # elif v==0.1:
-    # #   colors.append([1,0.5,0.25,1])
-    # #   zorders.append(1)
     # else: 
     #   colors.append([1,0,0,1])
     #   zorders.append(1)
+
+    v = round(Y[1],2)
+    # d = abs(Fflowc_tip10.Predict(X).Y[1] - Y[1])
+    # if d>=0.05:
+    #   markers.append("*")
+    # else:
+    #   markers.append("o")
+    markers.append("o")
+    if v<0.5: 
+      colors.append([0,0,1,0.3])
+      zorders.append(-1)
+    # elif v==0.1:
+    #   colors.append([1,0.5,0.25,1])
+    #   zorders.append(1)
+    else: 
+      colors.append([1,0,0,1])
+      zorders.append(1)
 
     # if Y[1]>=0.1: markers.append("*")
     # else        : markers.append("o")
@@ -140,8 +143,8 @@ def Run(ct, *args):
     # else                        : miss_and_spills.append(False)
 
   fig = plt.figure(figsize=(20,4))
-  fig.suptitle("observed da_pour with sampled point (std_pour)")
-  ep_block = 80
+  fig.suptitle("learn3 sampled points")
+  ep_block = 100
   for i in range(int(len(x1)/ep_block)):
     for j in np.linspace(ep_block*i, ep_block*(i+1)-1, ep_block):
       j = int(j)
@@ -150,16 +153,25 @@ def Run(ct, *args):
                         zorder=zorders[j],
                         marker=markers[j],
                       )
-    plt.xlim(-0.3,0.45)
-    plt.ylim(0.1,0.5)
+      if j>=ep_block:
+        j -= ep_block
+        fig.add_subplot(1, len(x1)/ep_block, i+1).scatter(x1[j],x2[j],s=30,
+                        c=[0,0,0,0.2],
+                        zorder=zorders[j],
+                        marker="+",
+                      )
+
+    plt.xlim(0.35,0.7)
+    plt.ylim(0.05,0.3)
     # plt.title("episode " + str(i*ep_block) + "~" + str((i+1)*ep_block) )
     plt.title("episode " + str(i*ep_block) + "~" + str((i+1)*ep_block) +"\n"
               # + "spilled case: "+str(len(filter(lambda x: x=="*", markers[ep_block*i:ep_block*(i+1)])))+"/"+str(ep_block) +"\n"
               # + "miss predict (diff>0.05) case: "+str(len(filter(lambda x: x[0]==1, colors[ep_block*i:ep_block*(i+1)])))+"/"+str(ep_block) +"\n"
               # + "miss predict and spilled case: "+str(sum(miss_and_spills[ep_block*i:ep_block*(i+1)]))+"/"+str(ep_block)
               )
-    plt.xlabel("lp_pour_x")
-    plt.ylabel("lp_pour_z")
+    if i==0:
+      plt.xlabel("p_pour_trg_x")
+      plt.ylabel("p_pour_trg_z")
     # plt.plot(np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), np.linspace(min(min(est), min(true)), max(max(est), max(true)), 2), c="orange", linestyle="dashed")
   plt.subplots_adjust(left=0.05, right=0.95, top=0.8)
   plt.show()

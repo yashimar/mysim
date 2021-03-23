@@ -79,9 +79,9 @@ def Run(ct, *args):
   mm= TModelManager(domain.SpaceDefs, domain.Models)
   mm.Load(LoadYAML(model_path+'model_mngr.yaml'), model_path)
   mm.Init()
-  predict_model = "Fflowc_tip10"
+  # predict_model = "Fflowc_tip10"
   # predict_model = "Fflowc_shakeA10"
-  # predict_model = "Fmvtopour2"
+  predict_model = "Fmvtopour2"
   model = mm.Models[predict_model][2]
   # model.Load(data={"params": {"nn_params":None,"nn_params_err":None}},base_dir=model.load_base_dir)
   # model.Init()
@@ -118,6 +118,11 @@ def Run(ct, *args):
   # model.Update(None, None, not_learn=False)
 
   # SaveYAML(mm.Save(save_path), save_path+'model_mngr.yaml')
+
+  if True:
+    for i, (X, Y) in enumerate(zip(model.DataX, model.DataY)):
+      pred = model.Predict(x=X, x_var=0.0, with_var=True, with_grad=True)
+      Print(i, X[0]-0.6, Y[0], pred.Y[0])
 
   def validate_model(out_idx, do_print=False):
     diff = []
@@ -302,4 +307,4 @@ def Run(ct, *args):
 
   # hist()
 
-  scatter()
+  # scatter()
