@@ -1,15 +1,16 @@
 from core_tool import *
 import yaml
 import numpy as np
+import pandas as pd
 import pickle
 from collections import defaultdict
 
 def load_db(root_path, log_name):
   database_path = root_path + log_name + "/database.yaml"
-  Print("Loading database ...")
+  # Print("Loading database ...")
   with open(database_path) as f:
     database = yaml.safe_load(f)
-  Print("successfully loaded")
+  # Print("successfully loaded")
   return database["Entry"]
 
 def load_est_tree(root_path, log_name, db):
@@ -61,5 +62,23 @@ def get_state_histories(db,state_node_unit_pair):
         xs = node_xs["XS"]
         if node in possible_nodes:
           state_histories[state].append(format_x(xs[state]["X"]))
-    state_histories[state] = np.array(state_histories[state])*unit
+    if state_histories[state]!=[]:
+      state_histories[state] = np.array(state_histories[state])*unit
+  state_histories = dict(state_histories)
   return state_histories
+
+def make_sa_df(state_histories, sa_node_unit_pair):
+  sa_key_list = []
+  sa_matrix = []
+  for sa_key,_,_ in sa_node_unit_pair:
+    sa_list = state_histories[sa_key].tolist()
+    if type(sa_list[0])!=list: 
+      sa_key_list.append(sa_key)
+      sa_list = [sa_list]
+    else:
+      sa_key_list += [sa_key+"_dim"+str(i+1) for i in range(len(sa_list[0]))]
+      sa_list = np.array(sa_list).T.tolist()
+    sa_matrix += sa_list
+  sa_matrix = np.array(sa_matrix).T
+  sa_df = pd.DataFrame(sa_matrix, columns=sa_key_list)
+  return sa_df

@@ -47,7 +47,8 @@ def ConfigCallback(ct,l,sim):
       l.latest_mtr = l.custom_mtr
       m_setup.SetMaterial(l, preset=l.custom_mtr)
     if l.custom_smsz=="random":
-      l.config.SrcSize2H= Rand(0.03,0.08)
+      # l.config.SrcSize2H= Rand(0.03,0.08)
+      l.config.SrcSize2H= Rand(0.05,0.08)
     else:
       l.config.SrcSize2H= l.custom_smsz
     l.latest_smsz = l.config.SrcSize2H
@@ -80,7 +81,7 @@ def Run(ct,*args):
 
   if l.run_type==PLANNING:
     # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/nobounce/random/graphModel/modifiedStdPour/first"+"/"
+    #         + "debugger/tmp/ex4_2/std_pour/ketchup/random/first"+"/"
     # model_dir = src_core + "models/"
     # db_src = src_core + "database.yaml"
     model_dir = ""
@@ -97,7 +98,7 @@ def Run(ct,*args):
     l.opt_conf={
       'interactive': False,
       'not_learn': False,
-      'num_episodes': 200,
+      'num_episodes': 100,
       'max_priority_sampling': 0, 
       # "sampling_mode": "random", #random, bo(bayesian optimization)
       "return_epsiron": -100.0, 

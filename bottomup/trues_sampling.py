@@ -62,11 +62,12 @@ def ConfigCallback(ct,l,sim):
 def Run(ct,*args):
   l = TContainer(debug=True)
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "bottomup/learn1/"
+            + "debugger/tmp/ex5_4"+"/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  suff = "change2d/cropped"+"/"
+  # suff = "first/185/p_pour_trg_dim1_and_p_pour_trg_dim2"+"/"
+  suff = "first/85/p_pour_trg_dim1_and_shake_axis2_dim1/third"+"/"
   # suff = "trues_sampling/MinimalChange/smsz/s4ep597/second"+"/"
   # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #         + "bottomup/learn5/shake_A/nobouce_ketchup/random/first40/"
@@ -80,23 +81,26 @@ def Run(ct,*args):
   n_episode = 400
 
   l.config_callback= ConfigCallback
-  l.custom_mtr = "nobounce"
+  l.custom_mtr = "natto"
   # l.custom_smsz_all = sum([[x]*20 for x in np.linspace(0.03, 0.08, 20)], [])
-  l.custom_smsz_all = [0.065]*n_episode
+  l.custom_smsz_all = [0.0561]*n_episode
   l.delta_smsz = 0.0
   l.mtr_dir_name = l.custom_mtr
   
   l.skill_params = {
     'gh_ratio': [SSA([0.5])]*n_episode,
     'p_pour_trg0': lambda pc_rcv: [SSA(Vec([-0.3,0.35])+Vec([pc_rcv[0],pc_rcv[2]]))]*n_episode,
-    'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,z])) for x in np.linspace(0.3, 0.45, 20) for z in np.linspace(0.35, 0.45, 20)],
+    # 'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,z])) for x in np.linspace(0.55, 0.65, 10) for z in np.linspace(0.13, 0.19, 10)],
+    'p_pour_trg': lambda pc_rcv: [SSA(Vec([x,0.2117])) for x in np.linspace(0.486, 0.586, 20)]*20,
     # 'p_pour_trg': lambda pc_rcv: [SSA(Vec([x+0.6,0.31+0.202])) for x in np.linspace(-0.1, 0.0, 20)]*20,
     # 'p_pour_trg': lambda pc_rcv: [SSA(Vec([-0.1+0.6,0.15+0.202]))]*n_episode,
     'dtheta1': [SSA([0.014])]*n_episode,
-    # 'dtheta2': [SSA([0.004])]*n_episode,
-    'dtheta2': [SSA([0.002])]*n_episode,
-    'shake_spd': [SSA([0.8])]*n_episode,
-    'shake_axis2': [SSA([0.08,0.0])]*n_episode
+    'dtheta2': [SSA([0.004])]*n_episode,
+    # 'dtheta2': sum([[SSA([x])]*10 for x in np.linspace(0.002, 0.003, 10)], []),
+    'shake_spd': [SSA([0.4])]*n_episode,
+    # 'shake_axis2': [SSA([0.08,0.0])]*n_episode,
+    'shake_axis2': sum([[SSA([x, 0.1589])]*20 for x in np.linspace(0.0102, 0.0132, 20)], []),
+    # 'shake_axis2': sum([[SSA([0.0122, x])]*20 for x in np.linspace(0.456068, 0.58173, 20)], []),
   }
 
   l.opt_conf={
@@ -141,7 +145,8 @@ def Run(ct,*args):
   # if l.custom_smsz=="random": smsz_label="random"
   # else: smsz_label = str(l.custom_smsz).split(".")[0] + str(l.custom_smsz).split(".")[1]
   smsz_label = "custom"
-  l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + smsz_label + "/" + suff
+  # l.logdir = l.logdir + l.pour_skill + "/" + l.mtr_dir_name + "/" + smsz_label + "/" + suff
+  l.logdir = l.logdir + "trues_sampling/" + suff
   print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
   CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
   if os.path.exists(l.logdir+"config_log.yaml")==False and os.path.exists(l.logdir+"dpl_est.dat")==False:

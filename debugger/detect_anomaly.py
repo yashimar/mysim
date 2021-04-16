@@ -1,4 +1,5 @@
 from numpy.lib.function_base import copy
+from numpy.lib.scimath import logn
 from scipy.spatial.kdtree import distance_matrix
 from core_tool import *
 import os
@@ -62,7 +63,7 @@ def make_sa_df(state_histories, sa_node_unit_pair):
   sa_df = pd.DataFrame(sa_matrix, columns=sa_key_list)
   return sa_df
 
-def make_pca_sa_df(sa_df, do_plot_pca_info=True):
+def make_pca_sa_df(sa_df, do_plot_pca_info=False):
   ss = StandardScaler()
   sa_df_norm = ss.fit_transform(sa_df)
   pca = PCA()
@@ -172,8 +173,8 @@ def make_sa_bias_report(sa_df, bias_thresold=0.5):
     sa_value_relative_freequency = sa_series.value_counts(bins=20).values*1.0/len(sa_series)
     if max(sa_value_relative_freequency>bias_thresold):
       high_bias_relative_freequency_list.append(sa_key)
-    print(sa_key)
-    print(sa_value_relative_freequency)
+    # print(sa_key)
+    # print(sa_value_relative_freequency)
 
   f = open(SAVE_REPORT_PATH+"sa_histgram/report.txt", mode='w')
   f.write("High bias (relative freequecy > "+str(bias_thresold)+") skill parameter and state (Check whether the skill parameter is useful):")
@@ -193,7 +194,7 @@ def show_nearby_sample_info(l, kind, dist_M, target_sample_idx, n_consider=5):
   ## show_sa_comparsion(sa_df, target_sample_idx, near_sample_idx_list)
 
 def make_nearby_sa_report(l, bad_sample_idx_list, neighbor_threshold=1.0, n_print=5, n_table_rows=10, do_print_nearby_sample_info=False):
-  pca_feature_df = make_pca_sa_df(l.input_sa_df, do_plot_pca_info=True)
+  pca_feature_df = make_pca_sa_df(l.input_sa_df, do_plot_pca_info=False)
   bad_samples_pca_feature_df = pca_feature_df.iloc[bad_sample_idx_list,:]
   feature_dist_M = distance.cdist(pca_feature_df, pca_feature_df, metric="euclidean")
   # init_state_dist_M = distance.cdist(l.init_state_df, l.init_state_df, metric="euclidean")
@@ -291,22 +292,23 @@ def analyze_dynamics(l, targe_state, bad_sample_idx, log_name, neighbor_threshol
     return merged_filter_list
 
   nearby_init_state_df = l.all_sa_df[judge_whether_near_to_sample(l.all_sa_df)]
-  nearby_init_state_df = nearby_init_state_df.sort_values(".r", ascending=False)
-  nearby_init_state_return_median = nearby_init_state_df[".r"].median()
-  dynamics_return_median = np.median(dynamics_return_history)
+  nearby_init_state_better_return_df = nearby_init_state_df.sort_values(".r", ascending=False).head(int(len(nearby_init_state_df)/2.))
+  print(nearby_init_state_better_return_df)
+  nearby_init_state_better_return_mearn = nearby_init_state_better_return_df[".r"].mean()
+  dynamics_return_mean = np.mean(dynamics_return_history)
 
-  eval_dynamics = "good" if dynamics_return_median >= -0.5 else "bad"
-  eval_nearby_init_state = "good" if nearby_init_state_return_median >= -0.5 else "bad"
-  print("Median of surrounding dynamics return is "+str(eval_dynamics)+" ("+str(dynamics_return_median)+").")
-  print("Median of return log which is nearby initstate is "+str(eval_nearby_init_state)+" ("+str(nearby_init_state_return_median)+").")
+  eval_dynamics = "good" if dynamics_return_mean >= -0.5 else "bad"
+  eval_nearby_init_state = "good" if nearby_init_state_better_return_mearn >= -0.5 else "bad"
+  print("Average of surrounding dynamics return is "+str(eval_dynamics)+" ("+str(dynamics_return_mean)+").")
+  print("Average of return log which is nearby initstate and included in higher 50% is "+str(eval_nearby_init_state)+" ("+str(nearby_init_state_better_return_mearn)+").")
   if eval_nearby_init_state=="bad":
     bad_init_state = l.init_state_df.iloc[bad_sample_idx]
     print("Danger init state value range ...")
     for sa_key in bad_init_state.index:
       value_range = l.value_range[sa_key]
       if len(value_range)==1:
-        denger_range_min = max(bad_init_state[sa_key] - 0.05*value_range["range"], value_range["min"])
-        denger_range_max = min(bad_init_state[sa_key] + 0.05*value_range["range"], value_range["max"])
+        denger_range_min = max(bad_init_state[sa_key] - 0.05*value_range[0]["range"], value_range[0]["min"])
+        denger_range_max = min(bad_init_state[sa_key] + 0.05*value_range[0]["range"], value_range[0]["max"])
         Print(sa_key,":",str(denger_range_min),"~",str(denger_range_max))
       else:
         raise(Exception)
@@ -352,6 +354,15 @@ def analyze_dynamics(l, targe_state, bad_sample_idx, log_name, neighbor_threshol
   effective_skill_params = list(set(effective_skill_params))
   Print("Effective skill params :", effective_skill_params)
 
+  if len(effective_skill_params)>=1:
+    for skill in effective_skill_params:
+      bad_sample_skill_param_section = l.all_sa_df[skill].value_counts(bins=20).index[0]
+      bad_sample_skill_param_value = l.all_sa_df[skill][bad_sample_idx]
+      is_in_peak = bad_sample_skill_param_value in bad_sample_skill_param_section
+      is_limit_value = max(l.all_sa_df[skill]) in bad_sample_skill_param_section or min(l.all_sa_df[skill]) in bad_sample_skill_param_section
+      if is_in_peak and is_limit_value:
+        Print(skill,"is limit value on bad sample ("+str(bad_sample_skill_param_value)+").")
+
 def make_bad_sample_info(ct, l, target_state, log_name):
   global SAVE_REPORT_PATH
   SAVE_REPORT_PATH = SAVE_REPORT_ROOT_PATH + "/" + log_name + "/" +target_state + "/"
@@ -362,8 +373,10 @@ def make_bad_sample_info(ct, l, target_state, log_name):
   make_sa_bias_report(l.all_sa_df)
   make_nearby_sa_report(l, bad_sample_idx_list, neighbor_threshold=0.5)
 
-  ct.Run('mysim.vis.out_true_est2', log_name, target_state)
+  color_list = ["red" if idx in bad_sample_idx_list else "blue" for idx in range(len(history))]
+  ct.Run('mysim.vis.out_true_est2', log_name, target_state, color_list)
   save_plt_fig(SAVE_REPORT_PATH,"learning_curve")
+
 
 def Run(ct, *args):
   log_name = args[0]
@@ -386,13 +399,17 @@ def Run(ct, *args):
   l.skill_params_node_unit_pair = [
     ["p_pour_trg", ["n0"], 1],
     # ["dtheta1", ["n0"], 1],
-    ["dtheta2", ["n4tir"], 1],
+    # ["dtheta2", ["n4tir"], 1],
+    ["shake_spd", ["n0"], 1],
+    ["shake_axis2", ["n0"], 1],
     # ["skill", ["n0"], 1]
   ]
   l.value_range = {
     "size_srcmouth": [{"min": 0.03, "max": 0.08, "range": 0.05}],
     "p_pour_trg": [{"min": 0.2, "max": 1.2, "range": 1.0}, {"min": 0.1, "max": 0.7, "range": 0.6}],
     "dtheta2": [{"min": 0.002, "max": 0.02, "range": 0.018}],
+    "shake_spd": [{"min": 0.2, "max": 0.4, "range": 0.2}],
+    "shake_axis2": [{"min": 0.01, "max": 0.03, "range": 0.02}, {"min": -0.2*math.pi, "max": 0.2*math.pi, "range": 0.4*math.pi}]
   }
   l.target_value_dict = {
     "da_pour": 0.3,
@@ -410,7 +427,7 @@ def Run(ct, *args):
   l.skill_param_df = make_sa_df(l.state_histories, l.skill_params_node_unit_pair)
   l.init_state_dist_M = distance.cdist(l.init_state_df, l.init_state_df, metric="euclidean")
 
-  WINDOW_SIZE = 100
+  WINDOW_SIZE = 50
 
   # exit_state_dict = defaultdict(list)
   # diff_threshold = 1e-3
@@ -439,6 +456,7 @@ def Run(ct, *args):
   all_bad_sample_idx_list = np.sort(list(set(all_bad_sample_idx_list)))
     
   n_sample = 30
+  searach_range = 0.05
   bad_sample_simulation_input_sa_dict_list = []
   # for idx in bad_sample_idx_list[:1]:
   for idx in all_bad_sample_idx_list:
@@ -453,8 +471,8 @@ def Run(ct, *args):
         if sa_key in np.array(l.skill_params_node_unit_pair)[:,0]:
           v_noise = deepcopy(v)
           for i in range(len(v_noise)):
-            v_noise_i_min = max(v[i] - 0.05*l.value_range[sa_key][i]["range"], l.value_range[sa_key][i]["min"])
-            v_noise_i_max = min(v[i] + 0.05*l.value_range[sa_key][i]["range"], l.value_range[sa_key][i]["max"])
+            v_noise_i_min = max(v[i] - searach_range/2*l.value_range[sa_key][i]["range"], l.value_range[sa_key][i]["min"])
+            v_noise_i_max = min(v[i] + searach_range/2*l.value_range[sa_key][i]["range"], l.value_range[sa_key][i]["max"])
             v_noise[i] = (v_noise_i_max - v_noise_i_min) * np.random.rand() + v_noise_i_min
           if is_scalar==True: v_noise = v_noise[0]
           bad_sample_simulation_input_sa_dict[sa_key].append(v_noise)
@@ -466,30 +484,18 @@ def Run(ct, *args):
     bad_sample_simulation_input_sa_dict_list.append(bad_sample_simulation_input_sa_dict)
 
   # for idx, bad_sample_simulation_input_sa_dict in zip(all_bad_sample_idx_list, bad_sample_simulation_input_sa_dict_list):
-    # ct.Run("mysim.debugger.experiments.ex4", "sampling", bad_sample_simulation_input_sa_dict, ROOT_PATH+log_name+"/sampling/"+str(idx)+"/") 
+  #   ct.Run("mysim.debugger.experiments.ex5", "sampling", bad_sample_simulation_input_sa_dict, ROOT_PATH+log_name+"/sampling/"+str(idx)+"/") 
 
   for target_state in np.array(l.target_states_node_unit_pair)[:,0]:
+    print("")
     Print("target_state :",target_state)
+
+    make_bad_sample_info(ct, l, target_state, log_name)
+
     for idx in l.bad_sample_idx_dict[target_state]:
       Print("episode :",idx)
       analyze_dynamics(l, target_state, idx, log_name+"/sampling/"+str(idx)+"/")
       print("")
-      
-    make_bad_sample_info(ct, l, target_state, log_name)
   print("")
   # analyze_dynamics(l, target_state, bad_sample_idx_list[0], log_name+"/sampling/"+str(bad_sample_idx_list[0])+"/")
-
-
-  # for target_state,_,_ in l.target_states_node_unit_pair:
-  #   global SAVE_REPORT_PATH
-  #   SAVE_REPORT_PATH = SAVE_REPORT_ROOT_PATH + "/" + log_name + "/" +target_state + "/"
-
-  #   history = l.state_histories[target_state]
-  #   bad_sample_idx_list = make_bad_sample_idx_list(target_state, l.state_histories, WINDOW_SIZE=WINDOW_SIZE, IQR_MAGNIFICATION=2.0, return_threshold=-1.0)
-
-  #   make_sa_bias_report(l.all_sa_df)
-  #   make_nearby_sa_report(l, bad_sample_idx_list, neighbor_threshold=0.5)
-
-  #   ct.Run('mysim.vis.out_true_est2', log_name, target_state)
-  #   save_plt_fig(SAVE_REPORT_PATH,"learning_curve")
 

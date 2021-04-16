@@ -47,8 +47,7 @@ def ConfigCallback(ct,l,sim):
       l.latest_mtr = l.custom_mtr
       m_setup.SetMaterial(l, preset=l.custom_mtr)
     if l.custom_smsz=="random":
-      # l.config.SrcSize2H= Rand(0.03,0.08)
-      l.config.SrcSize2H= Rand(0.05,0.08)
+      l.config.SrcSize2H= Rand(0.03,0.08)
     else:
       l.config.SrcSize2H= l.custom_smsz
     l.latest_smsz = l.config.SrcSize2H
@@ -70,26 +69,26 @@ def Run(ct,*args):
   l = TContainer(debug=True)
   l.run_type = run_type
   l.logdir= '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-            + "debugger/ex5"+"/"
+            + "debugger/ex4"+"/"
   # l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
   #             + "mtr_sms_sv/test/learning_branch/"
   # l.logdir = "/tmp/lb/"
-  suff = "first"+"/"
+  suff = "second"+"/"
   
   l.config_callback= ConfigCallback
   l.type = "dnn"
 
   if l.run_type==PLANNING:
-    # src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/nobounce/random/graphModel/modifiedStdPour/first"+"/"
-    # model_dir = src_core + "models/"
-    # db_src = src_core + "database.yaml"
-    model_dir = ""
-    src_core = ""
-    db_src = ""
+    src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+            + "debugger/ex4/std_pour/ketchup/random/first"+"/"
+    model_dir = src_core + "models/"
+    db_src = src_core + "database.yaml"
+    # model_dir = ""
+    # src_core = ""
+    # db_src = ""
 
-    l.pour_skill = "shake_A"
-    l.custom_mtr = "natto"
+    l.pour_skill = "std_pour"
+    l.custom_mtr = "ketchup"
     # l.custom_smsz = 0.065    #random or 0.03~0.08
     l.custom_smsz = "random"    #random or 0.03~0.08
     l.delta_smsz = 0.0
@@ -159,8 +158,8 @@ def Run(ct,*args):
     src_core = ""
     db_src = ""
 
-    l.pour_skill = "shake_A"
-    l.custom_mtr = "natto"
+    l.pour_skill = "std_pour"
+    l.custom_mtr = "ketchup"
     l.custom_smsz_all = sa_dict["size_srcmouth"]
     n_episode = len(l.custom_smsz_all)
 
@@ -173,8 +172,8 @@ def Run(ct,*args):
       'dtheta1': [SSA([0.014])]*n_episode,
       # 'dtheta2': [SSA([0.004])]*n_episode,
       'dtheta2': [SSA([x]) for x in sa_dict["dtheta2"]],
-      'shake_spd': [SSA([x]) for x in sa_dict["shake_spd"]],
-      'shake_axis2': [SSA([x]) for x in sa_dict["shake_axis2"]],
+      'shake_spd': [SSA([0.8])]*n_episode,
+      'shake_axis2': [SSA([0.08,0.0])]*n_episode
     }
 
     l.opt_conf={
@@ -236,4 +235,4 @@ def Run(ct,*args):
     else:
       pass
 
-  ct.Run("mysim.debugger.experiments.ex5_main", l)
+  ct.Run("mysim.debugger.experiments.ex4_main_2", l)

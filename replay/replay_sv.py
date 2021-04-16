@@ -38,8 +38,8 @@ def Run(ct,*args):
   # target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
   #             + "bottomup/learn7/std_pour/ketchup/random/nn_reward/first"+"/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "debugger/ex5/shake_A/ketchup/random/first"+"/"
-  i_episode_list = [69]
+              + "debugger/ex5/shake_A/natto/random/first"+"/"
+  i_episode_list = [64]
   i_node = 0
   n_roop = 1
 

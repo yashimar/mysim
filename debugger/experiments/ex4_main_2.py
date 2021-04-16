@@ -4,7 +4,6 @@ SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
 import joblib
 import GPyOpt
-import yaml
 
 PLANNING = "planning"
 SAMPLING = "sampling"
@@ -32,15 +31,6 @@ def RwdModel():
   FRwd.Init()
 
   return FRwd
-
-def MakeLog(l, key, xs, ys):
-  MM = l.dpl.MM
-  In,Out,F= MM.Models[key]
-  x_in,cov_in,dims_in= SerializeXSSA(MM.SpaceDefs, xs, In)
-  x_out,cov_out,dims_out= SerializeXSSA(MM.SpaceDefs, ys, Out)
-  pred = F.Predict(x_in, with_var=True)
-  log = (key, {"input": x_in, "true_output": x_out, "prediction": {"X": pred.Y.tolist(), "Cov": pred.Var.tolist()}})
-  l.pred_true_log.append(log)
 
 def Execute(ct,l, count):
   if l.run_type == SAMPLING:
@@ -184,7 +174,6 @@ def Execute(ct,l, count):
       CPrint(2,'Node:','n2b')
       l.xs.n2b= CopyXSSA(l.xs.prev)
       InsertDict(l.xs.n2b, ObserveXSSA(l,l.xs.prev,obs_keys_after_grab))
-      MakeLog(l,"Fmvtopour2",l.xs.prev,l.xs.n2b)
       l.dpl.MM.Models['Fmvtopour2'][2].Options.update(l.nn_options)
       l.dpl.MM.Update('Fmvtopour2',l.xs.prev,l.xs.n2b, not_learn=l.not_learn)
       #res= l.dpl.Plan('n2b', l.xs.n2b)
@@ -241,7 +230,6 @@ def Execute(ct,l, count):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4ti, not_learn=l.not_learn)
-        MakeLog(l,"Fflowc_tip10",xs_in,l.xs.n4ti)
         l.dpl.MM.Models['Fflowc_tip10'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Fflowc_tip10',xs_in,l.xs.n4ti, not_learn=l.not_learn)
         #res= l.dpl.Plan('n4ti', l.xs.n4ti)
@@ -277,7 +265,6 @@ def Execute(ct,l, count):
         xs_in= CopyXSSA(l.xs.prev)
         xs_in['lp_pour']= l.xs.n2c['lp_pour']
         #l.dpl.MM.Update('Famount4',l.xs.prev,l.xs.n4sa, not_learn=l.not_learn)
-        MakeLog(l,"Fflowc_shakeA10",xs_in,l.xs.n4sa)
         l.dpl.MM.Models['Fflowc_shakeA10'][2].Options.update(l.nn_options)
         l.dpl.MM.Update('Fflowc_shakeA10',xs_in,l.xs.n4sa, not_learn=l.not_learn)
         #res= l.dpl.Plan('n4sa', l.xs.n4sa)
@@ -337,7 +324,7 @@ def Run(ct,*args):
       #NOTE: we stopped to plan p_pour_trg0
     'p_pour_trg': SP('action',2,min=[0.2,0.1],max=[1.2,0.7]),  #Target pouring axis position (x,z)
     'dtheta1': SP('state',1,min=[0.01],max=[0.02]),  #Pouring skill parameter for all skills
-    'dtheta2': SP('action',1,min=[0.002],max=[0.02]),  #Pouring skill parameter for 'std_pour'
+    'dtheta2': SP('action',1,min=[0.001],max=[0.02]),  #Pouring skill parameter for 'std_pour'
     #'dtheta1': SP('state',1),  #Pouring skill parameter for all skills
     #'dtheta2': SP('state',1),  #Pouring skill parameter for 'std_pour'
     'shake_spd': SP('state',1,min=[0.7],max=[0.9]),  #Pouring skill parameter for 'shake_A'
@@ -522,9 +509,6 @@ def Run(ct,*args):
     # CPrint(1,'Generated:',l.logdir+'dpl_est.dat')
     # #'''
 
-    with open(l.logdir+'pred_true_log.yaml',w_mode) as f:
-      yaml.dump({count-1: {key: data for (key, data) in l.pred_true_log}}, f, default_flow_style=False)
-
 
   # if l.interactive and 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
   if l.run_type==PLANNING and 'log_dpl' in ct.__dict__ and (CPrint(1,'Restart from existing DPL?'), AskYesNo())[1]:
@@ -585,7 +569,6 @@ def Run(ct,*args):
     l.dpl.NewEpisode()
     l.user_viz= []
     l.node_best_tree = []
-    l.pred_true_log = []
 
     if l.priority_sampling==True:
       if t_sampling<l.max_priority_sampling:

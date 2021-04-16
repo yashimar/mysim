@@ -24,6 +24,7 @@ def Run(ct, *args):
   root_path = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
   sl_path = root_path + name_log + "/sequence_list.yaml"
   tree_path = root_path+name_log+"/best_est_trees/"
+  color_list = args[2] if len(args)==3 else None
 
   with open(sl_path, "r") as yml:
     sl = yaml.load(yml)
@@ -58,11 +59,11 @@ def Run(ct, *args):
       for n in tree.Tree.keys():
         if n.A=="n4tir": n_tir = n
         elif n.A=="n4sar": n_sar = n
-      tir_xs = tree.Tree[n_tir].XS
-      # sar_xs = tree.Tree[n_sar].XS
+      # tir_xs = tree.Tree[n_tir].XS
+      sar_xs = tree.Tree[n_sar].XS
       # selected_xs = tir_xs if tir_xs[".r"].X.item()>sar_xs[".r"].X.item() else sar_xs
-      # for (est_dict, r_xs) in zip([ests["sa"]], [sar_xs]):
-      for (est_dict, r_xs) in zip([ests["ti"]], [tir_xs]):
+      for (est_dict, r_xs) in zip([ests["sa"]], [sar_xs]):
+      # for (est_dict, r_xs) in zip([ests["ti"]], [tir_xs]):
       # for (est_dict, r_xs) in zip([ests["ti"], ests["sa"], ests["selected"]], [tir_xs, sar_xs, selected_xs]):
         for s in ["da_spill2", "da_pour", ".r"]:
           est_dict[s]["mean"].append(r_xs[s].X.item())
@@ -81,8 +82,8 @@ def Run(ct, *args):
   # s, ylim = "da_pour", [-1,100]
   # s, ylim = "da_spill2", [-1,12]_
   # s, ylim = ".r", [-1,0]
-  skill = "ti"
-  # skill = "sa"
+  # skill = "ti"
+  skill = "sa"
   # skill = "selected"
   start = 0
 
@@ -130,9 +131,11 @@ def Run(ct, *args):
       trues[vis_state] = np.array(trues[vis_state])*unit
       ests[skill][vis_state]["mean"] = np.array(ests[skill][vis_state]["mean"])*unit
       ests[skill][vis_state]["sdv"] = np.array(ests[skill][vis_state]["sdv"])*unit
+      if color_list==None: color_list = ["blue"]*len(trues[vis_state])
       for i in range(start,len(trues[vis_state])):
         if smsz_list[i_s]<envs["smsz"][i]<=smsz_list[i_s+1]:
-          c = "blue"
+          # c = "blue"
+          c = color_list[i]
           # if ests[skill]["skill"]["mean"][i]==0:
           #   c = "green"
           # else:
@@ -153,7 +156,7 @@ def Run(ct, *args):
       colors = [
         'blue',
         # "green",
-        # "red"
+        "red"
         ]
       # circles = [plt.plot([0], [0], color=c, marker='o', ms=10) for c in colors]
       circles = [plt.plot([],[], marker="o", ls="", mec=None, color=c)[0] for c in colors]
@@ -162,7 +165,8 @@ def Run(ct, *args):
         Line2D([0], [0], color="lime", linestyle="dashed")
         ]
       labels = [
-        'observed value', 
+        'observed value',
+        'observed value (bad or need to check)', 
         # "observed value (Tipping)",
         # "observed value (Shaking)",
         'estimated value (mean +/- 1SD)', 
@@ -171,7 +175,9 @@ def Run(ct, *args):
       loc = 'lower right' if s=="da_pour" else "upper right"
       ax.legend(
         circles+lines, labels,
-        loc=loc  
+        # loc=loc,
+        # bbox_to_anchor=(0, -0.1), loc='upper left', borderaxespad=0
+        loc = "best"
       )
       ax.set_xlim(0,len(trues[vis_state]))
       ax.set_xticks(np.arange(0, len(trues[vis_state])+1, 50))

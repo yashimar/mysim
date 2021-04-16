@@ -19,10 +19,11 @@ def Run(ct, *args):
   with open(sl_path, "r") as yml:
     sl = yaml.load(yml)
 
-  trues = [sl[ep]["reward"][1][2][0]["da_spill2"] for ep in range(len(sl))]
+  # trues = [sl[ep]["reward"][1][2][0]["da_spill2"] for ep in range(len(sl))]
+  trues = [sl[ep]["reward"][1][3][0]["da_pour"] for ep in range(len(sl))]
   
-  x_values = np.linspace(0.3, 0.45, 20)
-  y_values = np.linspace(0.35, 0.45, 20)
+  x_values = np.linspace(0.3, 0.45, 10)
+  y_values = np.linspace(0.35, 0.45, 10)
   trues = np.array(trues).reshape((len(x_values), len(y_values))).T
 
   fig_title = "true bounce's da_spill2 heatmap" + "<br>" \
@@ -30,12 +31,12 @@ def Run(ct, *args):
   # subtitle = "smsz = 0.03, shake_axis2 = (0.01, 0.0), " \
   #            + "referenced p_pour_trg = (0.43, 0.15)"
   subtitle = "lp_pour_z = 0.31"
-  fig_xlabel = "p_pour_trg_x"
-  fig_ylabel = "p_pour_trg_z"
+  fig_xlabel = "shake_axis2_dim1"
+  fig_ylabel = "p_pour_trg_dim1"
 
   fig = go.Figure()
   fig.add_trace(go.Heatmap(z=trues, x=x_values, y=y_values, colorscale='Oranges',
-                            zmin=0.0, zmax=0.3, zauto=False
+                            # zmin=0.0, zmax=0.3, zauto=False
                           ))
   fig.update_layout(height=800, width=800, title_text=fig_title+"<br><sub>"+subtitle+"<sub>", xaxis={"title": fig_xlabel}, yaxis={"title": fig_ylabel})
   fig.show()
