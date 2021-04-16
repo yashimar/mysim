@@ -1,3 +1,5 @@
+from core_tool import *
+
 def CreatePredictionLog(l, key, xs, ys):
     MM = l.dpl.MM
     In, Out, F = MM.Models[key]
@@ -8,7 +10,7 @@ def CreatePredictionLog(l, key, xs, ys):
     l.pred_true_log.append(log)
 
 
-def CreateDPL(ct, l, domain):
+def SetupDPL(ct, l, domain):
     if 'log_dpl' in ct.__dict__ and (CPrint(1, 'Restart from existing DPL?'), AskYesNo())[1]:
         dpl = ct.log_dpl
         is_restarted = True
@@ -45,7 +47,19 @@ def CreateDPL(ct, l, domain):
 
     ct.log_dpl = dpl
 
-    return dpl, is_restarted
+    print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
+    CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
+
+    if is_restarted:
+        fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
+    else:
+        fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
+        if len(dpl.DB.Entry)>0:
+            for i in range(len(dpl.DB.Entry)):
+                fp.write(dpl.DB.DumpOneYAML(i))
+            fp.flush()
+
+    return dpl, fp
 
 
 def CreateDPLLog(l, count):

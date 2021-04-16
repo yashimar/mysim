@@ -2,10 +2,6 @@ from core_tool import *
 from util import CreatePredictionLog
 
 
-def Help():
-    pass
-
-
 def Delta1(dim, s):
     assert(abs(s-int(s)) < 1.0e-6)
     p = [0.0]*dim
@@ -24,7 +20,7 @@ def Rdamount():
     return FRwd
 
 
-def CreateDomain():  # SpaceDefs and Models (reward function) will be modified by curriculum. (For example, 'action' -> 'state', Rdamount -> Rdspill, and so on.)
+def Domain():  # SpaceDefs and Models (reward function) will be modified by curriculum. (For example, 'action' -> 'state', Rdamount -> Rdspill, and so on.)
     domain = TGraphDynDomain()
     SP = TCompSpaceDef
     domain.SpaceDefs = {
@@ -429,5 +425,8 @@ def Execute(ct, l):
         ct.sim_local.sensor_callback = None
         ct.srvp.ode_pause()
     l.dpl.EndEpisode()
+
+    print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
+    CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
 
     return l
