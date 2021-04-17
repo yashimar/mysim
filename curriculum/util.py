@@ -1,9 +1,12 @@
-def CreateExperimentsEvidenceFile(l):
-    l.logdir = l.logdir + "/" + l.suff
-    print 'Copying', PycToPy(__file__), 'to', PycToPy(l.logdir+os.path.basename(__file__))
-    CopyFile(PycToPy(__file__), PycToPy(l.logdir+os.path.basename(__file__)))
+from core_tool import *
+
+def CreateExperimentsEvidenceFile(l, file):
+    print 'Copying',PycToPy(file),'to',PycToPy(l.logdir+os.path.basename(file))
+    CopyFile(PycToPy(file),PycToPy(l.logdir+os.path.basename(file)))
+    if not os.path.isdir(l.logdir):
+        os.makedirs(l.logdir)
     if os.path.exists(l.logdir+"config_log.yaml") == False and os.path.exists(l.logdir+"dpl_est.dat") == False:
-        if src_core != "":
+        if l.src_core != "":
             CopyFile(l.src_core+"config_log.yaml", l.logdir+"config_log.yaml")
             Print("Copying", l.src_core+"config_log.yaml", "to", l.logdir+"config_log.yaml")
             CopyFile(l.src_core+"dpl_est.dat", l.logdir+"dpl_est.dat")

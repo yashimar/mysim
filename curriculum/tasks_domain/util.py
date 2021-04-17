@@ -1,4 +1,6 @@
 from core_tool import *
+import yaml
+import joblib
 
 def CreatePredictionLog(l, key, xs, ys):
     MM = l.dpl.MM
@@ -52,6 +54,12 @@ def SetupDPL(ct, l, domain):
 
     if is_restarted:
         fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
+        if len(dpl.DB.Entry)>0:
+            for i in range(len(dpl.DB.Entry)):
+                fp.write(dpl.DB.DumpOneYAML(i))
+            fp.flush()
+    elif os.path.exists(l.logdir+"dpl_log.dat"):
+        raise(Exception("Already log file exists. Change l.logdir."))
     else:
         fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
         if len(dpl.DB.Entry)>0:

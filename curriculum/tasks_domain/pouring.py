@@ -1,4 +1,6 @@
 from core_tool import *
+SmartImportReload('tsim.dpl_cmn')
+from tsim.dpl_cmn import *
 from util import CreatePredictionLog
 
 
@@ -35,7 +37,7 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
         'dtheta2': SP('action', 1, min=[0.002], max=[0.02]),  # Pouring skill parameter for 'std_pour'
         'shake_spd': SP('action', 1, min=[0.5], max=[1.2]),  # Pouring skill parameter for 'shake_A'
         'shake_range': SP('action', 1, min=[0.05], max=[0.12]),
-        'shake_angle': SP('action', 1, min=-0.5*math.pi, max=0.5*math.pi),
+        'shake_angle': SP('action', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
         # 'shake_axis2': SP('action',2,min=[0.05,-0.5*math.pi],max=[0.1,0.5*math.pi]),
         'p_pour': SP('state', 3),  # Pouring axis position (x,y,z)
         'lp_pour': SP('state', 3),  # Pouring axis position (x,y,z) in receiver frame
@@ -168,6 +170,7 @@ def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For e
 def Execute(ct, l):
     l.node_best_tree = []
     l.pred_true_log = []
+    l.user_viz= [] #Use in dpl_cmn
 
     l.dpl.NewEpisode()
     try:
@@ -200,15 +203,19 @@ def Execute(ct, l):
         l.xs.n0 = ObserveXSSA(l, None, obs_keys0+('da_trg',))
         # Heuristic init guess
         pc_rcv = np.array(l.xs.n0['ps_rcv'].X).reshape(4, 3).mean(axis=0)  # Center of ps_rcv
-        l.xs.n0['gh_ratio'] = SSA([0.5])
-        # A bit above of p_pour_trg
         l.xs.n0['p_pour_trg0'] = SSA(Vec([-0.3, 0.35])+Vec([pc_rcv[0], pc_rcv[2]]))
-        l.xs.n0['dtheta1'] = SSA([0.014])
-        l.xs.n0['dtheta2'] = SSA([0.004])
-        l.xs.n0['shake_spd'] = SSA([0.8])
-        l.xs.n0['shake_range'] = SSA([0.08])
-        l.xs.n0['shake_angle'] = SSA([0.0])
+        # l.xs.n0['gh_ratio'] = SSA([0.5])
+        # l.xs.n0['p_pour_trg'] = ...
+        # l.xs.n0['dtheta1'] = SSA([0.014])
+        # l.xs.n0['dtheta2'] = SSA([0.004])
+        # l.xs.n0['shake_spd'] = SSA([0.8])
+        # l.xs.n0['shake_range'] = SSA([0.08])
+        # l.xs.n0['shake_angle'] = SSA([0.0])
         res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
+        if l.pour_skill=="std_pour":
+            l.xs.n0['skill']= SSA([0])
+        elif l.pour_skill=="shake_A":
+            l.xs.n0['skill']= SSA([1])
         l.node_best_tree.append(res.PTree)
         l.idb.n0 = l.dpl.DB.AddToSeq(parent=None, name='n0', xs=l.xs.n0)
         l.xs.prev = l.xs.n0
@@ -365,7 +372,7 @@ def Execute(ct, l):
                 dtheta1 = l.xs.n2c['dtheta1'].X[0, 0]
                 shake_spd = l.xs.n2c['shake_spd'].X[0, 0]
                 # shake_axis2 = ToList(l.xs.n2c['shake_axis2'].X)
-                shake_axis2 = ToList([l.xs.n2c['shake_range'].X, l.xs.n2c['shake_angle'].X])
+                shake_axis2 = ToList([l.xs.n2c['shake_range'].X.item(), l.xs.n2c['shake_angle'].X.item()])
                 actions['shake_A']({'dtheta1': dtheta1, 'shake_spd': shake_spd, 'shake_axis2': shake_axis2})
 
                 ############################################################################

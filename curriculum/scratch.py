@@ -9,25 +9,30 @@ def Help():
 
 
 def ExecuteLearning(ct, l):
-    print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
-    CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
+    CreateExperimentsEvidenceFile(l, __file__)
 
     domain = td.Domain()
     l.dpl, fp = SetupDPL(ct, l, domain)
 
-    for count in l.opt_conf['num_episodes']:
+    for count in range(l.num_episodes):
+        if count <= 2:
+            l.pour_skill = "std_pour"
+        elif count <= 5:
+            l.pour_skill = "shake_A"
+        else:
+            l.pour_skill = ""
         CPrint(2, '========== Start %4i ==========' % count)
-        pouring.Execute(ct, l)
+        td.Execute(ct, l)
         CPrint(2, '========== End %4i ==========' % count)
 
         fp.write(l.dpl.DB.DumpOneYAML())
         fp.flush()
-        CPrint(1,count,l.dpl.DB.DumpOne())
+        CPrint(1, count, l.dpl.DB.DumpOne())
 
         CreateDPLLog(l, count)
 
     fp.close()
-    l= None
+    l = None
 
 
 def Run(ct, *args):
@@ -36,34 +41,34 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
+    suff = "ketchup_0055/fourth"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-        + "curriculum/simple_learning"+"/"
-    l.suff = "test"+"/"
+                + "curriculum/scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
     # l.src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/nobounce/random/graphModel/modifiedStdPour/first"+"/"
+    #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"+"/"
     l.src_core = ""
 
     ############################################################################
     # Modify ConfigCallback
     ############################################################################
     l.config_callback = td.ConfigCallback
-    l.custom_mtr = "natto"
+    l.rcv_size = "static"
+    l.mtr_smsz = "custom"
+    l.custom_mtr = "ketchup"
     l.custom_smsz = 0.055
 
     ############################################################################
     # Modify learning config
     ############################################################################
+    l.num_episodes = 50
+    l.interactive = False
+    l.not_learn = False
+    l.planning_node = ["n0"]
     l.opt_conf = {
-        'num_episodes': 3,
-        'interactive': False,
-        'not_learn': False,
-        'rcv_size': 'static',  # 'static', 'random'
-        'mtr_smsz': 'custom',  # 'fixed', 'fxvs1', 'random', 'viscous', custom
-        "planning_node": ["n0"],  # "n0","n2a"
         'model_dir': l.src_core + "models/" if l.src_core != "" else "",
         'model_dir_persistent': False,  # If False, models are saved in l.logdir, i.e. different one from 'model_dir'
         'db_src': l.src_core + "database.yaml" if l.src_core != "" else "",
