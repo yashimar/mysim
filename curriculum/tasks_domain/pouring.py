@@ -204,13 +204,13 @@ def Execute(ct, l):
         # Heuristic init guess
         pc_rcv = np.array(l.xs.n0['ps_rcv'].X).reshape(4, 3).mean(axis=0)  # Center of ps_rcv
         l.xs.n0['p_pour_trg0'] = SSA(Vec([-0.3, 0.35])+Vec([pc_rcv[0], pc_rcv[2]]))
-        # l.xs.n0['gh_ratio'] = SSA([0.5])
+        l.xs.n0['gh_ratio'] = SSA([0.5])
         # l.xs.n0['p_pour_trg'] = ...
-        # l.xs.n0['dtheta1'] = SSA([0.014])
-        # l.xs.n0['dtheta2'] = SSA([0.004])
-        # l.xs.n0['shake_spd'] = SSA([0.8])
-        # l.xs.n0['shake_range'] = SSA([0.08])
-        # l.xs.n0['shake_angle'] = SSA([0.0])
+        l.xs.n0['dtheta1'] = SSA([0.014])
+        l.xs.n0['dtheta2'] = SSA([0.004])
+        l.xs.n0['shake_spd'] = SSA([0.8])
+        l.xs.n0['shake_range'] = SSA([0.08])
+        l.xs.n0['shake_angle'] = SSA([0.0])
         res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
         if l.pour_skill=="std_pour":
             l.xs.n0['skill']= SSA([0])
