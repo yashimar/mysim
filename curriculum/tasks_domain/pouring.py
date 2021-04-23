@@ -144,6 +144,9 @@ def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For e
     elif l.mtr_smsz == 'viscous':
         m_setup.SetMaterial(l, preset=('natto', 'ketchup')[RandI(2)])
         l.config.SrcSize2H = Rand(0.03, 0.08)  # Mouth size of source container
+    elif l.mtr_smsz == 'curriculum_test':
+        m_setup.SetMaterial(l, preset=('nobounce', 'ketchup')[RandI(2)])
+        l.config.SrcSize2H = Rand(0.03, 0.08)
     elif l.mtr_smsz == "custom":
         if l.custom_mtr == "random":
             l.latest_mtr = ('bounce', 'nobounce', 'natto', 'ketchup')[RandI(4)]
@@ -205,7 +208,7 @@ def Execute(ct, l):
         pc_rcv = np.array(l.xs.n0['ps_rcv'].X).reshape(4, 3).mean(axis=0)  # Center of ps_rcv
         l.xs.n0['p_pour_trg0'] = SSA(Vec([-0.3, 0.35])+Vec([pc_rcv[0], pc_rcv[2]]))
         l.xs.n0['gh_ratio'] = SSA([0.5])
-        # l.xs.n0['p_pour_trg'] = ...
+        l.xs.n0['p_pour_trg'] = SSA(Vec([Rand(0.2,1.2), Rand(0.1, 0.7)]))
         l.xs.n0['dtheta1'] = SSA([0.014])
         l.xs.n0['dtheta2'] = SSA([0.004])
         l.xs.n0['shake_spd'] = SSA([0.8])
@@ -328,7 +331,7 @@ def Execute(ct, l):
                 actions['std_pour']({'dtheta1': dtheta1, 'dtheta2': dtheta2})
 
                 ############################################################################
-                # n3ti: Update Fflow_tip10
+                # n3ti: Update Fflowc_tip10
                 ############################################################################
                 CPrint(2, 'Node:', 'n3ti')
                 l.xs.n3ti = CopyXSSA(l.xs.prev)

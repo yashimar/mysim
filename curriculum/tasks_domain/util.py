@@ -1,6 +1,9 @@
-from core_tool import *
 import yaml
 import joblib
+from core_tool import *
+from tsim.dpl_cmn import *
+SmartImportReload('tsim.dpl_cmn')
+
 
 def CreatePredictionLog(l, key, xs, ys):
     MM = l.dpl.MM
@@ -26,6 +29,8 @@ def SetupDPL(ct, l, domain):
         if l.opt_conf['model_dir'] not in ('', None):
             if os.path.exists(l.opt_conf['model_dir']+'model_mngr.yaml'):
                 mm.Load(LoadYAML(l.opt_conf['model_dir']+'model_mngr.yaml'), l.opt_conf['model_dir'])
+            else:
+                raise(Exception("Not exists : "+l.opt_conf['model_dir']+'model_mngr.yaml'))
             if l.opt_conf['model_dir_persistent']:
                 mm.Options['base_dir'] = l.opt_conf['model_dir']
             else:
@@ -49,20 +54,20 @@ def SetupDPL(ct, l, domain):
 
     ct.log_dpl = dpl
 
-    print 'Copying',PycToPy(__file__),'to',PycToPy(l.logdir+os.path.basename(__file__))
-    CopyFile(PycToPy(__file__),PycToPy(l.logdir+os.path.basename(__file__)))
+    print 'Copying', PycToPy(__file__), 'to', PycToPy(l.logdir+os.path.basename(__file__))
+    CopyFile(PycToPy(__file__), PycToPy(l.logdir+os.path.basename(__file__)))
 
     if is_restarted:
-        fp= OpenW(l.logdir+'dpl_log.dat','a', l.interactive)
-        if len(dpl.DB.Entry)>0:
+        fp = OpenW(l.logdir+'dpl_log.dat', 'a', l.interactive)
+        if len(dpl.DB.Entry) > 0:
             for i in range(len(dpl.DB.Entry)):
                 fp.write(dpl.DB.DumpOneYAML(i))
             fp.flush()
     elif os.path.exists(l.logdir+"dpl_log.dat"):
         raise(Exception("Already log file exists. Change l.logdir."))
     else:
-        fp= OpenW(l.logdir+'dpl_log.dat','w', l.interactive)
-        if len(dpl.DB.Entry)>0:
+        fp = OpenW(l.logdir+'dpl_log.dat', 'w', l.interactive)
+        if len(dpl.DB.Entry) > 0:
             for i in range(len(dpl.DB.Entry)):
                 fp.write(dpl.DB.DumpOneYAML(i))
             fp.flush()
@@ -104,4 +109,12 @@ def CreateDPLLog(l, count):
             joblib.dump(tree, l.logdir+"best_est_trees/"+"ep"+str(len(l.dpl.DB.Entry)-1)+"_n2a_"+str(i)+".jb")
 
     with open(l.logdir+'pred_true_log.yaml', w_mode) as f:
-        yaml.dump({count-1: {key: data for (key, data) in l.pred_true_log}}, f, default_flow_style=False)
+        yaml.dump({count: {key: data for (key, data) in l.pred_true_log}}, f, default_flow_style=False)
+
+
+def ModelManager(domain, model_path):
+    mm = TModelManager(domain.SpaceDefs, domain.Models)
+    mm.Load(LoadYAML(model_path+'/models/model_mngr.yaml'), model_path+"/models/")
+    mm.Init()
+
+    return mm

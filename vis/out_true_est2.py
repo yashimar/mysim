@@ -59,12 +59,12 @@ def Run(ct, *args):
       for n in tree.Tree.keys():
         if n.A=="n4tir": n_tir = n
         elif n.A=="n4sar": n_sar = n
-      # tir_xs = tree.Tree[n_tir].XS
+      tir_xs = tree.Tree[n_tir].XS
       sar_xs = tree.Tree[n_sar].XS
-      # selected_xs = tir_xs if tir_xs[".r"].X.item()>sar_xs[".r"].X.item() else sar_xs
-      for (est_dict, r_xs) in zip([ests["sa"]], [sar_xs]):
+      selected_xs = tir_xs if tir_xs[".r"].X.item()>sar_xs[".r"].X.item() else sar_xs
+      # for (est_dict, r_xs) in zip([ests["sa"]], [sar_xs]):
       # for (est_dict, r_xs) in zip([ests["ti"]], [tir_xs]):
-      # for (est_dict, r_xs) in zip([ests["ti"], ests["sa"], ests["selected"]], [tir_xs, sar_xs, selected_xs]):
+      for (est_dict, r_xs) in zip([ests["ti"], ests["sa"], ests["selected"]], [tir_xs, sar_xs, selected_xs]):
         for s in ["da_spill2", "da_pour", ".r"]:
           est_dict[s]["mean"].append(r_xs[s].X.item())
           est_dict[s]["sdv"].append(np.sqrt(r_xs[s].Cov.item()))
@@ -79,12 +79,14 @@ def Run(ct, *args):
     ylim = [-1,100] 
   elif vis_state=="da_spill2":
     ylim = [-1,12]
+  elif vis_state==".r":
+    ylim = [-40,0]
   # s, ylim = "da_pour", [-1,100]
   # s, ylim = "da_spill2", [-1,12]_
   # s, ylim = ".r", [-1,0]
   # skill = "ti"
-  skill = "sa"
-  # skill = "selected"
+  # skill = "sa"
+  skill = "selected"
   start = 0
 
   if False:
@@ -119,7 +121,7 @@ def Run(ct, *args):
     # smsz_list = [0.03, 0.05, 0.07, 0.08]
     smsz_list = [0.03, 0.08]
     for i_s in range(len(smsz_list)-1):
-      fig = plt.figure(figsize=(13,4))
+      fig = plt.figure(figsize=(6,3))
       ax = fig.add_subplot(1, 1, 1)
       # ax.set_title(str(smsz_list[i_s])+" ~ "+str(smsz_list[i_s+1]))
       if vis_state=="da_pour": 
@@ -128,6 +130,9 @@ def Run(ct, *args):
       elif vis_state=="da_spill2": 
         target = 0
         unit = 10
+      elif vis_state==".r": 
+        target = 0
+        unit = 1
       trues[vis_state] = np.array(trues[vis_state])*unit
       ests[skill][vis_state]["mean"] = np.array(ests[skill][vis_state]["mean"])*unit
       ests[skill][vis_state]["sdv"] = np.array(ests[skill][vis_state]["sdv"])*unit
@@ -173,12 +178,12 @@ def Run(ct, *args):
         "target amount = "+str(int(target))
         ]
       loc = 'lower right' if s=="da_pour" else "upper right"
-      ax.legend(
-        circles+lines, labels,
-        # loc=loc,
-        # bbox_to_anchor=(0, -0.1), loc='upper left', borderaxespad=0
-        loc = "best"
-      )
+      # ax.legend(
+      #   circles+lines, labels,
+      #   # loc=loc,
+      #   # bbox_to_anchor=(0, -0.1), loc='upper left', borderaxespad=0
+      #   loc = "best"
+      # )
       ax.set_xlim(0,len(trues[vis_state]))
       ax.set_xticks(np.arange(0, len(trues[vis_state])+1, 50))
       # ax.set_xticks(np.arange(0, len(trues[vis_state])+1, 1), minor=True)

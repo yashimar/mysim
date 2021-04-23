@@ -20,15 +20,15 @@ def TestConfigCallback(ct,l,sim):
 
 def LoadActions(database, i_episode=0, i_node=0):
   xs= LoadYAML(database)['Entry'][i_episode]['Seq'][i_node]['XS']
-  # act_keys= (
-  #   'gh_ratio','p_pour_trg0','p_pour_trg',
-  #   'dtheta1','dtheta2','shake_spd','shake_axis2','skill',)
+  act_keys= (
+    'gh_ratio','p_pour_trg0','p_pour_trg',
+    'dtheta1','dtheta2','shake_spd','shake_range','shake_angle','skill',)
   # act_keys= (
   #   'gh_ratio','p_pour_trg0','p_pour_trg',
   #   'dtheta1','dtheta2')
-  act_keys= (
-    'gh_ratio','p_pour_trg0','p_pour_trg',
-    'dtheta1','shake_spd','shake_axis2')
+  # act_keys= (
+  #   'gh_ratio','p_pour_trg0','p_pour_trg',
+  #   'dtheta1','shake_spd','shake_axis2')
   actions= [ToList(np.array(xs[key]['X']).ravel()) for key in act_keys]
   return {key:(value[0] if len(value)==1 else value) for key,value in zip(act_keys,actions)}
 
@@ -38,8 +38,8 @@ def Run(ct,*args):
   # target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
   #             + "bottomup/learn7/std_pour/ketchup/random/nn_reward/first"+"/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "debugger/ex5/shake_A/natto/random/first"+"/"
-  i_episode_list = [64]
+              + "curriculum/manual_skill_ordering2/ketchup_0055/third"+"/"
+  i_episode_list = [26]
   i_node = 0
   n_roop = 1
 
@@ -86,18 +86,20 @@ def Run(ct,*args):
         ct.Run('mysim.act.move_to_pour_sv', l.opt_conf['actions'])
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_before_flow))
 
-        ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
-        XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
+        # ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
+        # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         # ct.Run('mysim.act.std_pour_sv_custom', l.opt_conf['actions'])
         # # ct.Run('mysim.act.std_pour_sv_prev', l.opt_conf['actions'])
         # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
-        # if l.opt_conf['actions']['skill']==0:
-        #   ct.Run('mysim.act.std_pour_sv_custom', l.opt_conf['actions'])
-        # else:
-        #   ct.Run('mysim.act.shake_A_5s_sv', l.opt_conf['actions'])
-        # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
+        if l.opt_conf['actions']['skill']==0:
+          ct.Run('mysim.act.std_pour_sv_custom', l.opt_conf['actions'])
+        else:
+          l.opt_conf['actions']
+          actions = {"dtheta1": l.opt_conf['actions']["dtheta1"], "shake_spd": l.opt_conf['actions']["shake_spd"], "shake_axis2": ToList([l.opt_conf['actions']['shake_range'], l.opt_conf['actions']['shake_angle']])}
+          ct.Run('mysim.act.shake_A_5s_sv', actions)
+        XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         # SaveYAML(XS,log_dir+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))
         Print(XS)

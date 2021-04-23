@@ -1,7 +1,9 @@
-from core_tool import *
-from tasks_domain import pouring as td
-from tasks_domain.util import SetupDPL, CreateDPLLog
 from util import CreateExperimentsEvidenceFile
+from tasks_domain.util import SetupDPL, CreateDPLLog
+from tasks_domain import pouring as td
+from core_tool import *
+
+ROOT_PATH = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
 
 
 def Help():
@@ -12,6 +14,7 @@ def ExecuteLearning(ct, l):
     CreateExperimentsEvidenceFile(l, __file__)
 
     domain = td.Domain()
+    domain.SpaceDefs.update(l.skill_params_def)
     l.dpl, fp = SetupDPL(ct, l, domain)
 
     for count in range(l.num_episodes):
@@ -41,37 +44,36 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "ketchup_0055/fourth"+"/"
+    suff = "curriculum_test/t7/first"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-                + "curriculum/scratch"+"/"+suff
+        + "curriculum/scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    # l.src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"+"/"
-    l.src_core = ""
+    # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+    #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
+    l.db_src = ""
+    l.model_src = ROOT_PATH + "curriculum/pretrain/Fmvtopour2"
 
     ############################################################################
     # Modify ConfigCallback
     ############################################################################
     l.config_callback = td.ConfigCallback
     l.rcv_size = "static"
-    l.mtr_smsz = "custom"
-    l.custom_mtr = "ketchup"
-    l.custom_smsz = 0.055
+    l.mtr_smsz = "curriculum_test"
 
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 50
+    l.num_episodes = 120
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
     l.opt_conf = {
-        'model_dir': l.src_core + "models/" if l.src_core != "" else "",
+        'model_dir': l.model_src + "/models/" if l.model_src != "" else "",
         'model_dir_persistent': False,  # If False, models are saved in l.logdir, i.e. different one from 'model_dir'
-        'db_src': l.src_core + "database.yaml" if l.src_core != "" else "",
+        'db_src': l.db_src + "/database.yaml" if l.db_src != "" else "",
         'config': {},  # Config of the simulator
         'dpl_options': {
             'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  # '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
@@ -100,6 +102,15 @@ def Run(ct, *args):
         'AdaDelta_rho': 0.9,  # default 0.9
         # 'train_log_file': '{base}train/nn_log-{name}{code}.dat',
         # "train_batch_loss_log_file": '{base}train/nn_batch_loss_log-{name}{code}.dat',
+    }
+
+    ############################################################################
+    # Modify Domain
+    ############################################################################
+    SP = TCompSpaceDef
+    l.skill_params_def = {
+        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
+        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
     }
 
     if True:

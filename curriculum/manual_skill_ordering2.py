@@ -1,4 +1,6 @@
 from copy import deepcopy
+
+from matplotlib.pyplot import title
 from util import CreateExperimentsEvidenceFile
 from tasks_domain.util import SetupDPL, CreateDPLLog
 from tasks_domain import pouring as td
@@ -36,7 +38,7 @@ def ExecuteLearning(ct, l):
 
     count = 0
     is_ready = True
-    while count <= l.num_episodes:
+    while count < l.num_episodes:
         if (len(l.tasks) >= 1) & is_ready:
             task = l.tasks[0]
             l.dpl.d.SpaceDefs.update(task.skill_params_def)
@@ -77,16 +79,17 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "ketchup_0055/fourth"+"/"
+    suff = "ketchup_0055/fifth"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-        + "curriculum/manual_skill_ordering"+"/"+suff
+        + "curriculum/manual_skill_ordering2"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    # l.src_core = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
+    # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
     #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"+"/"
-    l.src_core = ""
+    l.db_src = ""
+    l.model_src = ""
 
     ############################################################################
     # Modify ConfigCallback
@@ -100,14 +103,14 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 50
+    l.num_episodes = 65
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
     l.opt_conf = {
-        'model_dir': l.src_core + "models/" if l.src_core != "" else "",
+        'model_dir': l.model_src + "models/" if l.model_src != "" else "",
         'model_dir_persistent': False,  # If False, models are saved in l.logdir, i.e. different one from 'model_dir'
-        'db_src': l.src_core + "database.yaml" if l.src_core != "" else "",
+        'db_src': l.db_src + "database.yaml" if l.db_src != "" else "",
         'config': {},  # Config of the simulator
         'dpl_options': {
             'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  # '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
@@ -142,9 +145,11 @@ def Run(ct, *args):
     # Create Tasks
     ############################################################################
     SP = TCompSpaceDef
+    l.tasks = []
 
-    t0 = Task(name="t0")  # Optimize p_pour_trg
-    t0.skill_params_def = {
+    # 1
+    l.tasks.append(Task(name="Optimize p_pour_trg"))
+    l.tasks[-1].skill_params_def = {
         'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
         'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
         'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
@@ -152,53 +157,70 @@ def Run(ct, *args):
         'shake_range': SP('state', 1, min=[0.05], max=[0.12]),
         'shake_angle': SP('state', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
     }
-    t0.terminal_condition = lambda count: TerminalCheck(count, 9)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 11)
 
-    t1 = Task(name="t1")  # Optimize p_pour_trg, shake_range
-    t1.skill_params_def = {
+    # 2
+    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2"))
+    l.tasks[-1].skill_params_def = {
         'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
         'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
+        'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
+        'shake_range': SP('state', 1, min=[0.05], max=[0.12]),
+        'shake_angle': SP('state', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
+    }
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
+
+    # 3
+    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range"))
+    l.tasks[-1].skill_params_def = {
+        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
+        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
+        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
         'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
         'shake_angle': SP('state', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
     }
-    t1.terminal_condition = lambda count: TerminalCheck(count, 5)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
 
-    t2 = Task(name="t2")  # Optimize p_pour_trg, shake_angle
-    t2.skill_params_def = {
+    # 4
+    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_angle"))
+    l.tasks[-1].skill_params_def = {
         'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
         'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
+        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
         'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
         'shake_range': SP('state', 1, min=[0.05], max=[0.12]),
     }
-    t2.terminal_condition = lambda count: TerminalCheck(count, 5)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
 
-    t3 = Task(name="t3")  # Optimize p_pour_trg, shake_range, shake_angle
-    t3.skill_params_def = {
+    # 5
+    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range, shake_angle"))
+    l.tasks[-1].skill_params_def = {
         'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
         'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
+        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
         'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
     }
-    t3.terminal_condition = lambda count: TerminalCheck(count, 5)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
 
-    t4 = Task(name="t4")  # Optimize p_pour_trg, shake_range, shake_angle, shake_spd
-    t4.skill_params_def = {
+    # 6
+    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range, shake_angle, shake_spd"))
+    l.tasks[-1].skill_params_def = {
         'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
         'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
+        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
     }
-    t4.terminal_condition = lambda count: TerminalCheck(count, 5)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
 
-    t5 = Task(name="t5")  # Optimize p_pour_trg, shake_range, shake_angle, shake_spd, gh_ratio
-    t5.skill_params_def = {
+    # 7
+    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range, shake_angle, shake_spd, gh_ratio"))
+    l.tasks[-1].skill_params_def = {
         'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
+        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
     }
-    t5.terminal_condition = lambda count: TerminalCheck(count, 5)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
 
-    l.tasks = [t0, t1, t2, t3, t4, t5]
-
+    ############################################################################
+    # Execute
+    ############################################################################
     if True:
         ExecuteLearning(ct, l)

@@ -50,7 +50,10 @@ def Run(ct, *args):
                                       "dtheta2": data["dtheta2"]["X"]}})
         if state=="n3sa": keys.append({state: {"dtheta1": data["dtheta1"]["X"],
                                       "shake_spd": data["shake_spd"]["X"],
-                                      "shake_axis2": data["shake_axis2"]["X"]}})
+                                      # "shake_axis2": data["shake_axis2"]["X"],
+                                      "shake_range": data["shake_range"]["X"],
+                                      "shake_angle": data["shake_angle"]["X"],
+                                      }})
         if state=="n1rcvmvr": 
           rewards.append({str(reward_counter)+"_n1rcvmvr": data[".r"]["X"][0][0]})
           reward_counter += 1
