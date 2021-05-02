@@ -29,7 +29,7 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
     domain.SpaceDefs = {
         'skill': SP('select', num=2),  # Skill selection
         # 'ps_rcv': SP('state', 12),  # 4 edge point positions (x,y,z)*4 of receiver
-        'gh_ratio': SP('action', 1, min=[0.0], max=[1.0]),  # Gripper height (ratio)
+        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),  # Gripper height (ratio)
         'gh_abs': SP('state', 1),  # Gripper height (absolute value)
         # 'p_pour_trg0': SP('state', 1, min=[0.1], max=[0.7]),  # Target pouring axis position of preparation before pouring (x,z)
         # NOTE: we stopped to plan p_pour_trg0
@@ -297,12 +297,12 @@ def Execute(ct, l):
             ############################################################################
             # n2 (pouring): Execute pouring skill (Selection is already planned before node)
             ############################################################################
-            idx = int(l.xs.n2c['skill'].X[0])
+            idx = int(l.xs.n2['skill'].X[0])
             selected_skill = ('tip', 'shake')[idx]
 
             if selected_skill == 'tip':
-                dtheta1 = l.xs.n2c['dtheta1'].X[0, 0]
-                dtheta2 = l.xs.n2c['dtheta2'].X[0, 0]
+                dtheta1 = l.xs.n2['dtheta1'].X[0, 0]
+                dtheta2 = l.xs.n2['dtheta2'].X[0, 0]
                 actions['tip']({'dtheta1': dtheta1, 'dtheta2': dtheta2})
 
                 ############################################################################
@@ -329,10 +329,10 @@ def Execute(ct, l):
                 l.idb.n3tir = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3tir', xs=l.xs.n3tir)
 
             elif selected_skill == 'shake':
-                dtheta1 = l.xs.n2c['dtheta1'].X[0, 0]
-                shake_spd = l.xs.n2c['shake_spd'].X[0, 0]
-                # shake_axis2 = ToList(l.xs.n2c['shake_axis2'].X)
-                shake_axis2 = ToList([l.xs.n2c['shake_range'].X.item(), l.xs.n2c['shake_angle'].X.item()])
+                dtheta1 = l.xs.n2['dtheta1'].X[0, 0]
+                shake_spd = l.xs.n2['shake_spd'].X[0, 0]
+                # shake_axis2 = ToList(l.xs.n2['shake_axis2'].X)
+                shake_axis2 = ToList([l.xs.n2['shake_range'].X.item(), l.xs.n2['shake_angle'].X.item()])
                 actions['shake']({'dtheta1': dtheta1, 'shake_spd': shake_spd, 'shake_axis2': shake_axis2})
 
                 ############################################################################

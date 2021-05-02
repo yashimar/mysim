@@ -1,6 +1,6 @@
 from util import CreateExperimentsEvidenceFile
 from tasks_domain.util import SetupDPL, CreateDPLLog
-from tasks_domain import pouring as td
+import task_domain as td
 from core_tool import *
 
 ROOT_PATH = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
@@ -44,9 +44,9 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/t9/first"+"/"
+    suff = "curriculum_test/test/first"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-        + "curriculum/scratch"+"/"+suff
+                + "curriculum/flowing_out/scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
@@ -54,7 +54,8 @@ def Run(ct, *args):
     # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
     #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
     l.db_src = ""
-    l.model_src = ROOT_PATH + "curriculum/pretrain/Fmvtopour2"
+    # l.model_src = ROOT_PATH + "curriculum/pretrain/Fmvtopour2"
+    l.model_src = ""
 
     ############################################################################
     # Modify ConfigCallback
@@ -66,7 +67,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 120
+    l.num_episodes = 7
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
