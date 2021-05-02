@@ -44,7 +44,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/t7/first"+"/"
+    suff = "curriculum_test/t9/first"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
         + "curriculum/scratch"+"/"+suff
 

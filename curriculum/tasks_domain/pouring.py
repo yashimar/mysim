@@ -147,6 +147,10 @@ def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For e
     elif l.mtr_smsz == 'curriculum_test':
         m_setup.SetMaterial(l, preset=('nobounce', 'ketchup')[RandI(2)])
         l.config.SrcSize2H = Rand(0.03, 0.08)
+    elif l.mtr_smsz == "middle_ease_of_flow":
+        mtr, smsz = (("nobounce", 0.055), ("nobounce", 0.08), ("ketchup", 0.03), ("ketchup", 0.055))[RandI(4)]
+        m_setup.SetMaterial(l, preset=mtr)
+        l.config.SrcSize2H = smsz
     elif l.mtr_smsz == "custom":
         if l.custom_mtr == "random":
             l.latest_mtr = ('bounce', 'nobounce', 'natto', 'ketchup')[RandI(4)]

@@ -8,6 +8,8 @@ from tsim.dpl_cmn import *
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
 
+ROOT_PATH = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
+
 
 def Help():
     pass
@@ -33,6 +35,7 @@ def ExecuteLearning(ct, l):
     CreateExperimentsEvidenceFile(l, __file__)
 
     domain = td.Domain()
+    domain.SpaceDefs.update(l.skill_params_def)
     default_space_defs = deepcopy(domain.SpaceDefs)
     l.dpl, fp = SetupDPL(ct, l, domain)
 
@@ -42,6 +45,7 @@ def ExecuteLearning(ct, l):
         if (len(l.tasks) >= 1) & is_ready:
             task = l.tasks[0]
             l.dpl.d.SpaceDefs.update(task.skill_params_def)
+            task.config_callback()
             i = 0
             is_ready = False
 
@@ -67,6 +71,7 @@ def ExecuteLearning(ct, l):
         if task.terminal_condition(i) & (is_ready == False):
             l.tasks.pop(0)
             l.dpl.d.SpaceDefs.update(default_space_defs)
+            l.default_config_callback()
             is_ready = True
 
     fp.close()
@@ -79,9 +84,9 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "ketchup_0055/fifth"+"/"
+    suff = "t6/first"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-        + "curriculum/manual_skill_ordering2"+"/"+suff
+                + "curriculum/manual_init_state_ordering"+"/"+suff
 
     ############################################################################
     # Specify src directory
@@ -89,28 +94,32 @@ def Run(ct, *args):
     # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
     #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"+"/"
     l.db_src = ""
-    l.model_src = ""
+    # l.model_src = ""
+    l.model_src = ROOT_PATH + "curriculum/pretrain/Fmvtopour2"
 
     ############################################################################
     # Modify ConfigCallback
     ############################################################################
     l.config_callback = td.ConfigCallback
-    l.rcv_size = "static"
-    l.mtr_smsz = "custom"
-    l.custom_mtr = "ketchup"
-    l.custom_smsz = 0.055
+
+    def custom_config_callback(rcv_size, mtr_smsz, custom_mtr, custom_smsz):
+        l.rcv_size = rcv_size
+        l.mtr_smsz = mtr_smsz
+        l.custom_mtr = custom_mtr
+        l.custom_smsz = custom_smsz
+    l.default_config_callback = lambda: custom_config_callback("static", "curriculum_test", "", "")
 
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 65
+    l.num_episodes = 120
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
     l.opt_conf = {
-        'model_dir': l.model_src + "models/" if l.model_src != "" else "",
+        'model_dir': l.model_src + "/models/" if l.model_src != "" else "",
         'model_dir_persistent': False,  # If False, models are saved in l.logdir, i.e. different one from 'model_dir'
-        'db_src': l.db_src + "database.yaml" if l.db_src != "" else "",
+        'db_src': l.db_src + "/database.yaml" if l.db_src != "" else "",
         'config': {},  # Config of the simulator
         'dpl_options': {
             'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  # '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
@@ -142,82 +151,37 @@ def Run(ct, *args):
     }
 
     ############################################################################
+    # Modify Domain
+    ############################################################################
+    SP = TCompSpaceDef
+    l.skill_params_def = {
+        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
+        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
+    }
+
+    ############################################################################
     # Create Tasks
     ############################################################################
     SP = TCompSpaceDef
     l.tasks = []
 
     # 1
-    l.tasks.append(Task(name="Optimize p_pour_trg"))
-    l.tasks[-1].skill_params_def = {
-        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
-        'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
-        'shake_range': SP('state', 1, min=[0.05], max=[0.12]),
-        'shake_angle': SP('state', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 11)
+    l.tasks.append(Task(name="nobounce, 0.03"))
+    l.tasks[-1].skill_params_def = {}
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", "nobounce", 0.03)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
 
     # 2
-    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2"))
-    l.tasks[-1].skill_params_def = {
-        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
-        'shake_range': SP('state', 1, min=[0.05], max=[0.12]),
-        'shake_angle': SP('state', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
+    l.tasks.append(Task(name="(nobounce, 0.055), (nobounce, 0.08), (ketchup, 0.03), (ketchup, 0.055)"))
+    l.tasks[-1].skill_params_def = {}
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "middle_ease_of_flow", "", "")
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 40)
 
     # 3
-    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range"))
-    l.tasks[-1].skill_params_def = {
-        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
-        'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
-        'shake_angle': SP('state', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
-
-    # 4
-    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_angle"))
-    l.tasks[-1].skill_params_def = {
-        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
-        'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
-        'shake_range': SP('state', 1, min=[0.05], max=[0.12]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
-
-    # 5
-    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range, shake_angle"))
-    l.tasks[-1].skill_params_def = {
-        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
-        'shake_spd': SP('state', 1, min=[0.5], max=[1.2]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
-
-    # 6
-    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range, shake_angle, shake_spd"))
-    l.tasks[-1].skill_params_def = {
-        'gh_ratio': SP('state', 1, min=[0.0], max=[1.0]),
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
-
-    # 7
-    l.tasks.append(Task(name="Optimize p_pour_trg, dtheta2, shake_range, shake_angle, shake_spd, gh_ratio"))
-    l.tasks[-1].skill_params_def = {
-        'dtheta1': SP('state', 1, min=[0.01], max=[0.02]),
-        # 'dtheta2': SP('state', 1, min=[0.002], max=[0.02]),
-    }
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 8)
+    l.tasks.append(Task(name="ketchup, 0.08"))
+    l.tasks[-1].skill_params_def = {}
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", "ketchup", 0.08)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
 
     ############################################################################
     # Execute
