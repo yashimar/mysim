@@ -16,7 +16,7 @@ def Rflowedout():
         + 'reward_model'+"/"
     FRwd = TNNRegression()
     # prefix = modeldir+'p1_model/FRwdDefault'
-    prefix =
+    prefix = modeldir+'p1_model/Fflowedout'
     FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
     FRwd.Init()
 
@@ -40,6 +40,7 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
         'shake_range': SP('action', 1, min=[0.05], max=[0.12]),
         'shake_angle': SP('action', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
         # 'shake_axis2': SP('action',2,min=[0.05,-0.5*math.pi],max=[0.1,0.5*math.pi]),
+        'p_pour': SP('state', 3),  # Pouring axis position (z)
         'p_pour_z': SP('state', 1),  # Pouring axis position (z)
         # 'lp_pour': SP('state', 3),  # Pouring axis position (x,y,z) in receiver frame
         # 'dps_rcv': SP('state', 12),  # Displacement of ps_rcv from previous time
@@ -191,19 +192,19 @@ def Execute(ct, l):
 
         obs_keys0 = (
             # 'ps_rcv',
-            # 'p_pour',
+            'p_pour',
             "p_pour_z",
             # 'lp_pour',
             'a_trg',
             'size_srcmouth',
-            'material2'
+            'material2',
         )
         obs_keys_after_grab = obs_keys0+('gh_abs',)
         obs_keys_before_flow = obs_keys_after_grab + \
             (
                 # 'a_pour',
                 # 'a_spill2',
-                'a_total'
+                'a_total',
             )
         obs_keys_after_flow = obs_keys_before_flow + \
             (
@@ -212,7 +213,7 @@ def Execute(ct, l):
                 'flow_var',
                 # 'da_pour',
                 # 'da_spill2',
-                'da_total'
+                'da_total',
             )
 
         l.xs = TContainer()  # l.xs.NODE= XSSA
@@ -229,7 +230,7 @@ def Execute(ct, l):
         # # l.xs.n0['p_pour_trg0'] = SSA(Vec([0., Rand(0.1, 0.7)]))
         l.xs.n0['gh_ratio'] = SSA([0.5])
         # # l.xs.n0['p_pour_trg'] = SSA(Vec([Rand(0.2, 1.2), Rand(0.1, 0.7)]))
-        # l.xs.n0['dtheta1'] = SSA([0.014])
+        l.xs.n0['dtheta1'] = SSA([0.014])
         # l.xs.n0['dtheta2'] = SSA([0.004])
         # l.xs.n0['shake_spd'] = SSA([0.8])
         # l.xs.n0['shake_range'] = SSA([0.08])
@@ -290,6 +291,7 @@ def Execute(ct, l):
             if "n2" in l.planning_node:
                 res = l.dpl.Plan('n2', l.xs.n2, l.interactive)
                 l.node_best_tree.append(res.PTree)
+            InsertDict(l.xs.n2, ObserveXSSA(l, l.xs.prev, obs_keys_before_flow))
             l.idb.n2 = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n2', xs=l.xs.n2)
             l.xs.prev = l.xs.n2
             l.idb.prev = l.idb.n2
@@ -355,8 +357,8 @@ def Execute(ct, l):
                 # n3sar: Caluculate Rdamount
                 ############################################################################
                 CPrint(2, 'Node:', 'n3sar')
-                l.xs.n3sar = l.dpl.Forward('Rdamount', l.xs.n3sar)
-                l.idb.n3sar = l.dpl.DB.AddToSeq(parent=l.idb.n3sar, name='n3sar', xs=l.xs.n3sar)
+                l.xs.n3sar = l.dpl.Forward('Rflowedout', l.xs.prev)
+                l.idb.n3sar = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3sar', xs=l.xs.n3sar)
 
             if "n2" in l.planning_node:
                 # Conditions to break the try-and-error loop

@@ -1,5 +1,5 @@
-from util import CreateExperimentsEvidenceFile
-from tasks_domain.util import SetupDPL, CreateDPLLog
+from ...util import CreateExperimentsEvidenceFile
+from ..util import SetupDPL, CreateDPLLog
 import task_domain as td
 from core_tool import *
 
@@ -19,9 +19,9 @@ def ExecuteLearning(ct, l):
 
     for count in range(l.num_episodes):
         if count <= 2:
-            l.pour_skill = "std_pour"
+            l.pour_skill = "tip"
         elif count <= 5:
-            l.pour_skill = "shake_A"
+            l.pour_skill = "shake"
         else:
             l.pour_skill = ""
         CPrint(2, '========== Start %4i ==========' % count)
@@ -44,7 +44,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/test/first"+"/"
+    suff = "curriculum_test/t1/first"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
                 + "curriculum/flowing_out/scratch"+"/"+suff
 
@@ -67,7 +67,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 7
+    l.num_episodes = 100
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]

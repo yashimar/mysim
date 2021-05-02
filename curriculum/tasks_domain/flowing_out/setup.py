@@ -1,5 +1,7 @@
 #!/usr/bin/python
 from core_tool import *
+roslib.load_manifest('ay_sim_msgs')
+import ay_sim_msgs.msg
 SmartImportReload('mysim.sm.mysm')
 from mysim.sm.mysm import (
   SetMaterial,
