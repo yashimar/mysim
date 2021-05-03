@@ -18,9 +18,9 @@ def ExecuteLearning(ct, l):
     l.dpl, fp = SetupDPL(ct, l, domain)
 
     for count in range(l.num_episodes):
-        if count <= 2:
+        if count <= 9:
             l.pour_skill = "tip"
-        elif count <= 5:
+        elif count <= 19:
             l.pour_skill = "shake"
         else:
             l.pour_skill = ""
@@ -44,7 +44,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/t1/first"+"/"
+    suff = "curriculum_test/t13/first50"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
                 + "curriculum/flowing_out/scratch"+"/"+suff
 
@@ -67,7 +67,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 100
+    l.num_episodes = 50
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]

@@ -17,7 +17,7 @@ def Rflowedout():
     FRwd = TNNRegression()
     # prefix = modeldir+'p1_model/FRwdDefault'
     prefix = modeldir+'p1_model/Fflowedout'
-    FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+    FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
     FRwd.Init()
 
     return FRwd
