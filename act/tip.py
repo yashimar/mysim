@@ -14,18 +14,17 @@ def GenSMStdPour(ct,l,sim):
   sm.l.max_theta= 0.9*math.pi
   charge_time = 5
 
-  # poured_action= TFSMConditionedAction()
-  # poured_action.Condition= sm.l.IsPoured
-  # poured_action.NextState= EXIT_STATE
-
-  # spilled_action= TFSMConditionedAction()
-  # spilled_action.Condition= sm.l.IsSpilledEmpty
-  # spilled_action.NextState= EXIT_STATE
-
-  flow_out_action = TFSMConditionedAction()
-  flow_out_action.Condition = sm.l.IsFlowedOut
-  flow_out_action.NextState = EXIT_STATE
-
+  if sm.l.IsRcvConsidering:
+    poured_action= TFSMConditionedAction()
+    poured_action.Condition= sm.l.IsPoured
+    poured_action.NextState= EXIT_STATE
+    spilled_action= TFSMConditionedAction()
+    spilled_action.Condition= sm.l.IsSpilledEmpty
+    spilled_action.NextState= EXIT_STATE
+  else:
+    flowed_out_action = TFSMConditionedAction()
+    flowed_out_action.Condition = sm.l.IsFlowedOut
+    flowed_out_action.NextState = EXIT_STATE
   timeout_action= TFSMConditionedAction()
   timeout_action.Condition= sm.l.IsTimeout
   timeout_action.NextState= EXIT_STATE
@@ -48,12 +47,14 @@ def GenSMStdPour(ct,l,sim):
 
   sm.NewState('approach')  #NEW_TFlowAmountModel
   sm['approach'].EntryAction = lambda: sim.GetSensor(ct,sm.l)
-  # sm['approach'].NewAction()
-  # sm['approach'].Actions[-1]= poured_action
-  # sm['approach'].NewAction()
-  # sm['approach'].Actions[-1]= spilled_action
-  sm['approach'].NewAction()
-  sm['approach'].Actions[-1]= flow_out_action
+  if sm.l.IsRcvConsidering:
+    sm['approach'].NewAction()
+    sm['approach'].Actions[-1]= poured_action
+    sm['approach'].NewAction()
+    sm['approach'].Actions[-1]= spilled_action
+  else:
+    sm['approach'].NewAction()
+    sm['approach'].Actions[-1]= flowed_out_action
   sm['approach'].NewAction()
   sm['approach'].Actions[-1]= timeout_action
   ###
@@ -71,12 +72,14 @@ def GenSMStdPour(ct,l,sim):
 
   sm.NewState('find_flow_p')
   sm['find_flow_p'].EntryAction = lambda: sim.GetSensor(ct,sm.l)
-  # sm['find_flow_p'].NewAction()
-  # sm['find_flow_p'].Actions[-1]= poured_action
-  # sm['find_flow_p'].NewAction()
-  # sm['find_flow_p'].Actions[-1]= spilled_action
-  sm['find_flow_p'].NewAction()
-  sm['find_flow_p'].Actions[-1]= flow_out_action
+  if sm.l.IsRcvConsidering:
+    sm['find_flow_p'].NewAction()
+    sm['find_flow_p'].Actions[-1]= poured_action
+    sm['find_flow_p'].NewAction()
+    sm['find_flow_p'].Actions[-1]= spilled_action
+  else:
+    sm['find_flow_p'].NewAction()
+    sm['find_flow_p'].Actions[-1]= flowed_out_action
   sm['find_flow_p'].NewAction()
   sm['find_flow_p'].Actions[-1]= timeout_action
   ###
@@ -97,12 +100,14 @@ def GenSMStdPour(ct,l,sim):
 
   sm.NewState('flow_out')
   sm['flow_out'].EntryAction= lambda: (sim.GetSensor(ct,sm.l), sm.l.ChargeTimer(charge_time))  #Time of patience
-  # sm['flow_out'].NewAction()
-  # sm['flow_out'].Actions[-1]= poured_action
-  # sm['flow_out'].NewAction()
-  # sm['flow_out'].Actions[-1]= spilled_action
-  sm['flow_out'].NewAction()
-  sm['flow_out'].Actions[-1]= flow_out_action
+  if sm.l.IsRcvConsidering:
+    sm['flow_out'].NewAction()
+    sm['flow_out'].Actions[-1]= poured_action
+    sm['flow_out'].NewAction()
+    sm['flow_out'].Actions[-1]= spilled_action
+  else:
+    sm['flow_out'].NewAction()
+    sm['flow_out'].Actions[-1]= flowed_out_action
   sm['flow_out'].NewAction()
   sm['flow_out'].Actions[-1]= timeout_action
   ###

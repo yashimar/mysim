@@ -5,6 +5,15 @@ from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
 
 
+def CurrentPredict(l, key, xs):
+    MM = l.dpl.MM
+    In, Out, F = MM.Models[key]
+    x_in, cov_in, dims_in = SerializeXSSA(MM.SpaceDefs, xs, In)
+    pred = F.Predict(x_in, with_var=True)
+    pred_mean, pred_var = pred.Y.tolist(), pred.Var.tolist()
+    return pred_mean, np.diag(pred_var)
+
+
 def CreatePredictionLog(l, key, xs, ys):
     MM = l.dpl.MM
     In, Out, F = MM.Models[key]
