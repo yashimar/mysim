@@ -22,6 +22,9 @@ def Routflow():
     return FRwd
 
 
+setup_path = 'mysim.curriculum.tasks_domain.outflow.setup'
+
+
 def Domain():  # SpaceDefs and Models (reward function) will be modified by curriculum. (For example, 'action' -> 'state', Rdamount -> Rdspill, and so on.)
     domain = TGraphDynDomain()
     SP = TCompSpaceDef
@@ -113,7 +116,7 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
 
 
 def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For example, l.custom_mtr -> "natto", l.custom_smsz -> 0.055, and so on.)
-    m_setup = ct.Load('mysim.curriculum.tasks_domain.pouring.setup')
+    m_setup = ct.Load(setup_path)
     l.amount_trg = 0.3
     # Note: In this subtask, we do not use IsSpilled and IsPoured
     # l.spilled_stop = 10
@@ -153,7 +156,7 @@ def Execute(ct, l):
 
     l.dpl.NewEpisode()
     try:
-        ct.Run('mysim.curriculum.tasks_domain.pouring.setup', l)
+        ct.Run(setup_path, l)
         sim = ct.sim
 
         actions = {
