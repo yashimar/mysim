@@ -1,7 +1,7 @@
 from core_tool import *
 from ay_py.core import *
 import sys
-sys.path.append("/home/yashima/ros_ws/ay_tools/ay_test/python/models/")
+# sys.path.append("/home/yashima/ros_ws/ay_tools/ay_test/python/models/")
 import numpy as np
 from num_expec import *
 from matplotlib import pyplot as plt
@@ -27,10 +27,10 @@ def Run(ct,*args):
 
   def LearnReward():
     #I/O: [E[x], Var[x]],[REWARD_KEY]
-    dim_in = 2
+    dim_in = 3
     dim_out = 1
     options={
-      'base_dir': modeldir+'p1_model/Fflowedout'+"/",
+      'base_dir': modeldir+'p1_model/Fflowedout_shake'+"/",
       'n_units': [dim_in] + [128] + [dim_out],
       'name': 'FRwd',
       'loss_stddev_stop': 1.0e-6,
@@ -39,20 +39,20 @@ def Run(ct,*args):
       "batchsize": 64,
       'num_check_stop': 1000,
       }
-    prefix= modeldir+'p1_model/Fflowedout'
+    prefix= modeldir+'p1_model/Fflowedout_shake'
     FRwd= TNNRegression()
     FRwd.Load(data={'options':options})
     if os.path.exists(prefix+'.yaml'):
-      FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
-      FRwd.Load(data={'options':options}, base_dir=prefix)
+      FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
+      FRwd.Load(data={'options':options}, base_dir=prefix+"/")
     FRwd.Init()
     Print("len(DataX): ", len(FRwd.DataX))
 
-    for i in range(1):
-      # ex = [Rand(0.,0.55), Rand(-0.5,1.0)] #Should not contain sdv_x.
-      tmp = Rand(0.25,0.35)
-      ex = [tmp, tmp+Rand(-0.2,0.2)]
-      R = [-100*max(0,ex[0]-ex[1])**2 -1.0*max(0,ex[1]-ex[0])**2]
+    for i in range(500000):
+      ex = [Rand(0.,0.55), Rand(-0.5,1.0), RandI(2)] #Should not contain sdv_x.
+      # tmp = Rand(0.25,0.35)
+      # ex = [tmp, tmp+Rand(-0.2,0.2)]
+      R = [-100*max(0,ex[0]-ex[1])**2 -1.0*max(0,ex[1]-ex[0])**2 -(100.0 if ex[2]!=1 else 0.0)]
       FRwd.Update(ex, R, not_learn=True)
     FRwd.UpdateBatch()
 
@@ -60,8 +60,8 @@ def Run(ct,*args):
 
   def Predict():
     FRwd= TNNRegression()
-    prefix= modeldir+'p1_model/Fflowedout'
-    FRwd.Load(LoadYAML(prefix+'.yaml'), prefix)
+    prefix= modeldir+'p1_model/Fflowedout_shake'
+    FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
     FRwd.Init()
 
     plt.close()
@@ -69,8 +69,8 @@ def Run(ct,*args):
     # xx = [np.random.normal(x, 0.3, 1) for x in FRwd.DataX]
     # xx = [x for x in FRwd.DataX]
     # plt.scatter(FRwd.DataX, [-100*max(0,0.3-x)**2 -1.0*max(0,x-0.3)**2 for x in xx])
-    ex_list = np.array([[0.3, x] for x in np.linspace(0.0,0.55,1000)])
-    sdvx_list = [[sdv**2, 0.] for sdv in [0.001, 0.05, 0.1, 0.2]]
+    ex_list = np.array([[0.3, x, 1] for x in np.linspace(0.0,0.55,1000)])
+    sdvx_list = [[sdv**2, 0., 0.] for sdv in [0.001, 0.05, 0.1, 0.2]]
     for sdvx in sdvx_list:
       ey_list = []
       vary_list = []

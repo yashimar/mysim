@@ -20,9 +20,10 @@ class Task:
         self.name = name
         self.skill_params_def = {}
         self.config_callback = lambda: None
-        self.reward_function = {}
+        self.reward_callback = lambda: None
+        self.custom_reward_model = {}
         self.terminal_condition = lambda: None
-        self.pour_skill = None
+        self.pour_skill = ""
 
 
 def TerminalCheck(count, max_count):
@@ -47,6 +48,7 @@ def ExecuteLearning(ct, l):
             task = l.tasks[0]
             l.dpl.d.SpaceDefs.update(task.skill_params_def)
             task.config_callback()
+            task.reward_callback()
             l.pour_skill = task.pour_skill
             i = 0
             is_ready = False
@@ -67,6 +69,7 @@ def ExecuteLearning(ct, l):
             l.tasks.pop(0)
             l.dpl.d.SpaceDefs.update(default_space_defs)
             l.default_config_callback()
+            l.default_reward_callback()
             l.pour_skill = ""
             is_ready = True
 
@@ -104,6 +107,23 @@ def Run(ct, *args):
         l.custom_mtr = custom_mtr
         l.custom_smsz = custom_smsz
     l.default_config_callback = lambda: custom_config_callback("static", "curriculum_test", "", "")
+
+    ############################################################################
+    # Modify reward function
+    ############################################################################
+    def Routflow(skill=None):
+        modeldir = ROOT_PATH + 'reward_model'+"/"
+        FRwd = TNNRegression()
+        if skill == "tip":
+            prefix = modeldir+'p1_model/Fflowedout_tip'
+        elif skill == "shake":
+            prefix = modeldir+'p1_model/Fflowedout_shake'
+        else:
+            prefix = modeldir+'p1_model/Fflowedout'
+        FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
+        FRwd.Init()
+        return FRwd
+    l.default_reward_callback = lambda: l.dpl.d.Models.update({"Routflow": [['da_trg', "da_total"], [REWARD_KEY], Routflow()]})
 
     ############################################################################
     # Modify learning config
@@ -163,31 +183,27 @@ def Run(ct, *args):
 
     # 1
     l.tasks.append(Task(name="init sample: tip"))
-    l.tasks[-1].skill_params_def = {}
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "curriculum_test", "", "")
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 3)
     l.tasks[-1].pour_skill = "tip"
 
     # 2
     l.tasks.append(Task(name="init sample: shake"))
-    l.tasks[-1].skill_params_def = {}
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "curriculum_test", "", "")
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 3)
     l.tasks[-1].pour_skill = "shake"
 
     # 3
     l.tasks.append(Task(name="tip soulde be selected"))
-    l.tasks[-1].skill_params_def = {}
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "nobounce_large", "", "")
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 10)
-    l.tasks[-1].pour_skill = "tip"
+    l.tasks[-1].reward_callback = lambda: l.dpl.d.Models.update({"Routflow": [['da_trg', "da_total", "skill"], [REWARD_KEY], Routflow("tip")]})
 
     # 4
     l.tasks.append(Task(name="shake soulde be selected"))
-    l.tasks[-1].skill_params_def = {}
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "ketchup_small", "", "")
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 10)
-    l.tasks[-1].pour_skill = "shake"
+    l.tasks[-1].reward_callback = lambda: l.dpl.d.Models.update({"Routflow": [['da_trg', "da_total", "skill"], [REWARD_KEY], Routflow("shake")]})
 
     ############################################################################
     # Execute
