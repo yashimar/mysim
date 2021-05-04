@@ -67,7 +67,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 7
+    l.num_episodes = -1
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]

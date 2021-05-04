@@ -1,9 +1,9 @@
 from copy import deepcopy
 
 from matplotlib.pyplot import title
-from util import CreateExperimentsEvidenceFile
-from tasks_domain.util import SetupDPL, CreateDPLLog
-from tasks_domain import pouring as td
+from ...util import CreateExperimentsEvidenceFile
+from ..util import SetupDPL, CreateDPLLog
+import task_domain as td
 from tsim.dpl_cmn import *
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
@@ -123,11 +123,11 @@ def Run(ct, *args):
                 # 'ptree_num': 40, #default auto
                 # 'db_init_ratio': 1.0, #default 0.5
                 'db_init_R_min': -1.0,  # default -1.0
-                'grad_max_bounce': 10,  # default 10
+                'grad_max_bounce': 20,  # default 10
                 'prob_update_best': 0.4,  # default 0.4
                 'prob_update_rand': 0.3,  # default 0.3
-                'max_total_iter': 2000,  # default 2000
-                "grad_max_iter": 50,  # default 50
+                'max_total_iter': 4000,  # default 2000
+                "grad_max_iter": 100,  # default 50
                 'gd_alpha': 0.03  # default 0.03
             },
         },

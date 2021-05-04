@@ -18,12 +18,13 @@ def ExecuteLearning(ct, l):
     l.dpl, fp = SetupDPL(ct, l, domain)
 
     for count in range(l.num_episodes):
-        if count <= 2:
-            l.pour_skill = "tip"
-        elif count <= 5:
-            l.pour_skill = "shake"
-        else:
-            l.pour_skill = ""
+        l.pour_skill = ""
+        # if count <= 2:
+        #     l.pour_skill = "tip"
+        # elif count <= 5:
+        #     l.pour_skill = "shake"
+        # else:
+        #     l.pour_skill = ""
         CPrint(2, '========== Start %4i ==========' % count)
         td.Execute(ct, l)
         CPrint(2, '========== End %4i ==========' % count)
@@ -44,17 +45,16 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/test/first"+"/"
-    l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-                + "curriculum/pouring/scratch"+"/"+suff
+    t_index = 12
+    suff = "curriculum_test/t"+str(t_index)+"/first70"+"/"
+    l.logdir = ROOT_PATH + "curriculum/pouring/scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
+    # l.db_src = ROOT_PATH + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
     l.db_src = ""
-    l.model_src = ROOT_PATH + "curriculum/flowing_out/scratch/curriculum_test/test/first"
+    l.model_src = ROOT_PATH + "curriculum/flowing_out/scratch/curriculum_test/t"+str(t_index)+"/first50"
     # l.model_src = ""
 
     ############################################################################
@@ -67,7 +67,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 7
+    l.num_episodes = 70
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
