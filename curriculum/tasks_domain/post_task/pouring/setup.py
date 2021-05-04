@@ -159,8 +159,8 @@ def Run(ct,*args):
   #l.IsSpilled= lambda: (Print('dnum_spill=',l.filtered.dnum_spill,l.spilled_stop,(l.filtered.dnum_spill >= l.spilled_stop)),
                         #(l.filtered.dnum_spill >= l.spilled_stop))[-1]
   l.IsSpilledEmpty= lambda: l.IsSpilled() or l.IsEmpty()
-  l.IsFlowedOut = lambda: (0.0055*(l.config.BallNum - l.sensors.num_src) >= l.amount_trg)
-  l.IsRcvConsidering = False
+  # l.IsFlowedOut = lambda: (0.0055*(l.config.BallNum - l.sensors.num_src) >= l.amount_trg)
+  l.IsRcvConsidering = True
 
   ct.srvp.ode_resume()
   # ct.srvp.ode_pause()

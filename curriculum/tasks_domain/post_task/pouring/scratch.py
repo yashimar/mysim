@@ -18,13 +18,13 @@ def ExecuteLearning(ct, l):
     l.dpl, fp = SetupDPL(ct, l, domain)
 
     for count in range(l.num_episodes):
+        l.pour_skill = ""
         # if count <= 2:
         #     l.pour_skill = "tip"
         # elif count <= 5:
         #     l.pour_skill = "shake"
         # else:
         #     l.pour_skill = ""
-        l.pour_skill = ""
         CPrint(2, '========== Start %4i ==========' % count)
         td.Execute(ct, l)
         CPrint(2, '========== End %4i ==========' % count)
@@ -45,17 +45,16 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    t_index = 1
+    t_index = 12
     suff = "curriculum_test/t"+str(t_index)+"/first70"+"/"
     l.logdir = ROOT_PATH + "curriculum/pouring/scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
+    # l.db_src = ROOT_PATH + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
     l.db_src = ""
-    l.model_src = ROOT_PATH + "curriculum/outflow/c1/curriculum_test/t"+str(t_index)+"/first50"
+    l.model_src = ROOT_PATH + "curriculum/flowing_out/scratch/curriculum_test/t"+str(t_index)+"/first50"
     # l.model_src = ""
 
     ############################################################################
@@ -86,8 +85,8 @@ def Run(ct, *args):
                 'grad_max_bounce': 10,  # default 10
                 'prob_update_best': 0.4,  # default 0.4
                 'prob_update_rand': 0.3,  # default 0.3
-                'max_total_iter': 4000,  # default 2000
-                "grad_max_iter": 100,  # default 50
+                'max_total_iter': 2000,  # default 2000
+                "grad_max_iter": 50,  # default 50
                 'gd_alpha': 0.03  # default 0.03
             },
         },

@@ -22,9 +22,6 @@ def Rdamount():
     return FRwd
 
 
-setup_path = 'mysim.curriculum.tasks_domain.pouring.setup'
-
-
 def Domain():  # SpaceDefs and Models (reward function) will be modified by curriculum. (For example, 'action' -> 'state', Rdamount -> Rdspill, and so on.)
     domain = TGraphDynDomain()
     SP = TCompSpaceDef
@@ -43,13 +40,13 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
         'shake_angle': SP('action', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
         # 'shake_axis2': SP('action',2,min=[0.05,-0.5*math.pi],max=[0.1,0.5*math.pi]),
         'p_pour': SP('state', 3),  # Pouring axis position (z)
-        # 'p_pour_z': SP('state', 1),  # Pouring axis position (z)
+        'p_pour_z': SP('state', 1),  # Pouring axis position (z)
         'lp_pour': SP('state', 3),  # Pouring axis position (x,y,z) in receiver frame
         'dps_rcv': SP('state', 12),  # Displacement of ps_rcv from previous time
         'v_rcv': SP('state', 1),  # Velocity norm of receiver
         # 'p_flow': SP('state',2),  #Flow position (x,y)
-        'lp_flow': SP('state', 2),  # Flow position (x,y) in receiver frame
-        # 'lpp_flow': SP('state', 2),  # Flow position (x,y) relative to previous (before flowctrl) p_pour
+        # 'lp_flow': SP('state', 2),  # Flow position (x,y) in receiver frame
+        'lpp_flow': SP('state', 2),  # Flow position (x,y) relative to previous (before flowctrl) p_pour
         'flow_var': SP('state', 1),  # Variance of flow
         'a_pour': SP('state', 1),  # Amount poured in receiver
         'a_spill2': SP('state', 1),  # Amount spilled out
@@ -75,23 +72,28 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
             ['dps_rcv', 'v_rcv'], None],
         'Fmvtopour2': [  # Move to pouring point
             ['gh_abs', 'p_pour_trg'],
-            ['lp_pour'], None],
+            ['lp_pour', 'p_pour_z'], None],
         'Ftip': [  # Flow control with tip.
-            ['gh_abs', 'lp_pour',  # Removed 'p_pour_trg0','p_pour_trg'
+            ['gh_abs', 'p_pour_z',  # Removed 'p_pour_trg0','p_pour_trg'
              'da_trg', 'size_srcmouth', 'material2',
              'dtheta1', 'dtheta2'],
-            ['da_total', 'lp_flow', 'flow_var'], None],
+            ['da_total', 'lpp_flow', 'flow_var'], None],
         'Fshake': [  # Flow control with shake.
-            ['gh_abs', 'lp_pour',  # Removed 'p_pour_trg0','p_pour_trg'
+            ['gh_abs', 'p_pour_z',  # Removed 'p_pour_trg0','p_pour_trg'
              'da_trg', 'size_srcmouth', 'material2',
              'dtheta1', 'shake_spd', 'shake_range', 'shake_angle'],
-            ['da_total', 'lp_flow', 'flow_var'], None],
-        'Famount': [  # Amount model common for tip and shake
+            ['da_total', 'lpp_flow', 'flow_var'], None],
+        'Famount': [  # Amount model common for tip and shake.Use Ftip or Fshake prediction.
             ['lp_pour',  # Removed 'gh_abs','p_pour_trg0','p_pour_trg'
              'da_trg', 'material2',  # Removed 'size_srcmouth'
-             'da_total', 'lp_flow', 'flow_var'],
+             'da_total', 'lpp_flow', 'flow_var'],
             ['da_pour', 'da_spill2'], None],
-        "Rdamount": [['da_trg', "da_total"], [REWARD_KEY], Rdamount()],
+        'Famount2': [  # Amount model common for tip and shake.
+            ['lp_pour',  # Removed 'gh_abs','p_pour_trg0','p_pour_trg'
+             'da_trg', 'material2',  # Removed 'size_srcmouth'
+             'da_total', 'lpp_flow', 'flow_var'],
+            ['da_pour', 'da_spill2'], None],
+        "Rdamount": [['da_pour', "da_spill2"], [REWARD_KEY], Rdamount()],
         'P1': [[], [PROB_KEY], TLocalLinear(0, 1, lambda x:[1.0], lambda x:[0.0])],
         'P2':  [[], [PROB_KEY], TLocalLinear(0, 2, lambda x:[1.0]*2, lambda x:[0.0]*2)],
         'Pskill': [['skill'], [PROB_KEY], TLocalLinear(0, 2, lambda s:Delta1(2, s[0]), lambda s:[0.0]*2)],
@@ -116,10 +118,9 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
 
 
 def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For example, l.custom_mtr -> "natto", l.custom_smsz -> 0.055, and so on.)
-    m_setup = ct.Load(setup_path)
+    m_setup = ct.Load('mysim.curriculum.tasks_domain.pouring.setup')
     l.amount_trg = 0.3
-    # Note: In this subtask, we do not use IsSpilled and IsPoured
-    # l.spilled_stop = 10
+    l.spilled_stop = 10
     l.config.RcvPos = [0.6, l.config.RcvPos[1], l.config.RcvPos[2]]
     # l.config.RcvPos= [0.8+0.6*(random.random()-0.5), l.config.RcvPos[1], l.config.RcvPos[2]]
     CPrint(3, 'l.config.RcvPos=', l.config.RcvPos)
@@ -134,17 +135,44 @@ def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For e
         rsz = Rand(0.2, 0.5)
         l.config.RcvSize = [rsx, rsy, rsz]
 
-    if l.mtr_smsz == 'curriculum_test':
+    if l.mtr_smsz == 'fixed':
+        m_setup.SetMaterial(l, preset='bounce')
+        l.config.SrcSize2H = 0.03  # Mouth size of source container
+    elif l.mtr_smsz == 'fxvs1':
+        m_setup.SetMaterial(l, preset='ketchup')
+        l.config.SrcSize2H = 0.08  # Mouth size of source container
+    elif l.mtr_smsz == 'random':
+        m_setup.SetMaterial(l, preset=('bounce', 'nobounce', 'natto', 'ketchup')[RandI(4)])
+        l.config.SrcSize2H = Rand(0.03, 0.08)  # Mouth size of source container
+    elif l.mtr_smsz == 'viscous':
+        m_setup.SetMaterial(l, preset=('natto', 'ketchup')[RandI(2)])
+        l.config.SrcSize2H = Rand(0.03, 0.08)  # Mouth size of source container
+    elif l.mtr_smsz == 'curriculum_test':
         m_setup.SetMaterial(l, preset=('nobounce', 'ketchup')[RandI(2)])
         l.config.SrcSize2H = Rand(0.03, 0.08)
-    elif l.mtr_smsz == 'nobounce_large':
-        m_setup.SetMaterial(l, preset='nobounce')
-        l.config.SrcSize2H = Rand(0.03, 0.055)
-    elif l.mtr_smsz == 'ketchup_small':
-        m_setup.SetMaterial(l, preset='ketchup')
-        l.config.SrcSize2H = Rand(0.055, 0.08)
-    else:
-        raise(Exception("l.mtr_smsz is '"+l.mtr_smsz+"', but this is invalid name."))
+    elif l.mtr_smsz == "middle_ease_of_flow":
+        mtr, smsz = (("nobounce", 0.055), ("nobounce", 0.08), ("ketchup", 0.03), ("ketchup", 0.055))[RandI(4)]
+        m_setup.SetMaterial(l, preset=mtr)
+        l.config.SrcSize2H = smsz
+    elif l.mtr_smsz == "custom":
+        if l.custom_mtr == "random":
+            l.latest_mtr = ('bounce', 'nobounce', 'natto', 'ketchup')[RandI(4)]
+            m_setup.SetMaterial(l, preset=l.latest_mtr)
+        else:
+            l.latest_mtr = l.custom_mtr
+            m_setup.SetMaterial(l, preset=l.custom_mtr)
+        if l.custom_smsz == "random":
+            l.config.SrcSize2H = Rand(0.03, 0.08)
+        else:
+            l.config.SrcSize2H = l.custom_smsz
+        l.latest_smsz = l.config.SrcSize2H
+    elif l.mtr_smsz == "latest_mtr_smsz":
+        m_setup.SetMaterial(l, preset=l.latest_mtr)
+        l.config.SrcSize2H = Rand(max(0.03, l.latest_smsz-l.delta_smsz),
+                                  min(0.08, l.latest_smsz+l.delta_smsz))
+    elif l.mtr_smsz == "early_natto":
+        m_setup.SetMaterial(l, preset='natto')
+        l.config.SrcSize2H = l.custom_smsz
     CPrint(3, 'l.config.ViscosityParam1=', l.config.ViscosityParam1)
     CPrint(3, 'l.config.SrcSize2H=', l.config.SrcSize2H)
 
@@ -156,7 +184,7 @@ def Execute(ct, l):
 
     l.dpl.NewEpisode()
     try:
-        ct.Run(setup_path, l)
+        ct.Run('mysim.curriculum.tasks_domain.pouring.setup', l)
         sim = ct.sim
 
         actions = {
@@ -170,6 +198,7 @@ def Execute(ct, l):
         obs_keys0 = (
             'ps_rcv',
             'p_pour',
+            "p_pour_z",
             'lp_pour',
             'a_trg',
             'size_srcmouth',
@@ -184,7 +213,8 @@ def Execute(ct, l):
             )
         obs_keys_after_flow = obs_keys_before_flow + \
             (
-                'lp_flow',
+                # 'lp_flow',
+                'lpp_flow',
                 'flow_var',
                 'da_pour',
                 'da_spill2',
@@ -332,10 +362,13 @@ def Execute(ct, l):
                 l.xs.n3ti = CopyXSSA(l.xs.prev)
                 InsertDict(l.xs.n3ti, ObserveXSSA(l, l.xs.prev, obs_keys_after_flow))
                 xs_in = CopyXSSA(l.xs.prev)
-                xs_in['lp_pour'] = l.xs.n2c['lp_pour']
+                xs_in['p_pour_z'] = l.xs.n2c['p_pour_z']
                 CreatePredictionLog(l, "Ftip", xs_in, l.xs.n3ti)
-                l.dpl.MM.Models['Ftip'][2].Options.update(l.nn_options)
-                l.dpl.MM.Update('Ftip', xs_in, l.xs.n3ti, not_learn=l.not_learn)
+                # l.dpl.MM.Models['Ftip'][2].Options.update(l.nn_options)
+                # l.dpl.MM.Update('Ftip', xs_in, l.xs.n3ti, not_learn=l.not_learn)
+                l.dpl.MM.Update('Ftip', xs_in, l.xs.n3ti, not_learn=True)
+                cp_m, cp_v = CurrentPredict(l, "Fshake", xs_in)
+                da_total_p, lpp_flow_p, flow_var_p = SSA(cp_m[0], cp_v[0]), SSA(cp_m[1:3], cp_v[1:3]), SSA(cp_m[3], cp_v[3])
                 if "n3ti" in l.planning_node:
                     res = l.dpl.Plan('n3ti', l.xs.n3ti, l.interactive)
                     l.node_best_tree.append(res.PTree)
@@ -344,13 +377,19 @@ def Execute(ct, l):
                 l.idb.prev = l.idb.n3ti
 
                 ############################################################################
-                # n4ti: Update Famount
+                # n4ti: Update Famount & Famount2
                 ############################################################################
                 CPrint(2, 'Node:', 'n4ti')
                 l.xs.n4ti = CopyXSSA(l.xs.prev)
                 InsertDict(l.xs.n4ti, ObserveXSSA(l, l.xs.prev, ()))  # Observation is omitted since there is no change
                 xs_in = CopyXSSA(l.xs.prev)
                 xs_in['lp_pour'] = l.xs.n2c['lp_pour']
+                CreatePredictionLog(l, "Famount2", xs_in, l.xs.n4ti)
+                l.dpl.MM.Models['Famount2'][2].Options.update(l.nn_options)
+                l.dpl.MM.Update('Famount2', xs_in, l.xs.n4ti, not_learn=l.not_learn)
+                xs_in["da_total"] = da_total_p
+                xs_in["lpp_flow"] = lpp_flow_p
+                xs_in["flow_var"] = flow_var_p
                 CreatePredictionLog(l, "Famount", xs_in, l.xs.n4ti)
                 l.dpl.MM.Models['Famount'][2].Options.update(l.nn_options)
                 l.dpl.MM.Update('Famount', xs_in, l.xs.n4ti, not_learn=l.not_learn)
@@ -380,10 +419,13 @@ def Execute(ct, l):
                 l.xs.n3sa = CopyXSSA(l.xs.prev)
                 InsertDict(l.xs.n3sa, ObserveXSSA(l, l.xs.prev, obs_keys_after_flow))
                 xs_in = CopyXSSA(l.xs.prev)
-                xs_in['lp_pour'] = l.xs.n2c['lp_pour']
+                xs_in['p_pour_z'] = l.xs.n2c['p_pour_z']
                 CreatePredictionLog(l, "Fshake", xs_in, l.xs.n3sa)
-                l.dpl.MM.Models['Fshake'][2].Options.update(l.nn_options)
-                l.dpl.MM.Update('Fshake', xs_in, l.xs.n3sa, not_learn=l.not_learn)
+                # l.dpl.MM.Models['Fshake'][2].Options.update(l.nn_options)
+                # l.dpl.MM.Update('Fshake', xs_in, l.xs.n3sa, not_learn=l.not_learn)
+                l.dpl.MM.Update('Fshake', xs_in, l.xs.n3sa, not_learn=True)
+                cp_m, cp_v = CurrentPredict(l, "Fshake", xs_in)
+                da_total_p, lpp_flow_p, flow_var_p = SSA(cp_m[0], cp_v[0]), SSA(cp_m[1:3], cp_v[1:3]), SSA(cp_m[3], cp_v[3])
                 if "n3sa" in l.planning_node:
                     res = l.dpl.Plan('n3sa', l.xs.n3sa, l.interactive)
                     l.node_best_tree.append(res.PTree)
@@ -392,7 +434,7 @@ def Execute(ct, l):
                 l.idb.prev = l.idb.n3sa
 
                 ############################################################################
-                # n4sa: Update Famount
+                # n4sa: Update Famount & Famount2
                 ############################################################################
                 CPrint(2, 'Node:', 'n4sa')
                 l.xs.n4sa = CopyXSSA(l.xs.prev)
@@ -400,9 +442,16 @@ def Execute(ct, l):
                 # WARNING:NOTE: Famount uses 'lp_pour' as input, so here we use a trick:
                 xs_in = CopyXSSA(l.xs.prev)
                 xs_in['lp_pour'] = l.xs.n2c['lp_pour']
+                CreatePredictionLog(l, "Famount2", xs_in, l.xs.n4sa)
+                l.dpl.MM.Models['Famount2'][2].Options.update(l.nn_options)
+                l.dpl.MM.Update('Famount2', xs_in, l.xs.n4sa, not_learn=l.not_learn)
+                xs_in["da_total"] = da_total_p
+                xs_in["lpp_flow"] = lpp_flow_p
+                xs_in["flow_var"] = flow_var_p
                 CreatePredictionLog(l, "Famount", xs_in, l.xs.n4sa)
                 l.dpl.MM.Models['Famount'][2].Options.update(l.nn_options)
                 l.dpl.MM.Update('Famount', xs_in, l.xs.n4sa, not_learn=l.not_learn)
+                # res= l.dpl.Plan('n4sa', l.xs.n4sa)
                 l.idb.n4sa = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n4sa', xs=l.xs.n4sa)
                 l.xs.prev = l.xs.n4sa
                 l.idb.prev = l.idb.n4sa
