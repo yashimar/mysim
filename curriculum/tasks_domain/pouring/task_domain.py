@@ -91,7 +91,7 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
              'da_trg', 'material2',  # Removed 'size_srcmouth'
              'da_total', 'lp_flow', 'flow_var'],
             ['da_pour', 'da_spill2'], None],
-        "Rdamount": [['da_trg', "da_total"], [REWARD_KEY], Rdamount()],
+        "Rdamount": [['da_pour', "da_spill2"], [REWARD_KEY], Rdamount()],
         'P1': [[], [PROB_KEY], TLocalLinear(0, 1, lambda x:[1.0], lambda x:[0.0])],
         'P2':  [[], [PROB_KEY], TLocalLinear(0, 2, lambda x:[1.0]*2, lambda x:[0.0]*2)],
         'Pskill': [['skill'], [PROB_KEY], TLocalLinear(0, 2, lambda s:Delta1(2, s[0]), lambda s:[0.0]*2)],

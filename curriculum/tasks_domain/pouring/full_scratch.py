@@ -18,13 +18,13 @@ def ExecuteLearning(ct, l):
     l.dpl, fp = SetupDPL(ct, l, domain)
 
     for count in range(l.num_episodes):
-        # if count <= 2:
-        #     l.pour_skill = "tip"
-        # elif count <= 5:
-        #     l.pour_skill = "shake"
-        # else:
-        #     l.pour_skill = ""
-        l.pour_skill = ""
+        if count <= 2:
+            l.pour_skill = "tip"
+        elif count <= 5:
+            l.pour_skill = "shake"
+        else:
+            l.pour_skill = ""
+        # l.pour_skill = ""
         CPrint(2, '========== Start %4i ==========' % count)
         td.Execute(ct, l)
         CPrint(2, '========== End %4i ==========' % count)
@@ -46,8 +46,8 @@ def Run(ct, *args):
     # Specify save directory
     ############################################################################
     t_index = 5
-    suff = "curriculum_test/t"+str(t_index)+"/first70"+"/"
-    l.logdir = ROOT_PATH + "curriculum/pouring/scratch"+"/"+suff
+    suff = "curriculum_test/t"+str(t_index)+"/first120"+"/"
+    l.logdir = ROOT_PATH + "curriculum/pouring/full_scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
@@ -55,8 +55,8 @@ def Run(ct, *args):
     # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
     #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"
     l.db_src = ""
-    l.model_src = ROOT_PATH + "curriculum/outflow/c1/curriculum_test/t"+str(t_index)+"/first50"
-    # l.model_src = ""
+    # l.model_src = ROOT_PATH + "curriculum/outflow/c1/curriculum_test/t"+str(t_index)+"/first50"
+    l.model_src = ""
 
     ############################################################################
     # Modify ConfigCallback
@@ -68,7 +68,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 70
+    l.num_episodes = 120
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
