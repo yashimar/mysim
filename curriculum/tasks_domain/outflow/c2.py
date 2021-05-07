@@ -83,7 +83,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/test2/first50"+"/"
+    suff = "curriculum_test/t1/first50"+"/"
     l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
                 + "curriculum/outflow/c1"+"/"+suff
 
@@ -140,16 +140,14 @@ def Run(ct, *args):
         'dpl_options': {
             'opt_log_name': '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat',  # '{base}seq/opt-{i:04d}-{e:03d}-{n}-{v:03d}.dat' or None
             "ddp_sol": {
-                'ptree_num': 60, #default auto
-                'db_init_ratio': 0.0, #default 0.5
-                'num_finished': 60,  #default 20
-                'num_proc': 12,  #default 12
+                # 'ptree_num': 40, #default auto
+                # 'db_init_ratio': 1.0, #default 0.5
                 'db_init_R_min': -1.0,  # default -1.0
-                'grad_max_bounce': 10,  # default 10
+                'grad_max_bounce': 20,  # default 10
                 'prob_update_best': 0.4,  # default 0.4
                 'prob_update_rand': 0.3,  # default 0.3
-                'max_total_iter': 2000,  # default 2000
-                "grad_max_iter": 50,  # default 50
+                'max_total_iter': 4000,  # default 2000
+                "grad_max_iter": 100,  # default 50
                 'gd_alpha': 0.03  # default 0.03
             },
         },

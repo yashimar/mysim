@@ -27,19 +27,19 @@ def Run(ct,*args):
 
   def LearnReward():
     #I/O: [E[x], Var[x]],[REWARD_KEY]
-    dim_in = 3
+    dim_in = 2
     dim_out = 1
     options={
-      'base_dir': modeldir+'p1_model/Fflowedout_shake'+"/",
+      'base_dir': modeldir+'p1_model/Fdapour_gentle'+"/",
       'n_units': [dim_in] + [128] + [dim_out],
       'name': 'FRwd',
       'loss_stddev_stop': 1.0e-6,
       'loss_stddev_init': 2000.0,
       'num_max_update': 10000,
-      "batchsize": 64,
-      'num_check_stop': 1000,
+      "batchsize": 128,
+      'num_check_stop': 2000,
       }
-    prefix= modeldir+'p1_model/Fflowedout_shake'
+    prefix= modeldir+'p1_model/Fdapour_gentle'
     FRwd= TNNRegression()
     FRwd.Load(data={'options':options})
     if os.path.exists(prefix+'.yaml'):
@@ -48,11 +48,11 @@ def Run(ct,*args):
     FRwd.Init()
     Print("len(DataX): ", len(FRwd.DataX))
 
-    for i in range(500000):
-      ex = [Rand(0.,0.55), Rand(-0.5,1.0), RandI(2)] #Should not contain sdv_x.
-      # tmp = Rand(0.25,0.35)
-      # ex = [tmp, tmp+Rand(-0.2,0.2)]
-      R = [-100*max(0,ex[0]-ex[1])**2 -1.0*max(0,ex[1]-ex[0])**2 -(100.0 if ex[2]!=1 else 0.0)]
+    for i in range(2000):
+      ex = [0.3, Rand(0.25,0.35)] #Should not contain sdv_x.
+      # tmp = Rand(0.299,0.301)
+      # ex = [tmp, tmp+Rand(-0.02,0.02)]
+      R = [-100.0*max(0,ex[0]-ex[1])**2 -20*max(0,ex[1]-ex[0])**2]
       FRwd.Update(ex, R, not_learn=True)
     FRwd.UpdateBatch()
 
@@ -60,7 +60,7 @@ def Run(ct,*args):
 
   def Predict():
     FRwd= TNNRegression()
-    prefix= modeldir+'p1_model/Fflowedout_shake'
+    prefix= modeldir+'p1_model/Fdapour_gentle'
     FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
     FRwd.Init()
 
@@ -69,8 +69,8 @@ def Run(ct,*args):
     # xx = [np.random.normal(x, 0.3, 1) for x in FRwd.DataX]
     # xx = [x for x in FRwd.DataX]
     # plt.scatter(FRwd.DataX, [-100*max(0,0.3-x)**2 -1.0*max(0,x-0.3)**2 for x in xx])
-    ex_list = np.array([[0.3, x, 1] for x in np.linspace(0.0,0.55,1000)])
-    sdvx_list = [[sdv**2, 0., 0.] for sdv in [0.001, 0.05, 0.1, 0.2]]
+    ex_list = np.array([[0.3, x] for x in np.linspace(0,0.55,1000)])
+    sdvx_list = [[0., sdv**2] for sdv in [0.0, 0.05, 0.1, 0.2]]
     for sdvx in sdvx_list:
       ey_list = []
       vary_list = []
@@ -80,8 +80,9 @@ def Run(ct,*args):
         vary = pred.Var.item()
         ey_list.append(ey)
         vary_list.append(vary)
-      plt.plot(ex_list[:,1], ey_list, label="Sdv[x]="+str(np.sqrt(sdvx[0])))
-    # plt.ylim(-1,0.3)
+      plt.plot(ex_list[:,1], ey_list, label="Sdv[x]="+str(np.sqrt(sdvx[1])))
+    # plt.xlim(0.2,0.4)
+    plt.ylim(-1.0,0.1)
     plt.legend()
     plt.xlabel("E[x]")
     plt.ylabel("Pred E[R(E[x])]")

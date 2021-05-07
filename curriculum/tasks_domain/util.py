@@ -127,3 +127,14 @@ def ModelManager(domain, model_path):
     mm.Init()
 
     return mm
+
+
+def Rmodel(model_name):
+    modeldir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
+                + 'reward_model'+"/"
+    FRwd = TNNRegression()
+    prefix = modeldir+'p1_model/'+model_name
+    FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
+    FRwd.Init()
+
+    return FRwd

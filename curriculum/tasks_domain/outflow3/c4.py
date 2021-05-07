@@ -83,18 +83,17 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "curriculum_test/test2/first50"+"/"
-    l.logdir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-                + "curriculum/outflow/c1"+"/"+suff
+    t_index = 1
+    suff = "curriculum_test/t"+str(t_index)+"/second50"+"/"
+    l.logdir = ROOT_PATH + "curriculum/outflow3/c4"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    # l.db_src = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/' \
-    #         + "bottomup/learn4/std_pour/ketchup/random/graphModel/modifiedStdPour/first"+"/"
-    l.db_src = ""
-    l.model_src = ""
-    # l.model_src = ROOT_PATH + "curriculum/pretrain/Fmvtopour2"
+    l.db_src = ROOT_PATH + "curriculum/outflow3/c3/curriculum_test/t"+str(t_index)+"/first80"
+    # l.db_src = ""
+    l.model_src = ROOT_PATH + "curriculum/outflow3/c3/curriculum_test/t"+str(t_index)+"/first80"
+    # l.model_src = ""
 
     ############################################################################
     # Modify ConfigCallback
@@ -111,19 +110,10 @@ def Run(ct, *args):
     ############################################################################
     # Modify reward function
     ############################################################################
-    def Routflow(skill=None):
-        modeldir = ROOT_PATH + 'reward_model'+"/"
-        FRwd = TNNRegression()
-        if skill == "tip":
-            prefix = modeldir+'p1_model/Fflowedout_tip'
-        elif skill == "shake":
-            prefix = modeldir+'p1_model/Fflowedout_shake'
-        else:
-            prefix = modeldir+'p1_model/Fflowedout'
-        FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
-        FRwd.Init()
-        return FRwd
-    l.default_reward_callback = lambda: l.dpl.d.Models.update({"Routflow": [['da_trg', "da_total"], [REWARD_KEY], Routflow()]})
+    def update_model(new_model_list):
+        for new_model in new_model_list:
+            l.dpl.d.Models.update(new_model)
+    l.default_reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: 0)]}])
 
     ############################################################################
     # Modify learning config
@@ -182,30 +172,23 @@ def Run(ct, *args):
     ############################################################################
     SP = TCompSpaceDef
     l.tasks = []
-
-    # 1
-    l.tasks.append(Task(name="init sample: tip"))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "curriculum_test", "", "")
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 3)
-    l.tasks[-1].pour_skill = "tip"
-
-    # 2
-    l.tasks.append(Task(name="init sample: shake"))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "curriculum_test", "", "")
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 3)
-    l.tasks[-1].pour_skill = "shake"
-
-    # 3
+    
+    # 6
     l.tasks.append(Task(name="tip soulde be selected"))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "nobounce_large", "", "")
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 10)
-    l.tasks[-1].reward_callback = lambda: l.dpl.d.Models.update({"Routflow": [['da_trg', "da_total", "skill"], [REWARD_KEY], Routflow("tip")]})
+    l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=0 else 0)]}])
 
-    # 4
+    # 7
     l.tasks.append(Task(name="shake soulde be selected"))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "ketchup_small", "", "")
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 10)
-    l.tasks[-1].reward_callback = lambda: l.dpl.d.Models.update({"Routflow": [['da_trg', "da_total", "skill"], [REWARD_KEY], Routflow("shake")]})
+    l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=1 else 0)]}])
+    
+    #8
+    l.tasks.append(Task(name="large size"))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 30)
 
     ############################################################################
     # Execute
