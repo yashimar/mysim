@@ -1,0 +1,16 @@
+{
+	"ct_format": {
+		"scope": "python",
+		"prefix": "ct_format",
+		"body": [
+			"from core_tool import *",
+			"","",
+			"def Help():",
+			"    pass",
+			"","",
+			"def Run(ct, *args):",
+			"    pass"
+		],
+		"description": "Simple format for ct."
+	}
+}
