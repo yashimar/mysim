@@ -43,6 +43,8 @@ def ExecuteLearning(ct, l):
 
     count = 0
     is_ready = True
+    l.default_config_callback()
+    l.default_reward_callback()
     while count < l.num_episodes:
         if (len(l.tasks) >= 1) & is_ready:
             task = l.tasks[0]
@@ -84,15 +86,15 @@ def Run(ct, *args):
     # Specify save directory
     ############################################################################
     t_index = 1
-    suff = "curriculum_test/t"+str(t_index)+"/second50"+"/"
-    l.logdir = ROOT_PATH + "curriculum/outflow3/c4"+"/"+suff
+    suff = "curriculum_test/t"+str(t_index)+"/first60"+"/"
+    l.logdir = ROOT_PATH + "curriculum/flow_ctrl/c1"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    l.db_src = ROOT_PATH + "curriculum/outflow3/c3/curriculum_test/t"+str(t_index)+"/first80"
-    # l.db_src = ""
-    l.model_src = ROOT_PATH + "curriculum/outflow3/c3/curriculum_test/t"+str(t_index)+"/first80"
+    # l.db_src = ROOT_PATH + "curriculum/outflow3/c5/curriculum_test/t"+str(t_index)+"/first80"
+    l.db_src = ""
+    l.model_src = ROOT_PATH + "curriculum/outflow3/c5/curriculum_test/t"+str(t_index)+"/second70"
     # l.model_src = ""
 
     ############################################################################
@@ -113,12 +115,15 @@ def Run(ct, *args):
     def update_model(new_model_list):
         for new_model in new_model_list:
             l.dpl.d.Models.update(new_model)
-    l.default_reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: 0)]}])
+    l.default_reward_callback = lambda: update_model([
+        {"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: 0)]},
+        {"Rdapour_gentle": [['da_trg', 'da_pour'], [REWARD_KEY], TLocalQuad(2,lambda y: 0)]},
+    ])
 
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 50
+    l.num_episodes = 60
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
@@ -173,22 +178,20 @@ def Run(ct, *args):
     SP = TCompSpaceDef
     l.tasks = []
     
-    # 6
-    l.tasks.append(Task(name="tip should be selected"))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 10)
-    l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=0 else 0)]}])
-
-    # 7
-    l.tasks.append(Task(name="shake should be selected"))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 10)
-    l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=1 else 0)]}])
+    #1
+    l.tasks.append(Task(name="small size"))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.07, 0.08))
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
     
-    #8
+    #2
+    l.tasks.append(Task(name="middle size"))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.055, 0.07))
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
+    
+    #3
     l.tasks.append(Task(name="large size"))
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
-    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 30)
+    l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
 
     ############################################################################
     # Execute

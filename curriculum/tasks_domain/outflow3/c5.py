@@ -83,7 +83,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    t_index = 2
+    t_index = 3
     suff = "curriculum_test/t"+str(t_index)+"/second70"+"/"
     l.logdir = ROOT_PATH + "curriculum/outflow3/c5"+"/"+suff
 
@@ -174,13 +174,13 @@ def Run(ct, *args):
     l.tasks = []
     
     # 6
-    l.tasks.append(Task(name="tip soulde be selected"))
+    l.tasks.append(Task(name="tip should be selected"))
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
     l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=0 else 0)]}])
 
     # 7
-    l.tasks.append(Task(name="shake soulde be selected"))
+    l.tasks.append(Task(name="shake should be selected"))
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.03, 0.055))
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
     l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=1 else 0)]}])

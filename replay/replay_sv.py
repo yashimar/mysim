@@ -38,8 +38,8 @@ def Run(ct,*args):
   # target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
   #             + "bottomup/learn7/std_pour/ketchup/random/nn_reward/first"+"/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "curriculum/outflow/c1/curriculum_test/t5/first50"+"/"
-  i_episode_list = [7]
+              + "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c2_small_nobounce_tip_5+5+5+5+5+5"+"/"
+  i_episode_list = [4]
   i_node = 0
   n_roop = 1
 
@@ -62,7 +62,7 @@ def Run(ct,*args):
       l.config_callback= TestConfigCallback
       # ct.Run('mysim.setup.setup2', l)
 
-      ct.Run('mysim.setup.setup_sv', l)
+      ct.Run('mysim.curriculum.tasks_domain.flow_ctrl.setup', l)
 
       sim= ct.sim
       l= ct.sim_local
@@ -94,11 +94,11 @@ def Run(ct,*args):
         # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         if l.opt_conf['actions']['skill']==0:
-          ct.Run('mysim.act.std_pour_sv_custom', l.opt_conf['actions'])
+          ct.Run('mysim.act.tip', l.opt_conf['actions'])
         else:
           l.opt_conf['actions']
           actions = {"dtheta1": l.opt_conf['actions']["dtheta1"], "shake_spd": l.opt_conf['actions']["shake_spd"], "shake_axis2": ToList([l.opt_conf['actions']['shake_range'], l.opt_conf['actions']['shake_angle']])}
-          ct.Run('mysim.act.shake_A_5s_sv', actions)
+          ct.Run('mysim.act.shake', actions)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         # SaveYAML(XS,log_dir+"_ep"+str(i_episode)+'_%s.dat'%TimeStr('short2'))

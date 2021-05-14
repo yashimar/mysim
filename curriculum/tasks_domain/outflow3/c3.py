@@ -185,13 +185,13 @@ def Run(ct, *args):
     l.tasks[-1].pour_skill = "shake"
     
     # 3
-    l.tasks.append(Task(name="tip soulde be selected"))
+    l.tasks.append(Task(name="tip should be selected"))
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.055, 0.08))
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
     l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=0 else 0)]}])
 
     # 4
-    l.tasks.append(Task(name="shake soulde be selected"))
+    l.tasks.append(Task(name="shake should be selected"))
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce", "ketchup"), (0.055, 0.08))
     l.tasks[-1].terminal_condition = lambda count: TerminalCheck(count, 20)
     l.tasks[-1].reward_callback = lambda: update_model([{"Rskill": [['skill'], [REWARD_KEY], TLocalQuad(1,lambda y: -100.0 if y[0]!=1 else 0)]}])
