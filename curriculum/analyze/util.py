@@ -11,8 +11,11 @@ import cv2
 
 
 ROOT_PATH = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
+PICTURE_DIR = "/home/yashima/Pictures/"
 MEAN = "mean"
 SIGMA = "sigma"
+FORCE_TO_NONE = "froce_to_None"
+DEAL_AS_ZERO = "deal_as_zero"
 
 def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
     sh_path = root_path + save_sh_dir + "/state_history.yaml"
@@ -39,11 +42,11 @@ def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recrea
                                 XS = node_xs["XS"][state]
                                 if dim == 1:
                                     state_histories[node][state][MEAN].append(XS["X"][0][0])
-                                    state_histories[node][state][SIGMA].append(np.sqrt(XS["Cov"][0][0]) if XS["Cov"] is not None else None)
+                                    state_histories[node][state][SIGMA].append(np.sqrt(XS["Cov"][0][0]).item() if XS["Cov"] is not None else None)
                                 else:
                                     for i, x in enumerate(XS["X"]):
                                         state_histories[node][state+"_"+str(i)][MEAN].append(x[0])
-                                        state_histories[node][state+"_"+str(i)][SIGMA].append(np.sqrt(np.diag(XS["Cov"])[i]) if XS["Cov"] is not None else None)
+                                        state_histories[node][state+"_"+str(i)][SIGMA].append(np.sqrt(np.diag(XS["Cov"])[i]).item() if XS["Cov"] is not None else None)
                                 break
                         if is_found_node == False:
                             if dim == 1:
@@ -99,19 +102,55 @@ def get_true_and_est_state_histories(save_sh_dir, log_name_list, node_states_dim
     return sh, esh
 
 
+def plus_list(d_lists, deal_with_None=FORCE_TO_NONE):
+    s = 0
+    none_index_list = False
+    for d_list in d_lists:
+        array = np.array(d_list).astype(np.float32)
+        none_index_list += np.isnan(array)
+        s += np.nan_to_num(array, 0.)
+    if deal_with_None == FORCE_TO_NONE:
+        np.place(s, none_index_list, np.nan)
+    elif deal_with_None == DEAL_AS_ZERO:
+        pass
+    else:
+        raise(Exception("deal_with_None is not valid."))
+    
+    return s.tolist()
+
+
 def check_or_create_dir(dir_path):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
         
         
-def plot_and_save_df_scatter(df, xy_pairs, save_img_dir):
+def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title):
     plt.close("all")
     check_or_create_dir(save_img_dir)
     concat_imgs = []
-    for x, y in xy_pairs:
+    for x, y, xlim, ylim in xy_limit_pairs:
         save_path = save_img_dir+x.replace("_","")+"_"+y.replace("_","")+".png"
-        df.plot.scatter(x=x,y=y).get_figure().savefig(save_path)
+        df.plot.scatter(x=x,y=y,xlim=xlim,ylim=ylim).get_figure().savefig(save_path)
         concat_imgs.append(cv2.imread(save_path))
     plt.close("all")
     im_v = cv2.vconcat(concat_imgs)
-    cv2.imwrite(save_img_dir+"concat.png", im_v)
+    cv2.imwrite(save_img_dir+concat_title, im_v)
+    
+    
+def pred_test(model):
+    for x,t in zip(model.DataX, model.DataY):
+        p = model.Predict(x, with_var=True)
+        print("---")
+        Print("input:", x)
+        Print("est:", p.Y[0].item())
+        Print("sigma:", np.sqrt(p.Var[0,0]))
+        Print("true:", t[0])
+        Print("diff:", abs(p.Y[0].item()-t[0]))
+        
+
+# def learn_test(model):
+    # y = model.Forward(model.DataX[0:1], True)
+    # t = Variable(model.DataY[0:1])
+    # loss = F.mean_squared_error(y, t)
+    # loss.backward(retain_grad=True)
+    # print(loss.requires_grad)

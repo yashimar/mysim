@@ -4,8 +4,6 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import plotly.express as px
     
-PICTURE_DIR = "/home/yashima/Pictures/"
-
 
 def Help():
     pass
@@ -34,6 +32,8 @@ def Run(ct, *args):
         ["n0", [("size_srcmouth",1),("material2",4),("dtheta2",1)]],
         ["n2b", [("lp_pour",3),]],
         ["n3ti", [("da_total",1),]],
+        ["n4tir1", [(".r",1),]],
+        ["n4tir2", [(".r",1),]],
     ]
 
     sh, esh = get_true_and_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
@@ -45,6 +45,8 @@ def Run(ct, *args):
         "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
+        "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
+        "Rdapour_Rdaspill": plus_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
     })
     df.dropna(inplace=True)
     
@@ -52,9 +54,10 @@ def Run(ct, *args):
     # fig.show()
     
     plot_and_save_df_scatter(df,[
-        ("lp_pour_x", "lp_pour_z"),
-        ("lp_pour_x", "da_total_tip"),
-        ("lp_pour_z", "da_total_tip"),
-        ("size_srcmouth", "da_total_tip"),
-        ("dtheta2", "da_total_tip"),
-    ], save_img_dir)
+        ("episode", "Rdapour_Rdaspill", None, [-20,0.5]),
+        ("lp_pour_x", "lp_pour_z", [-0.5,0.7], [-0.2, 0.6]),
+        ("lp_pour_x", "da_total_tip", [-0.5,0.7], [-0.1, 0.6]),
+        ("lp_pour_z", "da_total_tip", [-0.2, 0.6], [-0.1, 0.6]),
+        ("size_srcmouth", "da_total_tip", [0.01, 0.10], [-0.1, 0.6]),
+        ("dtheta2", "da_total_tip", [-0.005, 0.03], [-0.1, 0.6]),
+    ], save_img_dir, concat_title=save_sh_dir.replace("/","_")+".png")
