@@ -8,6 +8,7 @@ import yaml
 from yaml.representer import Representer
 yaml.add_representer(defaultdict, Representer.represent_dict)
 import joblib
+import math
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -285,4 +286,4 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
                                                 ))
     fig.show()
     check_or_create_dir(save_dir)
-    plotly.offline.plot(fig, filename = save_dir + file_name_pref + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"] + ".html", auto_open=False)
+    plotly.offline.plot(fig, filename = save_dir + file_name_pref + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"].replace("_","") + ".html", auto_open=False)
