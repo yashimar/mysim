@@ -7,8 +7,9 @@ from collections import defaultdict
 import yaml
 from yaml.representer import Representer
 yaml.add_representer(defaultdict, Representer.represent_dict)
-import numpy as np
 import joblib
+import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 import plotly
 import plotly.graph_objects as go
@@ -163,7 +164,7 @@ def pred_test(model):
     # print(loss.requires_grad)
     
 
-def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function):
+def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj=None):
     domain = td.Domain()
     mm = ModelManager(domain, ROOT_PATH+model_path)
     model = mm.Models[model_name][2]
@@ -220,6 +221,14 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
             added_text = tmp   
     footnote += added_text
     
+    def make_hovertext(Z, stat_type):
+        hovertext = []
+        for i, y in enumerate(Y["values"]):
+            hovertext.append([])
+            for j, x, in enumerate(X["values"]):
+                hovertext[-1].append('{}: {}<br />{}: {}<br />{}: {}'.format(Z["name"]+" ("+stat_type+")",Z[stat_type][i][j],X["feature"],x,Y["feature"],y))
+        return hovertext
+    
     subplot_titles = ["<b>"+v_Z["name"]+" ("+stat_type+")<b>" for v_Z in Z.values() for stat_type in STAT_TYPES]
     
     fig = make_subplots(
@@ -256,8 +265,12 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
                                         #   ticktext=["-0.01", "-0.05", "-0.1", "-1", "-10"],
                                         x = colorbar_loc[r-1][c-1][0], y = colorbar_loc[r-1][c-1][1],
                                         thickness=23, len = 0.45,
-                                    )
+                                    ),
+                                    hoverinfo='text',
+                                    text=make_hovertext(v_Z, stat_type),
                         ), r, c)
+            if scatter_obj != None:
+                fig.add_trace(scatter_obj, r, c)
             fig['layout']['xaxis'+str(i)]['title'] = X["feature"]
             fig['layout']['yaxis'+str(i)]['title'] = Y["feature"]
     fig.add_annotation(dict(font=dict(color='black',size=15),
