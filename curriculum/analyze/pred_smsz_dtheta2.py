@@ -11,7 +11,7 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5"
+    model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5"
     save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
     file_name_pref = ""
     

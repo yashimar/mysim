@@ -12,6 +12,7 @@ import joblib
 from matplotlib import pyplot as plt
 import plotly
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import cv2
 
 
@@ -21,6 +22,7 @@ MEAN = "mean"
 SIGMA = "sigma"
 FORCE_TO_NONE = "froce_to_None"
 DEAL_AS_ZERO = "deal_as_zero"
+STAT_TYPES = [MEAN, SIGMA]
 
 def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
     sh_path = root_path + save_sh_dir + "/state_history.yaml"
@@ -217,34 +219,50 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
         else:
             added_text = tmp   
     footnote += added_text
-
-    for k_Z, v_Z in Z.items():
-        for stat_type in [MEAN, SIGMA]:
-            fig = go.Figure()
-            fig.add_trace(go.Heatmap(z=v_Z[stat_type], x=X["values"], y=Y["values"],
-                                    colorscale='Oranges',
-                                    zmin=v_Z["range"][stat_type][0], 
-                                    zmax=v_Z["range"][stat_type][1], 
-                                    zauto=False,
-                                    colorbar=dict(
-                                    title=v_Z["name"]+" ("+stat_type+")",
-                                    titleside="top",
-                                    #   tickmode="array",
-                                    #   tickvals=[2, 1.3, 1, 0, -1],
-                                    #   ticktext=["-0.01", "-0.05", "-0.1", "-1", "-10"],
-                                    ticks="outside",
-                                    )
-                                    ))
-            fig.update_layout(
-                title_text="<b>"+v_Z["name"]+" ("+stat_type+")<b>",
-                height=800, width=800, 
-                xaxis={"title": X["feature"]}, 
-                yaxis={"title": Y["feature"]},
-                margin=dict(b=250),
+    
+    subplot_titles = ["<b>"+v_Z["name"]+" ("+stat_type+")<b>" for v_Z in Z.values() for stat_type in STAT_TYPES]
+    
+    fig = make_subplots(
+        rows=2, cols=2, 
+        subplot_titles=subplot_titles,
+        horizontal_spacing = 0.1,
+        vertical_spacing = 0.1,
+    )
+    fig.update_layout(
+                height=950, width=1800, 
+                margin=dict(t=20,b=150),
             )
-            fig.add_annotation(dict(font=dict(color='black',size=15),
+    x1,x2,y1,y2 = 0.46,1.0075,0.78,0.22
+    colorbar_loc = [
+        [[x1,y1],[x2,y1]],
+        [[x1,y2],[x2,y2]]
+    ]
+    r = 0
+    i = 0
+    for k_Z, v_Z in Z.items():
+        r += 1
+        c = 0
+        for stat_type in STAT_TYPES:
+            c += 1
+            i += 1
+            fig.add_trace(go.Heatmap(z=v_Z[stat_type], x=X["values"], y=Y["values"],
+                                    colorscale='Oranges',                 
+                                    zmin=v_Z["range"][stat_type][0], zmax=v_Z["range"][stat_type][1], zauto=False,
+                                    colorbar=dict(
+                                        title=v_Z["name"]+" ("+stat_type+")",
+                                        titleside="top", ticks="outside",
+                                        #   tickmode="array",
+                                        #   tickvals=[2, 1.3, 1, 0, -1],
+                                        #   ticktext=["-0.01", "-0.05", "-0.1", "-1", "-10"],
+                                        x = colorbar_loc[r-1][c-1][0], y = colorbar_loc[r-1][c-1][1],
+                                        thickness=23, len = 0.45,
+                                    )
+                        ), r, c)
+            fig['layout']['xaxis'+str(i)]['title'] = X["feature"]
+            fig['layout']['yaxis'+str(i)]['title'] = Y["feature"]
+    fig.add_annotation(dict(font=dict(color='black',size=15),
                                                 x=0,
-                                                y=-0.3,
+                                                y=-0.15,
                                                 # showarrow=False,
                                                 text=footnote,
                                                 # textangle=0,
@@ -252,6 +270,6 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
                                                 xref="paper",
                                                 yref="paper"
                                                 ))
-            fig.show()
-            check_or_create_dir(save_dir)
-            plotly.offline.plot(fig, filename = save_dir + file_name_pref + k_Z + "_" + stat_type + "_" + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"] + ".html", auto_open=False)
+    fig.show()
+    check_or_create_dir(save_dir)
+    plotly.offline.plot(fig, filename = save_dir + file_name_pref + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"] + ".html", auto_open=False)
