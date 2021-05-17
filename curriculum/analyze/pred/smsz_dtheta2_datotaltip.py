@@ -13,12 +13,12 @@ def Help():
 def Run(ct, *args):
     model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5"
     save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
-    file_name_pref = ""
-    model = None
-    # with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/Ftip.pkl", "rb") as f:
-    #     model = pickle.load(f)
-    
+    file_name_pref = "amp_smsz_dtheta2"
     model_name = "Ftip"
+    # model = None
+    with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
+        model = pickle.load(f)
+    
     xs_value = {
         "gh_abs": [0.25],
         "lp_pour_x": [-0.1],
@@ -31,8 +31,8 @@ def Run(ct, *args):
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,40)}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,40)}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.2,0.9,40)}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0,2.5,40)}
     z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.35]}}
     reward_function = {
         "name": "Rdatotal",
@@ -63,7 +63,7 @@ def Run(ct, *args):
     })
     df.dropna(inplace=True)
     scatter_obj = go.Scatter(
-        x=df[X["feature"]], y=df[Y["feature"]], 
+        x=df[X["feature"]]*10, y=df[Y["feature"]]*100, 
         mode='markers', 
         # marker_color="blue",
         opacity = 0.5,

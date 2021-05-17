@@ -15,7 +15,7 @@ def Run(ct, *args):
     save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
     file_name_pref = ""
     model = None
-    # with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/Ftip.pkl", "rb") as f:
+    # with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/Ftip_{}.pkl".format(file_name_pref), "rb") as f:
     #     model = pickle.load(f)
     
     model_name = "Ftip"
