@@ -7,6 +7,7 @@ from collections import defaultdict
 import yaml
 from yaml.representer import Representer
 yaml.add_representer(defaultdict, Representer.represent_dict)
+import pickle
 import joblib
 import glob
 import math
@@ -174,10 +175,11 @@ def pred_test(model):
     # print(loss.requires_grad)
     
 
-def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj=None):
-    domain = td.Domain()
-    mm = ModelManager(domain, ROOT_PATH+model_path)
-    model = mm.Models[model_name][2]
+def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj=None, model=None):
+    if model == None:
+        domain = td.Domain()
+        mm = ModelManager(domain, ROOT_PATH+model_path)
+        model = mm.Models[model_name][2]
     inputs = []
     for v_y in Y["values"]:
         for v_x in X["values"]:
@@ -296,3 +298,16 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
     fig.show()
     check_or_create_dir(save_dir)
     plotly.offline.plot(fig, filename = save_dir + file_name_pref + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"].replace("_","") + ".html", auto_open=False)
+    
+
+def remake_model(td, model_name, model_path):
+    mm = ModelManager(td.Domain(), ROOT_PATH+model_path)
+    model = mm.Models[model_name][2]
+    model.Options["base_dir"] = ROOT_PATH+model_path
+    DataX, DataY = model.DataX, model.DataY
+    for key in ["nn_params", "nn_params_err", "nn_data_x", "nn_data_y"]:
+        model.Params[key] = None
+    model.Params["num_train"] = 0
+    model.Init()
+    
+    return model, DataX, DataY

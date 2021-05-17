@@ -14,6 +14,9 @@ def Run(ct, *args):
     model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5"
     save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
     file_name_pref = ""
+    model = None
+    # with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/Ftip.pkl", "rb") as f:
+    #     model = pickle.load(f)
     
     model_name = "Ftip"
     xs_value = {
@@ -74,4 +77,4 @@ def Run(ct, *args):
         ),
     )
     
-    plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj=scatter_obj)
+    plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj=scatter_obj, model=model)

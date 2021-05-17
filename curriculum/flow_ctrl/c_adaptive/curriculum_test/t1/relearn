@@ -1,0 +1,33 @@
+options:
+  AdaDelta_rho: 0.9
+  AdaDelta_rho_err: null
+  base_dir: /home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5/models/
+  batchsize: 10
+  batchsize_err: null
+  bias_rand_init_bound: [-1.0, 1.0]
+  bias_rand_init_bound_err: [0.0, 0.5]
+  data_file_name: '{base}nn_{label}.dat'
+  dropout: true
+  dropout_err: null
+  dropout_ratio: 0.01
+  dropout_ratio_err: null
+  error_loss_neg_weight: 0.1
+  gpu: -1
+  init_bias_randomly: true
+  loss_maf_alpha: 0.4
+  loss_maf_alpha_err: null
+  loss_stddev_init: 2.0
+  loss_stddev_init_err: null
+  loss_stddev_stop: 0.001
+  loss_stddev_stop_err: null
+  n_units: [12, 200, 200, 200, 4]
+  n_units_err: null
+  name: Ftip
+  num_check_stop: 50
+  num_check_stop_err: null
+  num_max_update: 5000
+  num_max_update_err: null
+  num_min_predictable: 3
+  train_log_file: '{base}train/nn_log-{n:05d}-{name}{code}.dat'
+  verbose: true
+params: {nn_data_x: null, nn_data_y: null, nn_params: null, nn_params_err: null, num_train: null}

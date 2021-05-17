@@ -9,11 +9,16 @@ def Help():
 
 def Run(ct, *args):
     model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5"
+    save_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn"
     model_name = "Ftip"
+    suff = "amp_smsz"
     
-    mm = ModelManager(td.Domain(), ROOT_PATH+model_path)
-    model = mm.Models[model_name][2]
-    model.Params["nn_params"], model.Params["nn_params_err"] = None, None
-    model.Init()
+    model, DataX, DataY = remake_model(td, model_name, model_path)
+    print(model.Options)
+    for x,y in zip(DataX, DataY):
+        x[5] *= 10
+        model.Update(x.tolist(),y.tolist(),not_learn=False)
     
-    pred_test(model)
+    check_or_create_dir(ROOT_PATH+save_path)
+    with open(ROOT_PATH+save_path+"/{}_{}.pkl".format(model_name, suff), "wb") as f:
+        pickle.dump(model, f)

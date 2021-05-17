@@ -32,7 +32,7 @@ def Run(ct, *args):
     vis_state_dynamics_outdim_lim_pair = [
         ("da_total_tip", "Ftip", 0, (-0.1,0.9)),
         ("lp_flow_x_tip", "Ftip", 1, (-0.3,1.5)),
-        ("lp_flow_z_tip", "Ftip", 2, (-0.1,0.1)),
+        ("lp_flow_y_tip", "Ftip", 2, (-0.1,0.1)),
         ("flow_var_tip", "Ftip", 3, (0.1,1.0)),
     ]
     
@@ -118,3 +118,32 @@ def Run(ct, *args):
         fig.show()
         check_or_create_dir(save_dir)
         plotly.offline.plot(fig, filename = save_dir + file_name_pref + dynamics + "_" + state.replace("_","") + ".html", auto_open=False)
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["mean_pred {}".format(state)]-df["true {}".format(state)],
+            mode='markers',
+            name='pred mean - true',
+            marker=dict(color='orange', size=8)
+        ))
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["latent_mean_pred {}".format(state)]-df["true {}".format(state)],
+            mode='markers',
+            name='latent_pred mean - true',
+            marker=dict(color='purple', size=8)
+        ))
+        fig.add_shape(type='line',
+              x0=0,
+              x1=max(df["episode"]),
+              y0=0,
+              y1=0,
+              line=dict(color='blue')
+        )
+        fig.update_layout(
+            title="{} {} est_error".format(dynamics, state),
+            xaxis_title="episode",
+            yaxis_title="est_error {}".format(state),
+        )
+        fig.show()
+        check_or_create_dir(save_dir)
+        plotly.offline.plot(fig, filename = save_dir + file_name_pref + dynamics + "_" + state.replace("_","") + "_esterror" + ".html", auto_open=False)
