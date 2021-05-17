@@ -8,20 +8,21 @@ def Help():
 
 def Run(ct, *args):
     model_path_list = [
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c0_init_50",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c1_small_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c2_small_nobounce_tip_dtheta2_3",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c3_small_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c4_small_ketchup_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c5_middle_nobounce_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c6_middle_ketchup_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c7_large_nobounce_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c0_init_50",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c1_small_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c2_small_nobounce_tip_dtheta2_3",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c3_small_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c4_small_ketchup_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c5_middle_nobounce_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c6_middle_ketchup_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c7_large_nobounce_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5",
+        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/amp_smsz_dtheta2",
     ]
-    save_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1"
+    save_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/amp_smsz_dtheta2"
     save_img_dir = PICTURE_DIR + save_path.replace("/","_") + "/"
     model_name = "Ftip"
     
