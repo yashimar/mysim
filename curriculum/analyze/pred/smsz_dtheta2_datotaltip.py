@@ -46,7 +46,7 @@ def Run(ct, *args):
         ["n2b", [("lp_pour",3),]],
         ["n3ti", [("da_total",1),]],
     ]
-    sh, esh = get_true_and_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],

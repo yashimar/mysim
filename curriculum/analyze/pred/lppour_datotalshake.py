@@ -48,7 +48,7 @@ def Run(ct, *args):
         ["n2b", [("lp_pour",3),]],
         ["n3sa", [("da_total",1),]],
     ]
-    sh, esh = get_true_and_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],

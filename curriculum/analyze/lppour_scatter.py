@@ -37,7 +37,7 @@ def Run(ct, *args):
         ["n3sa", [("da_total",1),]],
     ]
 
-    sh, esh = get_true_and_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
@@ -51,7 +51,7 @@ def Run(ct, *args):
         "shake_range": sh["n0"]["shake_range"][MEAN],
         "shake_angle": sh["n0"]["shake_angle"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
-        # "Rdapour_Rdaspill": plus_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
+        # "Rdapour_Rdaspill": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
     })
     df.dropna(inplace=True)
     

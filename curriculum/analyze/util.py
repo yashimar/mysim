@@ -8,6 +8,7 @@ import yaml
 from yaml.representer import Representer
 yaml.add_representer(defaultdict, Representer.represent_dict)
 import joblib
+import glob
 import math
 import numpy as np
 import pandas as pd
@@ -25,6 +26,11 @@ SIGMA = "sigma"
 FORCE_TO_NONE = "froce_to_None"
 DEAL_AS_ZERO = "deal_as_zero"
 STAT_TYPES = [MEAN, SIGMA]
+ERROR = "err"
+MODEL_TYPES = [MEAN, ERROR]
+PLUS = "plus"
+MINUS = "minus"
+TRUE = "true"
 
 def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
     sh_path = root_path + save_sh_dir + "/state_history.yaml"
@@ -72,8 +78,8 @@ def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recrea
     return state_histories
 
 
-def get_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
-    esh_path = root_path + save_sh_dir + "/est_state_history.yaml"
+def get_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
+    esh_path = root_path + save_sh_dir + "/bestpolicy_est_state_history.yaml"
     
     if (recreate == False) & (os.path.exists(esh_path)):
         with open(esh_path) as f:
@@ -104,20 +110,23 @@ def get_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, re
     return est_state_histories
 
 
-def get_true_and_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
+def get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
     sh = get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate)
-    esh = get_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate)
+    esh = get_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate)
     
     return sh, esh
 
 
-def plus_list(d_lists, deal_with_None=FORCE_TO_NONE):
+def operate_list(d_lists, operator=PLUS, deal_with_None=FORCE_TO_NONE):
     s = 0
     none_index_list = False
     for d_list in d_lists:
         array = np.array(d_list).astype(np.float32)
         none_index_list += np.isnan(array)
-        s += np.nan_to_num(array, 0.)
+        if operator == PLUS:
+            s += np.nan_to_num(array, 0.)
+        elif operator == MINUS:
+            s -= np.nan_to_num(array, 0.)
     if deal_with_None == FORCE_TO_NONE:
         np.place(s, none_index_list, np.nan)
     elif deal_with_None == DEAL_AS_ZERO:
