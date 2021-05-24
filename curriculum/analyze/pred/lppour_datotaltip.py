@@ -3,7 +3,7 @@ from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
 from ..util import *
 from ...tasks_domain.util import Rmodel
-from ...tasks_domain.flow_ctrl import task_domain as td
+from ...tasks_domain.pouring import task_domain as td
 
 
 def Help():
@@ -14,11 +14,12 @@ def Run(ct, *args):
     model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5"
     save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
     file_name_pref = ""
-    model = None
-    # with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/Ftip_{}.pkl".format(file_name_pref), "rb") as f:
-    #     model = pickle.load(f)
-    
     model_name = "Ftip"
+    # model = None
+    with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
+        model = pickle.load(f)
+        model_path = "relearned model"
+    
     xs_value = {
         "gh_abs": [0.25],
         "lp_pour_x": [0.],

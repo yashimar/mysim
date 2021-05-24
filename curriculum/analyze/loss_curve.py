@@ -20,9 +20,10 @@ def Run(ct, *args):
         # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5",
         # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5",
         # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5",
-        "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/amp_smsz_dtheta2",
+        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/amp_smsz_dtheta2",
+        "test/mms3"
     ]
-    save_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/amp_smsz_dtheta2"
+    save_path = "test/mms3"
     save_img_dir = PICTURE_DIR + save_path.replace("/","_") + "/"
     model_name = "Ftip"
     

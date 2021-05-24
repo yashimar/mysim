@@ -3,7 +3,7 @@ from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
 from ..util import *
 from ...tasks_domain.util import Rmodel
-from ...tasks_domain.flow_ctrl import task_domain as td
+from ...tasks_domain.pouring import task_domain as td
 
 
 def Help():
@@ -13,11 +13,12 @@ def Help():
 def Run(ct, *args):
     model_path = "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5"
     save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
-    file_name_pref = "amp_smsz_dtheta2"
+    file_name_pref = ""
     model_name = "Ftip"
     # model = None
-    with open(ROOT_PATH+"curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/relearn/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
+    with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
         model = pickle.load(f)
+        model_path = "relearned model"
     
     xs_value = {
         "gh_abs": [0.25],
@@ -31,9 +32,9 @@ def Run(ct, *args):
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.2,0.9,40)}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0,2.5,40)}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.35]}}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,40)}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,40)}
+    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",
         "model": Rmodel("Fdatotal_gentle"),
@@ -49,7 +50,7 @@ def Run(ct, *args):
         ["n2b", [("lp_pour",3),]],
         ["n3ti", [("da_total",1),]],
     ]
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [save_sh_dir], node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
@@ -63,7 +64,7 @@ def Run(ct, *args):
     })
     df.dropna(inplace=True)
     scatter_obj = go.Scatter(
-        x=df[X["feature"]]*10, y=df[Y["feature"]]*100, 
+        x=df[X["feature"]], y=df[Y["feature"]], 
         mode='markers', 
         # marker_color="blue",
         opacity = 0.5,

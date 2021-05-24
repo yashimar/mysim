@@ -1,7 +1,10 @@
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from ..tasks_domain.util import ModelManager
+# from ..tasks_domain.before_normalize.util import ModelManager
+from ..tasks_domain.util import ModelManager3 as ModelManager
+# from ...fixed_script.ml_dnn import TNNRegression2
+# from ...fixed_script.dpl4 import TModelManager3
 import os
 from collections import defaultdict
 import yaml
@@ -18,6 +21,7 @@ import plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import cv2
+
 
 
 ROOT_PATH = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
@@ -252,6 +256,7 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
     fig.update_layout(
                 height=950, width=1800, 
                 margin=dict(t=20,b=150),
+                hoverdistance = 5,
             )
     x1,x2,y1,y2 = 0.46,1.0075,0.78,0.22
     colorbar_loc = [
