@@ -153,6 +153,7 @@ def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_
             # horizontal_spacing = 0.1,
             # vertical_spacing = 0.1,
         )
+    go_layout.update({'annotations': [{"xanchor": "center"}]})
     fig.update_layout(**go_layout)
     for r, (x, y, xlim, ylim) in enumerate(xy_limit_pairs):
         fig.add_trace(go.Scatter(
@@ -161,7 +162,7 @@ def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_
             # marker_color="blue",
             opacity = 0.5,
             hoverinfo='text',
-            text=["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns]) for i in df.index],
+            text=["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index],
             showlegend=False,
             marker = dict(
                 size = 10,
