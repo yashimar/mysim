@@ -28,6 +28,8 @@ ROOT_PATH = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/"
 PICTURE_DIR = "/home/yashima/Pictures/"
 MEAN = "mean"
 SIGMA = "sigma"
+L_MEAN = "latent_mean"
+L_SIGMA = "latent_sigma"
 FORCE_TO_NONE = "froce_to_None"
 DEAL_AS_ZERO = "deal_as_zero"
 STAT_TYPES = [MEAN, SIGMA]
@@ -336,3 +338,121 @@ def remake_model(td, model_name, model_path, save_path, suff):
     model.Init()
     
     return model, DataX, DataY
+
+def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, save_dir, file_name_pref):
+    domain = td.Domain()
+    mm = ModelManager(domain, ROOT_PATH+log_name_list[-1])
+    
+    pred_true_history = defaultdict(lambda: defaultdict(lambda: {MEAN: [], SIGMA: [], TRUE: [], L_MEAN: [], L_SIGMA: []}))
+    for log_name in log_name_list:
+        with open(ROOT_PATH+log_name+"/pred_true_log.yaml") as f:
+            pred_true_log = yaml.safe_load(f)
+        
+        for i in range(len(pred_true_log)):
+            for dynamics, outdim in dynamics_outdim_pair.items():
+                if dynamics in pred_true_log[i].keys():
+                    xs = pred_true_log[i][dynamics]
+                    latent_model = mm.Models[dynamics][2]
+                    latent_p = latent_model.Predict(xs["input"], with_var=True)
+                    for j in range(outdim):
+                        pred_true_history[dynamics]["out{}".format(j)][MEAN].append(xs["prediction"]["X"][j][0])
+                        pred_true_history[dynamics]["out{}".format(j)][SIGMA].append(math.sqrt(xs["prediction"]["Cov"][j][j]))
+                        pred_true_history[dynamics]["out{}".format(j)][L_MEAN].append(latent_p.Y[j].item())
+                        pred_true_history[dynamics]["out{}".format(j)][L_SIGMA].append(latent_p.Var[j,j].item())
+                        pred_true_history[dynamics]["out{}".format(j)][TRUE].append(xs["true_output"][j])
+                else:
+                    for j in range(outdim):
+                        pred_true_history[dynamics]["out{}".format(j)][MEAN].append(np.nan)
+                        pred_true_history[dynamics]["out{}".format(j)][SIGMA].append(np.nan)
+                        pred_true_history[dynamics]["out{}".format(j)][L_MEAN].append(np.nan)
+                        pred_true_history[dynamics]["out{}".format(j)][L_SIGMA].append(np.nan)
+                        pred_true_history[dynamics]["out{}".format(j)][TRUE].append(np.nan)
+                        
+    features = dict()
+    for state, dynamics, outdim, _ in vis_state_dynamics_outdim_lim_pair:
+        for stat_type in [MEAN, SIGMA, L_MEAN, L_SIGMA]:
+            features["{}_pred {}".format(stat_type, state)] = pred_true_history[dynamics]["out{}".format(outdim)][stat_type]
+        features["true {}".format(state)] = pred_true_history[dynamics]["out{}".format(outdim)][TRUE]
+        features["episode"] = np.arange(0,len(pred_true_history["Ftip"]["out0"][TRUE]))
+    df = pd.DataFrame(features)
+    # df.dropna(inplace=True)
+
+    fig = make_subplots(
+        rows=2*len(vis_state_dynamics_outdim_lim_pair), cols=1,
+        subplot_titles=sum([["{} {}".format(dynamics, state), "{} {} est_error".format(dynamics, state)] for dynamics, state, _, _ in vis_state_dynamics_outdim_lim_pair],[]),
+        # horizontal_spacing = 0.5,
+        # specs = [[{},] for _ in range(2*len(vis_state_dynamics_outdim_lim_pair))],
+        # vertical_spacing = 0.05,
+    )
+    go_layout.update({'annotations': [{"xanchor": "center"}]})
+    fig.update_layout(**go_layout)
+    for r, (state, dynamics, _, lim) in enumerate(vis_state_dynamics_outdim_lim_pair):
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["mean_pred {}".format(state)],
+            mode='markers',
+            name='pred mean+/-sigma',
+            legendgroup=str(2*r+1),
+            error_y=dict(
+                type="data",
+                symmetric=True,
+                array=df["sigma_pred {}".format(state)].values.tolist(),
+                color='orange',
+                thickness=1.5,
+                width=3,
+            ),
+            marker=dict(color='orange', size=8)
+        ), 2*r+1, 1)
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["latent_mean_pred {}".format(state)],
+            mode='markers',
+            name='latent_pred mean+/-sigma',
+            legendgroup=str(2*r+1),
+            error_y=dict(
+                type="data",
+                symmetric=True,
+                array=df["latent_sigma_pred {}".format(state)].values.tolist(),
+                color='purple',
+                thickness=1.5,
+                width=3,
+            ),
+            marker=dict(color='purple', size=8)
+        ), 2*r+1, 1)
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["true {}".format(state)],
+            mode='markers',
+            name='true',
+            legendgroup=str(2*r+1),
+            marker=dict(color='blue', size=8)
+        ), 2*r+1, 1)
+        fig['layout']['xaxis{}'.format(2*r+1)]['title'] = "episode"
+        fig['layout']['yaxis{}'.format(2*r+1)]['title'] = "{}".format(state)
+        fig['layout']['yaxis{}'.format(2*r+1)]['range'] = lim
+        
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["mean_pred {}".format(state)]-df["true {}".format(state)],
+            mode='markers',
+            name='pred mean - true',
+            legendgroup=str(2*r+2),
+            marker=dict(color='orange', size=8)
+        ), 2*r+2, 1)
+        fig.add_trace(go.Scatter(
+            x = df["episode"], y=df["latent_mean_pred {}".format(state)]-df["true {}".format(state)],
+            mode='markers',
+            name='latent_pred mean - true',
+            legendgroup=str(2*r+2),
+            marker=dict(color='purple', size=8)
+        ), 2*r+2, 1)
+        fig.add_shape(type='line',
+              x0=0,
+              x1=max(df["episode"]),
+              y0=0,
+              y1=0,
+              line=dict(color='blue'),
+              row=2*r+2,
+              col=1,
+        )
+        fig['layout']['xaxis{}'.format(2*r+2)]['title'] = "episode"
+        fig['layout']['yaxis{}'.format(2*r+2)]['title'] = "est_error {}".format(state)
+        fig['layout']['yaxis{}'.format(2*r+2)]['range'] = lim
+    check_or_create_dir(save_dir)
+    plotly.offline.plot(fig, filename = save_dir + file_name_pref + "transition.html", auto_open=False)
