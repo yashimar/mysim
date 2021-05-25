@@ -6,12 +6,20 @@ from sklearn.preprocessing import MinMaxScaler
 class TNNRegression2(TNNRegression):
   
   def MmsX(self, pred_input = None):
-    mms = MinMaxScaler(feature_range=(-1,1))
-    mms.fit(self.DataX)
     if pred_input == None:
-      return mms.transform(self.DataX)
+      if len(self.DataX) == 0:
+        return self.DataX
+      else:
+        mms = MinMaxScaler(feature_range=(-1,1))
+        mms.fit(self.DataX)
+        return mms.transform(self.DataX)
     else:
-      return mms.transform([pred_input]).flatten().tolist()
+      if len(self.DataX) == 0:
+        return pred_input
+      else:
+        mms = MinMaxScaler(feature_range=(-1,1))
+        mms.fit(self.DataX)
+        return mms.transform([pred_input]).flatten().tolist()
   
       
   def UpdateMain(self):

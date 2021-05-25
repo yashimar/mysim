@@ -1,7 +1,8 @@
+from core_tool import *
 from ...util import CreateExperimentsEvidenceFile
 from ..util import SetupDPL, CreateDPLLog
 import task_domain as td
-# from core_tool import *
+
 
 ROOT_PATH = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'
 
@@ -45,17 +46,17 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    t_index = 3
-    suff = "curriculum_test/t"+str(t_index)+"/next150"+"/"
-    l.logdir = ROOT_PATH + "curriculum/pouring3/full_scratch"+"/"+suff
+    t_index = 1
+    suff = "curriculum_test/t"+str(t_index)+"/first300"+"/"
+    l.logdir = ROOT_PATH + "curriculum2/pouring/full_scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    l.db_src = ROOT_PATH + "curriculum/pouring3/full_scratch/curriculum_test/t"+str(t_index)+"/first150"
-    # l.db_src = ""
-    l.model_src = ROOT_PATH + "curriculum/pouring3/full_scratch/curriculum_test/t"+str(t_index)+"/first150"
-    # l.model_src = ""
+    # l.db_src = ROOT_PATH + "curriculum/pouring3/full_scratch/curriculum_test/t"+str(t_index)+"/first150"
+    l.db_src = ""
+    # l.model_src = ROOT_PATH + "curriculum/pouring3/full_scratch/curriculum_test/t"+str(t_index)+"/first150"
+    l.model_src = ""
 
     ############################################################################
     # Modify ConfigCallback
@@ -67,7 +68,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 150
+    l.num_episodes = 300
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]

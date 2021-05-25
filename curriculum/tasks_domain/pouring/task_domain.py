@@ -1,7 +1,7 @@
-from ..util import CreatePredictionLog, CurrentPredict, Rmodel
 from tsim.dpl_cmn import *
 from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
+from ..util import CreatePredictionLog, CurrentPredict, Rmodel
 
 
 def Delta1(dim, s):
