@@ -1,7 +1,7 @@
 from core_tool import *
-from .util import *
+from util import *
 import pandas as pd
-    
+
 
 def Help():
     pass
@@ -25,17 +25,17 @@ def Run(ct, *args):
         "curriculum2/pouring/full_scratch/curriculum_test/t1/first300",
     ]
     save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
-    save_img_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    
+    save_img_dir = PICTURE_DIR + save_sh_dir.replace("/", "_") + "/"
+
     node_states_dim_pair = [
-        ["n0", [("size_srcmouth",1),("material2",4),("dtheta2",1),("shake_spd",1),("shake_range",1),("shake_angle",1)]],
-        ["n2b", [("lp_pour",3),]],
-        ["n3ti", [("da_total",1),]],
-        ["n4tir1", [(".r",1),]],
-        ["n4tir2", [(".r",1),]],
-        ["n3sa", [("da_total",1),]],
-        ["n4sar1", [(".r",1),]],
-        ["n4sar2", [(".r",1),]],
+        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1)]],
+        ["n2b", [("lp_pour", 3), ]],
+        ["n3ti", [("da_total", 1), ]],
+        ["n4tir1", [(".r", 1), ]],
+        ["n4tir2", [(".r", 1), ]],
+        ["n3sa", [("da_total", 1), ]],
+        ["n4sar1", [(".r", 1), ]],
+        ["n4sar2", [(".r", 1), ]],
     ]
 
     sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
@@ -51,22 +51,29 @@ def Run(ct, *args):
         # "shake_spd": sh["n0"]["shake_spd"][MEAN],
         # "shake_range": sh["n0"]["shake_range"][MEAN],
         # "shake_angle": sh["n0"]["shake_angle"][MEAN],
-        "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
+        "episode": np.arange(0, len(sh["n0"]["dtheta2"][MEAN])),
         "Rdapour_Rdaspill": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
     })
     df.dropna(inplace=True)
-    
+
     # fig = px.scatter_3d(df, x="lp_pour_x", y="lp_pour_z", z="da_total_tip")
     # fig.show()
-    
-    plot_and_save_df_scatter(df,[
+
+    go_layout = {
+        'height': 4000,
+        'width': 900,
+        'margin': dict(t=20, b=150),
+        'hoverdistance': 5,
+    }
+    plot_and_save_df_scatter(df, [
         # ("episode", "Rdapour_Rdaspill", None, [-20,0.5]),
-        ("lp_pour_x", "lp_pour_z", [-0.5,0.7], [-0.2, 0.6]),
-        ("lp_pour_x", "da_total_tip", [-0.5,0.7], [-0.1, 0.6]),
+        ("lp_pour_x", "lp_pour_z", [-0.5, 0.7], [-0.2, 0.6]),
+        ("lp_pour_x", "da_total_tip", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_z", "da_total_tip", [-0.2, 0.6], [-0.1, 0.6]),
         ("dtheta2", "da_total_tip", [0., 0.025], [-0.1, 0.6]),
         ("size_srcmouth", "da_total_tip", [0.01, 0.10], [-0.1, 0.6]),
         # ("shake_spd", "da_total_shake", [0.4, 1.3], [-0.1, 0.6]),
         # ("shake_range", "da_total_shake", [0.04, 0.13], [-0.1, 0.6]),
         # ("shake_angle", "da_total_shake", [-0.6*math.pi, 0.6*math.pi], [-0.1, 0.6]),
-    ], save_img_dir, concat_title=save_sh_dir.replace("/","_")+"_shake_nobounce"+".png")
+    ], save_img_dir, concat_title="tip_nobounce", go_layout=go_layout)
+    

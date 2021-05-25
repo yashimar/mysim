@@ -147,17 +147,36 @@ def check_or_create_dir(dir_path):
         os.makedirs(dir_path)
         
         
-def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title):
-    plt.close("all")
+def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_layout):
+    fig = make_subplots(
+            rows=len(xy_limit_pairs), cols=1, 
+            # horizontal_spacing = 0.1,
+            # vertical_spacing = 0.1,
+        )
+    fig.update_layout(**go_layout)
+    for r, (x, y, xlim, ylim) in enumerate(xy_limit_pairs):
+        fig.add_trace(go.Scatter(
+            x=df[x], y=df[y], 
+            mode='markers', 
+            # marker_color="blue",
+            opacity = 0.5,
+            hoverinfo='text',
+            text=["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns]) for i in df.index],
+            showlegend=False,
+            marker = dict(
+                size = 10,
+                color = df.index,
+                colorscale="Viridis",
+                # cmin = 0,
+                # cmax = 0.55,
+            ),
+        ), r+1, 1)
+        fig['layout']['xaxis{}'.format(r+1)]['title'] = x
+        fig['layout']['yaxis{}'.format(r+1)]['title'] = y
+        fig['layout']['xaxis{}'.format(r+1)]['range'] = xlim
+        fig['layout']['yaxis{}'.format(r+1)]['range'] = ylim
     check_or_create_dir(save_img_dir)
-    concat_imgs = []
-    for x, y, xlim, ylim in xy_limit_pairs:
-        save_path = save_img_dir+x.replace("_","")+"_"+y.replace("_","")+".png"
-        df.plot.scatter(x=x,y=y,xlim=xlim,ylim=ylim).get_figure().savefig(save_path)
-        concat_imgs.append(cv2.imread(save_path))
-    plt.close("all")
-    im_v = cv2.vconcat(concat_imgs)
-    cv2.imwrite(save_img_dir+concat_title, im_v)
+    plotly.offline.plot(fig, filename = save_img_dir+"{}.html".format(concat_title), auto_open=False)
     
     
 def pred_test(model):
