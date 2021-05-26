@@ -33,9 +33,9 @@ def Run(ct, *args):
         ("lp_flow_y_tip", "Ftip", 2, (-0.1,0.1)),
         ("flow_var_tip", "Ftip", 3, (0.1,1.0)),
         ("da_total_shake", "Fshake", 0, (-0.1,0.9)),
-        # ("lp_flow_x_shake", "Fshake", 1, (-0.3,1.5)),
-        # ("lp_flow_y_shake", "Fshake", 2, (-0.1,0.1)),
-        # ("flow_var_shake", "Fshake", 3, (0.1,1.0)),
+        ("lp_flow_x_shake", "Fshake", 1, (-0.3,1.5)),
+        ("lp_flow_y_shake", "Fshake", 2, (-0.1,0.1)),
+        ("flow_var_shake", "Fshake", 3, (0.1,1.0)),
         ("da_pour", "Famount", 0, (-0.1,0.9)),
         ("da_spill2", "Famount", 0, (-0.1,1)),
     ]

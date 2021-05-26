@@ -33,13 +33,9 @@ def LoadActions(database, i_episode=0, i_node=0):
   return {key:(value[0] if len(value)==1 else value) for key,value in zip(act_keys,actions)}
 
 def Run(ct,*args):
-  # log_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/" \
-  #           + "replay/mtr_sms_sv/learn/shake_A/nobounce/002/"
-  # target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-  #             + "bottomup/learn7/std_pour/ketchup/random/nn_reward/first"+"/"
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c0_init_50"+"/"
-  i_episode_list = [26]
+              + "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"+"/"
+  i_episode_list = [0]
   i_node = 0
   n_roop = 1
 
@@ -62,7 +58,7 @@ def Run(ct,*args):
       l.config_callback= TestConfigCallback
       # ct.Run('mysim.setup.setup2', l)
 
-      ct.Run('mysim.curriculum.tasks_domain.flow_ctrl.setup', l)
+      ct.Run('mysim.curriculum.tasks_domain.before_normalize.flow_ctrl.setup', l)
 
       sim= ct.sim
       l= ct.sim_local
