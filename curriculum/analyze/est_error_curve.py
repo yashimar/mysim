@@ -26,7 +26,7 @@ def Run(ct, *args):
     ]
     save_dir = PICTURE_DIR + "curriculum2/pouring/full_scratch/curriculum_test/t1".replace("/","_") + "/"
     file_name_pref = ""
-    dynamics_outdim_pair = {"Fmvtopour2": 3, "Ftip": 4, "Fshake": 4, "Famount": 2}
+    dynamics_iodim_pair = {"Fmvtopour2": (3, 3), "Ftip": (12, 4), "Fshake": (14, 4), "Famount": (12, 2)}
     vis_state_dynamics_outdim_lim_pair = [
         ("da_total_tip", "Ftip", 0, (-0.1,0.9)),
         ("lp_flow_x_tip", "Ftip", 1, (-0.3,1.5)),
@@ -48,4 +48,4 @@ def Run(ct, *args):
         'hoverdistance': 5,
     }
     
-    transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, save_dir, file_name_pref)
+    transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, save_dir, file_name_pref)

@@ -339,7 +339,7 @@ def remake_model(td, model_name, model_path, save_path, suff):
     
     return model, DataX, DataY
 
-def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, save_dir, file_name_pref):
+def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, save_dir, file_name_pref):
     domain = td.Domain()
     mm = ModelManager(domain, ROOT_PATH+log_name_list[-1])
     
@@ -349,7 +349,7 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
             pred_true_log = yaml.safe_load(f)
         
         for i in range(len(pred_true_log)):
-            for dynamics, outdim in dynamics_outdim_pair.items():
+            for dynamics, (indim, outdim) in dynamics_iodim_pair.items():
                 if dynamics in pred_true_log[i].keys():
                     xs = pred_true_log[i][dynamics]
                     latent_model = mm.Models[dynamics][2]
@@ -360,6 +360,8 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
                         pred_true_history[dynamics]["out{}".format(j)][L_MEAN].append(latent_p.Y[j].item())
                         pred_true_history[dynamics]["out{}".format(j)][L_SIGMA].append(latent_p.Var[j,j].item())
                         pred_true_history[dynamics]["out{}".format(j)][TRUE].append(xs["true_output"][j])
+                    for j in range(indim):
+                        pred_true_history[dynamics]["in{}".format(j)][TRUE].append(xs["input"][j])
                 else:
                     for j in range(outdim):
                         pred_true_history[dynamics]["out{}".format(j)][MEAN].append(np.nan)
@@ -367,6 +369,8 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
                         pred_true_history[dynamics]["out{}".format(j)][L_MEAN].append(np.nan)
                         pred_true_history[dynamics]["out{}".format(j)][L_SIGMA].append(np.nan)
                         pred_true_history[dynamics]["out{}".format(j)][TRUE].append(np.nan)
+                    for j in range(indim):
+                        pred_true_history[dynamics]["in{}".format(j)][TRUE].append(np.nan)
                         
     features = dict()
     for state, dynamics, outdim, _ in vis_state_dynamics_outdim_lim_pair:
@@ -384,13 +388,15 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
         # specs = [[{},] for _ in range(2*len(vis_state_dynamics_outdim_lim_pair))],
         # vertical_spacing = 0.05,
     )
-    go_layout.update({'annotations': [{"xanchor": "center"}]})
+    go_layout.update({'annotations': [{"xanchor": "center", "opacity": 0.8, 'bordercolor': "rgba(0,0,0,0)", 'bgcolor': "rgba(0,0,0,0)"}]})
     fig.update_layout(**go_layout)
     for r, (state, dynamics, _, lim) in enumerate(vis_state_dynamics_outdim_lim_pair):
+        anno_text = ["".join(["in{}: {}<br />".format(j, pred_true_history[dynamics]["in{}".format(j)][TRUE][i]) for j in range(dynamics_iodim_pair[dynamics][0])]) for i in range(len(df))]
         fig.add_trace(go.Scatter(
             x = df["episode"], y=df["mean_pred {}".format(state)],
             mode='markers',
             name='pred mean+/-sigma',
+            text = anno_text,
             legendgroup=str(2*r+1),
             error_y=dict(
                 type="data",
@@ -406,6 +412,7 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
             x = df["episode"], y=df["latent_mean_pred {}".format(state)],
             mode='markers',
             name='latent_pred mean+/-sigma',
+            text = anno_text,
             legendgroup=str(2*r+1),
             error_y=dict(
                 type="data",
@@ -421,6 +428,7 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
             x = df["episode"], y=df["true {}".format(state)],
             mode='markers',
             name='true',
+            text = anno_text,
             legendgroup=str(2*r+1),
             marker=dict(color='blue', size=8)
         ), 2*r+1, 1)
@@ -432,6 +440,7 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
             x = df["episode"], y=df["mean_pred {}".format(state)]-df["true {}".format(state)],
             mode='markers',
             name='pred mean - true',
+            text = anno_text,
             legendgroup=str(2*r+2),
             marker=dict(color='orange', size=8)
         ), 2*r+2, 1)
@@ -439,6 +448,7 @@ def transition_plot(td, log_name_list, dynamics_outdim_pair, vis_state_dynamics_
             x = df["episode"], y=df["latent_mean_pred {}".format(state)]-df["true {}".format(state)],
             mode='markers',
             name='latent_pred mean - true',
+            text = anno_text,
             legendgroup=str(2*r+2),
             marker=dict(color='purple', size=8)
         ), 2*r+2, 1)
