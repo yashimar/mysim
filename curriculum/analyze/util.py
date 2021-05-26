@@ -148,8 +148,28 @@ def check_or_create_dir(dir_path):
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
         
-        
-def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_layout):
+
+def base_trace(x, y, color, text):
+    trace = go.Scatter(
+        x=x, y=y, 
+        mode='markers', 
+        # marker_color="blue",
+        opacity = 0.5,
+        hoverinfo='text',
+        text=text,
+        showlegend=False,
+        marker = dict(
+            size = 10,
+            color = color,
+            colorscale="Viridis",
+            # cmin = 0,
+            # cmax = 0.55,
+        ),
+    )
+    return trace
+
+
+def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_layout, updatemenu=None):
     fig = make_subplots(
             rows=len(xy_limit_pairs), cols=1, 
             # horizontal_spacing = 0.1,
@@ -158,26 +178,14 @@ def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_
     go_layout.update({'annotations': [{"xanchor": "center"}]})
     fig.update_layout(**go_layout)
     for r, (x, y, xlim, ylim) in enumerate(xy_limit_pairs):
-        fig.add_trace(go.Scatter(
-            x=df[x], y=df[y], 
-            mode='markers', 
-            # marker_color="blue",
-            opacity = 0.5,
-            hoverinfo='text',
-            text=["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index],
-            showlegend=False,
-            marker = dict(
-                size = 10,
-                color = df.index,
-                colorscale="Viridis",
-                # cmin = 0,
-                # cmax = 0.55,
-            ),
-        ), r+1, 1)
+        text = ["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index]
+        fig.add_trace(base_trace(df[x],df[y],df.index,text), r+1, 1)
         fig['layout']['xaxis{}'.format(r+1)]['title'] = x
         fig['layout']['yaxis{}'.format(r+1)]['title'] = y
         fig['layout']['xaxis{}'.format(r+1)]['range'] = xlim
         fig['layout']['yaxis{}'.format(r+1)]['range'] = ylim
+        if updatemenu != None:
+            updatemenu(fig)
     check_or_create_dir(save_img_dir)
     plotly.offline.plot(fig, filename = save_img_dir+"{}.html".format(concat_title), auto_open=False)
     

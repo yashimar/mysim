@@ -63,7 +63,7 @@ def Run(ct, *args):
         "Rdapour_Rdaspill": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })
-    # df.dropna(inplace=True)
+    df.dropna(inplace=True)
     df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
     df["comment"][27] = "<br />　'flow_out'遷移後, dtheta2が大きくすぐに最大角に到達して終了."\
                         + "<br />　目標量出したことによって終了しておらず, kickback中に多量流れ出ており, da_total_tipが目標量に近いのは偶然."
@@ -78,6 +78,28 @@ def Run(ct, *args):
     df["comment"][196] = "<br />　レシーバーより手前過ぎて溢れ."
     df["comment"][239] = "<br />　'flow_out'遷移後, da_totalが目標量に到達したため終了."\
                         + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
+                        
+    def updatemenu(fig):
+        buttons = []
+        for i in range(2*len(df)):
+            label = "visible"
+            visibility = [i==j for j in range(2*len(df))]
+            button = dict(
+                label =  label,
+                method = 'update',
+                args = [{'visible': visibility},
+                        {'title': label}])
+            buttons.append(button)
+        updatemenus = [{
+            # "type": "buttons",
+            "buttons": buttons,
+            "active": -1,
+            "x": 1.05,
+            # "xanchor": "left",
+            # "y": 1,
+            # "yanchor": "top",
+        }]
+        fig['layout']['updatemenus'] = updatemenus
 
     go_layout = {
         'height': 12000,
@@ -112,5 +134,5 @@ def Run(ct, *args):
         # ("shake_spd", "da_total_shake", [0.4, 1.3], [-0.1, 0.6]),
         # ("shake_range", "da_total_shake", [0.04, 0.13], [-0.1, 0.6]),
         # ("shake_angle", "da_total_shake", [-0.6*math.pi, 0.6*math.pi], [-0.1, 0.6]),
-    ], save_img_dir, concat_title="tip_ketchup", go_layout=go_layout)
+    ], save_img_dir, concat_title="sample_scatter", go_layout=go_layout, updatemenu=updatemenu)
     
