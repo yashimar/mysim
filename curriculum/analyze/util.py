@@ -1,3 +1,4 @@
+# coding: UTF-8
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
@@ -109,7 +110,6 @@ def get_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_d
                                 for i, x in enumerate(XS.X):
                                     est_state_histories[node][state+"_"+str(i)][MEAN].append(x.item())
                                     est_state_histories[node][state+"_"+str(i)][SIGMA].append(np.sqrt(np.diag(XS.Cov)[i]).item() if XS.Cov is not None else None)
-                            break
                         
         with open(esh_path, "w") as f:
             yaml.dump({"Seq": est_state_histories}, f, default_flow_style=False)
@@ -339,7 +339,7 @@ def remake_model(td, model_name, model_path, save_path, suff):
     
     return model, DataX, DataY
 
-def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, save_dir, file_name_pref):
+def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, suff_annotation, save_dir, file_name_pref):
     domain = td.Domain()
     mm = ModelManager(domain, ROOT_PATH+log_name_list[-1])
     
@@ -391,7 +391,8 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
     go_layout.update({'annotations': [{"xanchor": "center", "opacity": 0.8, 'bordercolor': "rgba(0,0,0,0)", 'bgcolor': "rgba(0,0,0,0)"}]})
     fig.update_layout(**go_layout)
     for r, (state, dynamics, _, lim) in enumerate(vis_state_dynamics_outdim_lim_pair):
-        anno_text = ["".join(["in{}: {}<br />".format(j, pred_true_history[dynamics]["in{}".format(j)][TRUE][i]) for j in range(dynamics_iodim_pair[dynamics][0])]) for i in range(len(df))]
+        anno_text = ["<b>true inputs</b><br />"+"".join(["　in{}: {}<br />".format(j, pred_true_history[dynamics]["in{}".format(j)][TRUE][i]) for j in range(dynamics_iodim_pair[dynamics][0])]) for i in range(len(df))]
+        anno_text = [t1+t2 for t1,t2 in zip(anno_text,suff_annotation)]
         fig.add_trace(go.Scatter(
             x = df["episode"], y=df["mean_pred {}".format(state)],
             mode='markers',

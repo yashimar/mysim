@@ -31,10 +31,13 @@ def Run(ct, *args):
     node_states_dim_pair = [
         ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1)]],
         ["n2b", [("lp_pour", 3), ]],
-        ["n3ti", [("da_total", 1), ("da_pour", 1), ("da_spill2", 1)]],
+        ["n2c", [("skill", 1), ]],
+        ["n3ti", [("da_total", 1), ("lp_flow", 2), ("flow_var", 1)]],
+        ["n4ti", [("da_pour", 1), ("da_spill2", 1)]],
         ["n4tir1", [(".r", 1), ]],
         ["n4tir2", [(".r", 1), ]],
-        ["n3sa", [("da_total", 1), ("da_pour", 1), ("da_spill2", 1)]],
+        ["n3sa", [("da_total", 1), ("lp_flow", 2), ("flow_var", 1)]],
+        ["n4sa", [("da_pour", 1), ("da_spill2", 1)]],
         ["n4sar1", [(".r", 1), ]],
         ["n4sar2", [(".r", 1), ]],
     ]
@@ -44,8 +47,10 @@ def Run(ct, *args):
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
-        "da_pour_tip": sh["n3ti"]["da_pour"][MEAN],
-        "da_spill_tip": sh["n3ti"]["da_spill2"][MEAN],
+        "lp_flow_x_tip": sh["n3ti"]["lp_flow_0"][MEAN],
+        "flow_var_tip": sh["n3ti"]["flow_var"][MEAN],
+        "da_pour_tip": sh["n4ti"]["da_pour"][MEAN],
+        "da_spill_tip": sh["n4ti"]["da_spill2"][MEAN],
         # "da_total_shake": sh["n3sa"]["da_total"][MEAN],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
@@ -58,7 +63,7 @@ def Run(ct, *args):
         "Rdapour_Rdaspill": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })
-    df.dropna(inplace=True)
+    # df.dropna(inplace=True)
     df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
     df["comment"][27] = "<br />　'flow_out'遷移後, dtheta2が大きくすぐに最大角に到達して終了."\
                         + "<br />　目標量出したことによって終了しておらず, kickback中に多量流れ出ており, da_total_tipが目標量に近いのは偶然."
@@ -99,8 +104,13 @@ def Run(ct, *args):
         ("dtheta2", "da_spill_tip", [0., 0.025], [-0.1, 1]),
         ("size_srcmouth", "da_spill_tip", [0.01, 0.10], [-0.1, 10]),
         ("size_srcmouth", "da_spill_tip", [0.01, 0.10], [-0.1, 1]),
+        ("lp_flow_x_tip", "flow_var_tip", [-0.5, 0.7], [-0.1, 0.6]),
+        ("lp_flow_x_tip", "da_pour_tip", [-0.5, 0.7], [-0.1, 0.6]),
+        ("lp_flow_x_tip", "da_spill_tip", [-0.5, 0.7], [-0.1, 1]),
+        ("flow_var_tip", "da_pour_tip", [-0.1, 0.6], [-0.1, 0.6]),
+        ("flow_var_tip", "da_spill_tip", [-0.1, 0.6], [-0.1, 1]),
         # ("shake_spd", "da_total_shake", [0.4, 1.3], [-0.1, 0.6]),
         # ("shake_range", "da_total_shake", [0.04, 0.13], [-0.1, 0.6]),
         # ("shake_angle", "da_total_shake", [-0.6*math.pi, 0.6*math.pi], [-0.1, 0.6]),
-    ], save_img_dir, concat_title="tip_nobounce", go_layout=go_layout)
+    ], save_img_dir, concat_title="tip_ketchup", go_layout=go_layout)
     
