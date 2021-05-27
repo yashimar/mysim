@@ -169,23 +169,26 @@ def base_trace(x, y, color, text):
     return trace
 
 
-def plot_and_save_df_scatter(df, xy_limit_pairs, save_img_dir, concat_title, go_layout, updatemenu=None):
+def plot_and_save_df_scatter(vis_df_title_pair, xy_limit_pairs, save_img_dir, concat_title, go_layout, updatemenu=None):
+    n_graph = len(xy_limit_pairs)
     fig = make_subplots(
-            rows=len(xy_limit_pairs), cols=1, 
+            rows=n_graph, cols=1,
+            # subplot_titles=["[{}] {} / {}".format(title, x, y) for x, y, _, _ in xy_limit_pairs for _, title in vis_df_title_pair],
             # horizontal_spacing = 0.1,
             # vertical_spacing = 0.1,
         )
-    go_layout.update({'annotations': [{"xanchor": "center"}]})
     fig.update_layout(**go_layout)
-    for r, (x, y, xlim, ylim) in enumerate(xy_limit_pairs):
-        text = ["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index]
-        fig.add_trace(base_trace(df[x],df[y],df.index,text), r+1, 1)
-        fig['layout']['xaxis{}'.format(r+1)]['title'] = x
-        fig['layout']['yaxis{}'.format(r+1)]['title'] = y
-        fig['layout']['xaxis{}'.format(r+1)]['range'] = xlim
-        fig['layout']['yaxis{}'.format(r+1)]['range'] = ylim
-        if updatemenu != None:
-            updatemenu(fig)
+    for xy_i, (x, y, xlim, ylim) in enumerate(xy_limit_pairs):
+        r_idx = xy_i+1
+        for df, _ in vis_df_title_pair:
+            text = ["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index]
+            fig.add_trace(base_trace(df[x],df[y],df.index,text), r_idx, 1)
+            fig['layout']['xaxis{}'.format(r_idx)]['title'] = x
+            fig['layout']['yaxis{}'.format(r_idx)]['title'] = y
+            fig['layout']['xaxis{}'.format(r_idx)]['range'] = xlim
+            fig['layout']['yaxis{}'.format(r_idx)]['range'] = ylim
+    if updatemenu != None:
+        updatemenu(fig)
     check_or_create_dir(save_img_dir)
     plotly.offline.plot(fig, filename = save_img_dir+"{}.html".format(concat_title), auto_open=False)
     
