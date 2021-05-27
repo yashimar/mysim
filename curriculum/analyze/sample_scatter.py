@@ -88,6 +88,9 @@ def Run(ct, *args):
     df["comment"][176] = "<br />　'flow_out'遷移後, dtheta2が大きいために, 十分な量が出ることなく最大角に到達して終了."\
                         + "<br />　dtheta2が小さければ, 十分な量を流し出せたはずの動作."
     df["comment"][196] = "<br />　レシーバーより手前過ぎて溢れ."
+    df["comment"][199] = "<br />　悪い局所解に最適化."\
+                        + "<br />　[tip] Rdapour: -2, Rdaspill2: -14"\
+                        + "<br />　[shake] Rdapour: -1, Rdaspill2: -6"
     df["comment"][239] = "<br />　'flow_out'遷移後, da_totalが目標量に到達したため終了."\
                         + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
                         
@@ -102,7 +105,7 @@ def Run(ct, *args):
     ]
     
     xy_limit_pairs = [
-        ("episode", "Rdapour_Rdaspill", None, [-20,0.5]),
+        ("episode", "Rdapour_Rdaspill", [-10, len(df)+10], [-40,0.5]),
         ("lp_pour_x", "lp_pour_z", [-0.5, 0.7], [-0.2, 0.6]),
         ("lp_pour_x", "da_total", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_z", "da_total", [-0.2, 0.6], [-0.1, 0.6]),
