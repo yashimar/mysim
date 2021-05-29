@@ -1,9 +1,9 @@
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from ..util import *
-from ...tasks_domain.util import Rmodel
-from ...tasks_domain.pouring import task_domain as td
+from ....util import *
+from .....tasks_domain.util import Rmodel
+from .....tasks_domain.pouring import task_domain as td
 
 
 def Help():
@@ -22,9 +22,9 @@ def Run(ct, *args):
     
     xs_value = {
         "gh_abs": [0.25],
-        "lp_pour_x": [0.],
+        "lp_pour_x": [-0.1],
         "lp_pour_y": [0.],
-        "lp_pour_z": [0.],
+        "lp_pour_z": [0.25],
         "da_trg": [0.3],
         "size_srcmouth": [0.055],
         "material2": KETCHUP,
@@ -32,9 +32,9 @@ def Run(ct, *args):
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "lp_pour_x", "values": np.linspace(-0.5,0.7,40)}
-    Y = {"feature": "lp_pour_z", "values": np.linspace(-0.2,0.6,40)}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.35]}}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,40)}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,40)}
+    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",
         "model": Rmodel("Fdatotal_gentle"),
@@ -50,8 +50,10 @@ def Run(ct, *args):
         ["n2b", [("lp_pour",3),]],
         ["n3ti", [("da_total",1),]],
     ]
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [save_sh_dir], node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
+        "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
+        "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
