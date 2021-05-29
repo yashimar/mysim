@@ -46,7 +46,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    t_index = 1
+    t_index = 3
     suff = "curriculum_test/t"+str(t_index)+"/first300"+"/"
     l.logdir = ROOT_PATH + "curriculum2/pouring/full_scratch"+"/"+suff
 
