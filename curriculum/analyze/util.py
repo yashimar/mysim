@@ -406,7 +406,7 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
     go_layout.update({'annotations': [{"xanchor": "center", "opacity": 0.8, 'bordercolor': "rgba(0,0,0,0)", 'bgcolor': "rgba(0,0,0,0)"}]})
     fig.update_layout(**go_layout)
     for r, (state, dynamics, _, lim) in enumerate(vis_state_dynamics_outdim_lim_pair):
-        for _, condition in vis_condition_title_pair:
+        for _, condition, _ in vis_condition_title_pair:
             df = pd.DataFrame(features)[condition]
             anno_text = ["<b>true inputs</b><br />"+"".join(["　in{}: {}<br />".format(j, pred_true_history[dynamics]["in{}".format(j)][TRUE][i]) for j in range(dynamics_iodim_pair[dynamics][0])]) for i in df.index]
             anno_text = [t1+t2 for t1,t2 in zip(anno_text,suff_annotation)]

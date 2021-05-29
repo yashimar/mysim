@@ -39,7 +39,7 @@ def Run(ct, *args):
         ("lp_flow_y_shake", "Fshake", 2, (-0.1,0.1)),
         ("flow_var_shake", "Fshake", 3, (0.1,1.0)),
         ("da_pour", "Famount", 0, (-0.1,0.9)),
-        ("da_spill2", "Famount", 1, (-0.1,5)),
+        ("da_spill2", "Famount", 1, (-0.1,7)),
     ]
     
     node_states_dim_pair = [
@@ -57,32 +57,40 @@ def Run(ct, *args):
     ]
     
     sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
+    num_graph_type = 5
     c_tip = [True if s == 0 else False for s in sh["n2c"]["skill"][MEAN]]
     c_shake = [True if s == 1 else False for s in sh["n2c"]["skill"][MEAN]]
     c_nobounce = [True if m2 == 0.0 else False for m2 in sh["n0"]["material2_2"][MEAN]]
     c_ketchup = [True if m2 == 0.25 else False for m2 in sh["n0"]["material2_2"][MEAN]]
-    vis_condition_title_pair = [
-        ("full", [True]*len(sh["n0"]["size_srcmouth"][MEAN])),
-        ("Tip", c_tip),
-        ("Tip - nobounce", [True if b1==b2==True else False for b1,b2 in zip(c_tip,c_nobounce)]),
-        ("Tip - ketchup", [True if b1==b2==True else False for b1,b2 in zip(c_tip,c_ketchup)]),
-        ("Shake", c_shake),
-        ("Shake - nobounce", [True if b1==b2==True else False for b1,b2 in zip(c_shake,c_nobounce)]),
-        ("Shake - ketchup", [True if b1==b2==True else False for b1,b2 in zip(c_shake,c_ketchup)]),
-        ("nobounce", c_nobounce),
-        ("ketchup", c_ketchup),
-    ]
-    vis_graph_type = []
+    ct = lambda c1,c2 : [True if b1==b2==True else False for b1,b2 in zip(c1,c2)]
+    c_lam_all = lambda j: True
+    c_lam_predture = lambda j: True if (j%num_graph_type!=1 and j%num_graph_type!=4) else False
+    c_lam_latentpredtrue = lambda j: True if (j%num_graph_type!=0 and j%num_graph_type!=3) else False
+    vis_condition_title_pair = sum([[
+        ("[{}] full".format(title), [True]*len(sh["n0"]["size_srcmouth"][MEAN]), c_lam),
+        ("[{}] Tip".format(title), c_tip, c_lam),
+        ("[{}] Tip - nobounce".format(title), ct(c_tip, c_nobounce), c_lam),
+        ("[{}] Tip - ketchup".format(title), ct(c_tip, c_ketchup), c_lam),
+        ("[{}] Shake".format(title), c_shake, c_lam),
+        ("[{}] Shake - nobounce".format(title), ct(c_shake, c_nobounce), c_lam),
+        ("[{}] Shake - ketchup".format(title), ct(c_shake, c_ketchup), c_lam),
+        ("[{}] nobounce".format(title), c_nobounce, c_lam),
+        ("[{}] ketchup".format(title), c_ketchup, c_lam),
+    ] for title,c_lam in zip(["All graph","Pred & True","Latent pred & True"],[c_lam_all,c_lam_predture,c_lam_latentpredtrue])], [])
     
-    num_graph_type = 5
     def updatemenu(fig):
         buttons = [{
             'label': title,
             'method': "update",
             'args':[
-                    {'visible': [True if (num_graph_type*i<=j%(num_graph_type*len(vis_condition_title_pair))<num_graph_type*(i+1)) else False for j in range(num_graph_type*len(vis_condition_title_pair)*len(vis_state_dynamics_outdim_lim_pair))]},
+                    {'visible': [((True if (num_graph_type*i<=j%(num_graph_type*len(vis_condition_title_pair))<num_graph_type*(i+1)) else False) and c_lam(j)) for j in range(num_graph_type*len(vis_condition_title_pair)*len(vis_state_dynamics_outdim_lim_pair))]},
                 ]
-        } for i, (title, _) in enumerate(vis_condition_title_pair)]
+        } for i, (title, _, c_lam) in enumerate(vis_condition_title_pair)]
+        buttons2 =[{
+            'label': "test",
+            'method': "update",
+            'args':[{'visible': [""]*num_graph_type*len(vis_condition_title_pair)*len(vis_state_dynamics_outdim_lim_pair)}]
+        }]
         updatemenus = [{
             "type": "dropdown",
             "buttons": buttons,
@@ -118,7 +126,7 @@ def Run(ct, *args):
     go_layout = {
         'height': 800*2*len(vis_state_dynamics_outdim_lim_pair),
         'width': 1800,
-        'margin': dict(t=30, b=0),
+        'margin': dict(t=30, b=0, pad=0),
         'legend_tracegroupgap': 800-30,
         'hoverdistance': 5,
     }
