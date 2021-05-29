@@ -39,6 +39,8 @@ MODEL_TYPES = [MEAN, ERROR]
 PLUS = "plus"
 MINUS = "minus"
 TRUE = "true"
+NOBOUNCE = [0.1, 0.2, 0.0, 0.1]
+KETCHUP = [0.1, 0.01, 0.25, 0.2]
 
 def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
     sh_path = root_path + save_sh_dir + "/state_history.yaml"
