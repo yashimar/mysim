@@ -214,7 +214,7 @@ def pred_test(model):
     # print(loss.requires_grad)
     
 
-def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj=None, model=None):
+def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=None, updatemenu=None, model=None):
     if model == None:
         domain = td.Domain()
         mm = ModelManager(domain, ROOT_PATH+model_path)
@@ -321,8 +321,9 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
                                     hoverinfo='text',
                                     text=make_hovertext(v_Z, stat_type),
                         ), r, c)
-            if scatter_obj != None:
-                fig.add_trace(scatter_obj, r, c)
+            if scatter_obj_list != None:
+                for scatter_obj in scatter_obj_list:
+                    fig.add_trace(scatter_obj, r, c)
             fig['layout']['xaxis'+str(i)]['title'] = X["feature"]
             fig['layout']['yaxis'+str(i)]['title'] = Y["feature"]
     fig.add_annotation(dict(font=dict(color='black',size=15),
@@ -335,7 +336,8 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
                                                 xref="paper",
                                                 yref="paper"
                                                 ))
-    fig.show()
+    if updatemenu != None:
+        updatemenu(fig)
     check_or_create_dir(save_dir)
     plotly.offline.plot(fig, filename = save_dir + file_name_pref + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"].replace("_","") + ".html", auto_open=False)
     
