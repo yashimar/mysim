@@ -134,6 +134,7 @@ def Run(ct, *args):
         ("size_srcmouth", "da_spill", [0.01, 0.10], [-0.1, 10]),
         ("size_srcmouth", "da_spill", [0.01, 0.10], [-0.1, 1]),
         ("lp_flow_x", "flow_var", [-0.5, 0.7], [-0.1, 0.6]),
+        ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_flow_x", "da_pour", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_flow_x", "da_spill", [-0.5, 0.7], [-0.1, 1]),
         ("flow_var", "da_pour", [-0.1, 0.6], [-0.1, 0.6]),
