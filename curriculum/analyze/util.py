@@ -409,7 +409,7 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
         for _, condition, _ in vis_condition_title_pair:
             df = pd.DataFrame(features)[condition]
             anno_text = ["<b>true inputs</b><br />"+"".join(["　in{}: {}<br />".format(j, pred_true_history[dynamics]["in{}".format(j)][TRUE][i]) for j in range(dynamics_iodim_pair[dynamics][0])]) for i in df.index]
-            anno_text = [t1+t2 for t1,t2 in zip(anno_text,suff_annotation)]
+            anno_text = [t1+t2 for t1,t2 in zip(anno_text,suff_annotation(df))]
             fig.add_trace(go.Scatter(
                 x = df["episode"], y=df["mean_pred {}".format(state)],
                 mode='markers',

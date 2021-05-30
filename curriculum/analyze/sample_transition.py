@@ -102,7 +102,7 @@ def Run(ct, *args):
         }]
         fig['layout']['updatemenus'] = updatemenus
     
-    suff_annotation = [
+    suff_annotation = lambda df: [
         "<b>policy's estimation</b><br />"
         "　lp_pour xz: ({:.3f}+/-{:.3f},{:.3f}+/-{:.3f})<br />".format(esh["n2b"]["lp_pour_0"][MEAN][i], esh["n2b"]["lp_pour_0"][SIGMA][i], esh["n2b"]["lp_pour_2"][MEAN][i], esh["n2b"]["lp_pour_2"][SIGMA][i])+\
         ("　<b>[tip]</b><br />" if esh["n2c"]["skill"][MEAN][i] == 0 else "　[tip]<br />") +\
@@ -121,7 +121,7 @@ def Run(ct, *args):
         "　　da_spill2: {:.3f}+/-{:.3f}<br />".format(esh["n4sa"]["da_spill2"][MEAN][i], esh["n4sa"]["da_spill2"][SIGMA][i])+\
         "　　Rdapour: {:.3f}+/-{:.3f}<br />".format(esh["n4sar1"][".r"][MEAN][i], esh["n4sar1"][".r"][SIGMA][i])+\
         "　　Rdaspill: {:.3f}+/-{:.3f}<br />".format(esh["n4sar2"][".r"][MEAN][i], esh["n4sar2"][".r"][SIGMA][i])
-    for i in range(len(esh["n2b"]["lp_pour_0"][MEAN]))]
+    for i in df.index]
     
     go_layout = {
         'height': 800*2*len(vis_state_dynamics_outdim_lim_pair),
