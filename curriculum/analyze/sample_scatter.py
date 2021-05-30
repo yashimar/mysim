@@ -81,6 +81,9 @@ def Run(ct, *args):
                         + "<br />　目標量出したことによって終了しておらず, kickback中に多量流れ出ており, da_total_tipが目標量に近いのは偶然."
     df["comment"][50] = "<br />　kickbackの反動で, レシーバー手前に溢れ."
     df["comment"][78] = "<br />　ソース位置がやや高く奥まっており, レシーバー奥に溢れ."
+    df["comment"][79] = "<br />　レシーバーの右上で注いでしまい, すべて溢れる."\
+                        + "<br />　dtheta2が大きく最大角に到達して終了."\
+                        + "<br />　口径が大きく'kickback'時に多く流れ出る."
     df["comment"][87] = "<br />　レシーバーより手前過ぎて溢れ."
     df["comment"][92] = "<br />　'flow_out'遷移後, 流れ出るまでの待機時間が上限に達し, 最大角に到達することなく終了."\
                         + "<br />　遷移後すぐに少し流れ出たが, その後流れ出なくなった."\
@@ -93,7 +96,14 @@ def Run(ct, *args):
                         + "<br />　[shake] Rdapour: -1, Rdaspill2: -6"
     df["comment"][239] = "<br />　'flow_out'遷移後, da_totalが目標量に到達したため終了."\
                         + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
-                        
+    df["comment"][269] = "<br />　flow_varがエピソード中更新されなかったためゼロ."\
+                        + "<br />　球体が'レシーバーの中'かつ'地面以外と接触'のとき'flow状態'とみなされない."\
+                        +"<br />　'flow状態'の球体が床面から10cm以下のときに'flow_var'が計算される.'"\
+                        +"<br />　床面から10cmはぎりぎりレシーバー底に触れない高さ.'"\
+                        +"<br />　'flow状態'かつ床面から10cm以下になる球が発生しなかったため'flow_var'が初期値0のまま."\
+                        +"<br />　'flow状態'かつ床面から12cm程度であれば発生していたので要調整."\
+                        +"<br />　ay_trick/sm4.pyのL114."\
+                        +"<br />　ay_sim/ode_grpour_sim.cppのL894, L873."
     vis_df_title_pair = [
         (df, "full data"), 
         (df[df["nobounce"]==True], "all skill, nobounce only"),
@@ -128,9 +138,9 @@ def Run(ct, *args):
         ("lp_flow_x", "da_spill", [-0.5, 0.7], [-0.1, 1]),
         ("flow_var", "da_pour", [-0.1, 0.6], [-0.1, 0.6]),
         ("flow_var", "da_spill", [-0.1, 0.6], [-0.1, 1]),
-        # ("shake_spd", "da_total_shake", [0.4, 1.3], [-0.1, 0.6]),
-        # ("shake_range", "da_total_shake", [0.04, 0.13], [-0.1, 0.6]),
-        # ("shake_angle", "da_total_shake", [-0.6*math.pi, 0.6*math.pi], [-0.1, 0.6]),
+        ("shake_spd", "da_total", [0.4, 1.3], [-0.1, 0.6]),
+        ("shake_range", "da_total", [0.04, 0.13], [-0.1, 0.6]),
+        ("shake_angle", "da_total", [-0.6*math.pi, 0.6*math.pi], [-0.1, 0.6]),
     ]
          
     def updatemenu(fig):
