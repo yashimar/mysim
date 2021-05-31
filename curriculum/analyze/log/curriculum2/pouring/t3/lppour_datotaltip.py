@@ -72,23 +72,6 @@ def Run(ct, *args):
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })
     df.dropna(inplace=True)
-    df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
-    df["comment"][27] = "<br />　'flow_out'遷移後, dtheta2が大きくすぐに最大角に到達して終了."\
-                        + "<br />　目標量出したことによって終了しておらず, kickback中に多量流れ出ており, da_total_tipが目標量に近いのは偶然."
-    df["comment"][50] = "<br />　kickbackの反動で, レシーバー手前に溢れ."
-    df["comment"][78] = "<br />　ソース位置がやや高く奥まっており, レシーバー奥に溢れ."
-    df["comment"][87] = "<br />　レシーバーより手前過ぎて溢れ."
-    df["comment"][92] = "<br />　'flow_out'遷移後, 流れ出るまでの待機時間が上限に達し, 最大角に到達することなく終了."\
-                        + "<br />　遷移後すぐに少し流れ出たが, その後流れ出なくなった."\
-                        + "<br />　稀な現象."
-    df["comment"][176] = "<br />　'flow_out'遷移後, dtheta2が大きいために, 十分な量が出ることなく最大角に到達して終了."\
-                        + "<br />　dtheta2が小さければ, 十分な量を流し出せたはずの動作."
-    df["comment"][196] = "<br />　レシーバーより手前過ぎて溢れ."
-    df["comment"][199] = "<br />　悪い局所解に最適化."\
-                        + "<br />　[tip] Rdapour: -2, Rdaspill2: -14"\
-                        + "<br />　[shake] Rdapour: -1, Rdaspill2: -6"
-    df["comment"][239] = "<br />　'flow_out'遷移後, da_totalが目標量に到達したため終了."\
-                        + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
     
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),

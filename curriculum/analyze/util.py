@@ -2,7 +2,7 @@
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-# from ..tasks_domain.before_normalize.util import ModelManager
+from ..tasks_domain.before_normalize.util import ModelManager as PrevModelManager
 from ..tasks_domain.util import ModelManager3 as ModelManager
 # from ...fixed_script.ml_dnn import TNNRegression2
 # from ...fixed_script.dpl4 import TModelManager3
@@ -214,10 +214,13 @@ def pred_test(model):
     # print(loss.requires_grad)
     
 
-def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=None, updatemenu=None, model=None):
+def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=None, updatemenu=None, model=None, is_prev_model=False):
     if model == None:
         domain = td.Domain()
-        mm = ModelManager(domain, ROOT_PATH+model_path)
+        if is_prev_model:
+            mm = PrevModelManager(domain, ROOT_PATH+model_path)
+        else:
+            mm = ModelManager(domain, ROOT_PATH+model_path)
         model = mm.Models[model_name][2]
     inputs = []
     for v_y in Y["values"]:
