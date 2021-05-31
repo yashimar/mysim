@@ -97,7 +97,6 @@ def Run(ct, *args):
         ("scatter c1&c2", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0) & (0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
         ("no scatter", [False]*len(df)),
     ]
-    print(-0.2<df["lp_pour_x"])
     scatter_obj_list = [
         go.Scatter(
             x=df[condition][X["feature"]], y=df[condition][Y["feature"]], 
@@ -106,7 +105,7 @@ def Run(ct, *args):
             opacity = 0.5,
             hoverinfo='text',
             # text=["true {}: {}<br />{}: {}<br />{}: {}<br />{}: {}".format(z["feature"], v_z, X["feature"], v_x, Y["feature"], v_y, "ep", v_ep) for v_z, v_x, v_y, v_ep in zip(df[condition][z["feature"]], df[condition][X["feature"]], df[condition][Y["feature"]], df[condition]["episode"])],
-            text=["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index],
+            text=["".join(["{}: {}<br />".format(c, df[condition][c][i]) for c in df[condition].columns if c!="comment"])+("<b>comment</b>: {}".format(df[condition]["comment"][i]) if df[condition]["comment"][i] != "" else "") for i in df[condition].index],
             showlegend=False,
             marker = dict(
                 size = 10,
@@ -117,22 +116,6 @@ def Run(ct, *args):
             ),
         )
     for _, condition in scatter_condition_title_pair]
-    # scatter_obj = go.Scatter(
-    #     x=df[X["feature"]], y=df[Y["feature"]], 
-    #     mode='markers', 
-    #     # marker_color="blue",
-    #     opacity = 0.5,
-    #     hoverinfo='text',
-    #     text=["true {}: {}<br />{}: {}<br />{}: {}<br />{}: {}".format(z["feature"], v_z, X["feature"], v_x, Y["feature"], v_y, "ep", v_ep) for v_z, v_x, v_y, v_ep in zip(df[z["feature"]], df[X["feature"]], df[Y["feature"]], df["episode"])],
-    #     showlegend=False,
-    #     marker = dict(
-    #         size = 10,
-    #         color = df[z["feature"]].values,
-    #         colorscale="Viridis",
-    #         cmin = 0,
-    #         cmax = 0.55,
-    #     ),
-    # )
     
     def updatemenu(fig):
         buttons = [{

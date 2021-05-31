@@ -90,7 +90,7 @@ def Run(ct, *args):
             opacity = 0.5,
             hoverinfo='text',
             # text=["true {}: {}<br />{}: {}<br />{}: {}<br />{}: {}".format(z["feature"], v_z, X["feature"], v_x, Y["feature"], v_y, "ep", v_ep) for v_z, v_x, v_y, v_ep in zip(df[condition][z["feature"]], df[condition][X["feature"]], df[condition][Y["feature"]], df[condition]["episode"])],
-            text=["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index],
+            text=["".join(["{}: {}<br />".format(c, df[condition][c][i]) for c in df[condition].columns if c!="comment"])+("<b>comment</b>: {}".format(df[condition]["comment"][i]) if df[condition]["comment"][i] != "" else "") for i in df[condition].index],
             showlegend=False,
             marker = dict(
                 size = 10,
