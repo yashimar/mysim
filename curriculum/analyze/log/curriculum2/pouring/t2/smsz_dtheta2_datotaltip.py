@@ -12,8 +12,8 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"
-    save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
+    model_path = "curriculum2/pouring/full_scratch/curriculum_test/t2/first300"
+    save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t2"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
     file_name_pref = ""
     model_name = "Ftip"

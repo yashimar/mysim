@@ -12,10 +12,10 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"
-    save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
+    model_path = "curriculum/pouring3/full_scratch/curriculum_test/t1/next150"
+    save_sh_dir = "curriculum/pouring3/full_scratch/curriculum_test/t1"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = ""
+    file_name_pref = "ketchup_"
     model_name = "Ftip"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:

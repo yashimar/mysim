@@ -12,10 +12,10 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"
-    save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
+    model_path = "curriculum/pouring3/full_scratch/curriculum_test/t2/next150"
+    save_sh_dir = "curriculum/pouring3/full_scratch/curriculum_test/t2"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = ""
+    file_name_pref = "ketchup_smsz0055_dtheta0002"
     model_name = "Ftip"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
@@ -24,9 +24,9 @@ def Run(ct, *args):
     
     xs_value = {
         "gh_abs": [0.25],
-        "lp_pour_x": [-0.1],
+        "lp_pour_x": [0.],
         "lp_pour_y": [0.],
-        "lp_pour_z": [0.25],
+        "lp_pour_z": [0.],
         "da_trg": [0.3],
         "size_srcmouth": [0.055],
         "material2": KETCHUP,
@@ -34,16 +34,16 @@ def Run(ct, *args):
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,40)}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,40)}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.1]}}
+    X = {"feature": "lp_pour_x", "values": np.linspace(-0.5,0.7,40)}
+    Y = {"feature": "lp_pour_z", "values": np.linspace(-0.2,0.6,40)}
+    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [0.,0.1]}}
     reward_function = {
         "name": "Rdatotal",
         "model": Rmodel("Fdatotal_gentle"),
         "input_features": ["da_trg","da_total_tip"],
         "format_mean": lambda pred: [pred.Y[0]],
         "format_var": lambda pred: [pred.Var[0,0]],
-        "range": {MEAN: [-3.,0.], SIGMA: [-0.05,2.0]}
+        "range": {MEAN: [-1.5,0.], SIGMA: [-0.05,0.1]}
     }
     
     node_states_dim_pair = [
@@ -61,7 +61,6 @@ def Run(ct, *args):
     ]
     sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
-        "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
@@ -90,11 +89,12 @@ def Run(ct, *args):
                         + "<br />　[shake] Rdapour: -1, Rdaspill2: -6"
     df["comment"][239] = "<br />　'flow_out'遷移後, da_totalが目標量に到達したため終了."\
                         + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
+    
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
-        # ("scatter c1\n0.05<smsz<0.06", (0.05<df["size_srcmouth"])<0.06),
-        # ("scatter c2\n0.002<dtheta2<0.005", (0.002<df["dtheta2"])<0.005),
-        # ("scatter c1&c2", ((0.05<df["size_srcmouth"])<0.06) & ((0.002<df["dtheta2"])<0.005)),
+        ("scatter c1\n0.05<smsz<0.06", (0.05<df["size_srcmouth"])<0.06),
+        ("scatter c2\n0.002<dtheta2<0.005", (0.002<df["dtheta2"])<0.005),
+        ("scatter c1&c2", ((0.05<df["size_srcmouth"])<0.06) & ((0.002<df["dtheta2"])<0.005)),
         ("no scatter", [False]*len(df)),
     ]
     scatter_obj_list = [
@@ -116,22 +116,6 @@ def Run(ct, *args):
             ),
         )
     for _, condition in scatter_condition_title_pair]
-    # scatter_obj = go.Scatter(
-    #     x=df[X["feature"]], y=df[Y["feature"]], 
-    #     mode='markers', 
-    #     # marker_color="blue",
-    #     opacity = 0.5,
-    #     hoverinfo='text',
-    #     text=["true {}: {}<br />{}: {}<br />{}: {}<br />{}: {}".format(z["feature"], v_z, X["feature"], v_x, Y["feature"], v_y, "ep", v_ep) for v_z, v_x, v_y, v_ep in zip(df[z["feature"]], df[X["feature"]], df[Y["feature"]], df["episode"])],
-    #     showlegend=False,
-    #     marker = dict(
-    #         size = 10,
-    #         color = df[z["feature"]].values,
-    #         colorscale="Viridis",
-    #         cmin = 0,
-    #         cmax = 0.55,
-    #     ),
-    # )
     
     def updatemenu(fig):
         buttons = [{
@@ -152,13 +136,12 @@ def Run(ct, *args):
         }]
         fig['layout']['updatemenus'] = updatemenus
     # updatemenu = None
-    
+
     go_layout = {
         'height': 14000,
         'width': 9000,
         'margin': dict(t=150, b=20),
         'hoverdistance': 5,
     }
-        
-    plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=scatter_obj_list, updatemenu=updatemenu, model=model)
     
+    plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=scatter_obj_list, updatemenu=updatemenu, model=model)

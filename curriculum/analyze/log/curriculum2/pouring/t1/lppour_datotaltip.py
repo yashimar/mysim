@@ -13,7 +13,8 @@ def Help():
 
 def Run(ct, *args):
     model_path = "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"
-    save_dir = PICTURE_DIR + model_path.replace("/","_") + "/"
+    save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
+    save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
     file_name_pref = "ketchup_smsz0055_dtheta0002"
     model_name = "Ftip"
     model = None
@@ -45,7 +46,6 @@ def Run(ct, *args):
         "range": {MEAN: [-1.5,0.], SIGMA: [-0.05,0.1]}
     }
     
-    save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
     node_states_dim_pair = [
         ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1)]],
         ["n2b", [("lp_pour", 3), ]],

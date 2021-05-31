@@ -10,19 +10,6 @@ def Help():
 
 def Run(ct, *args):
     log_name_list = [
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c0_init_50",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c1_small_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c2_small_nobounce_tip_dtheta2_3",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c3_small_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c4_small_ketchup_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c5_middle_nobounce_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c6_middle_ketchup_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c7_large_nobounce_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5",
-        # "curriculum/flow_ctrl/c_adaptive/curriculum_test/t1/c8_large_nobounce_tip_5_5_5_5",
-        # "curriculum/pouring3/full_scratch/curriculum_test/t1/first150",
         "curriculum2/pouring/full_scratch/curriculum_test/t1/first300",
     ]
     save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
@@ -97,11 +84,11 @@ def Run(ct, *args):
                         + "<br />　[shake] Rdapour: -1, Rdaspill2: -6"
     df["comment"][239] = "<br />　'flow_out'遷移後, da_totalが目標量に到達したため終了."\
                         + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
-    df["comment"][269] = "<br />　flow_varがエピソード中更新されなかったためゼロ."\
+    df["comment"][269] = "<br />　'flow_var','lp_flow'がエピソード中更新されなかったためゼロ."\
                         + "<br />　球体が'レシーバーの中'かつ'地面以外と接触'のとき'flow状態'とみなされない."\
-                        +"<br />　'flow状態'の球体が床面から10cm以下のときに'flow_var'が計算される.'"\
+                        +"<br />　'flow状態'の球体が床面から10cm以下のときに'flow_var','lp_flow'が計算される.'"\
                         +"<br />　床面から10cmはぎりぎりレシーバー底に触れない高さ.'"\
-                        +"<br />　'flow状態'かつ床面から10cm以下になる球が発生しなかったため'flow_var'が初期値0のまま."\
+                        +"<br />　'flow状態'かつ床面から10cm以下になる球が発生しなかったため'flow_var','lp_flow'が初期値0のまま."\
                         +"<br />　'flow状態'かつ床面から12cm程度であれば発生していたので要調整."\
                         +"<br />　ay_trick/sm4.pyのL114."\
                         +"<br />　ay_sim/ode_grpour_sim.cppのL894, L873."
