@@ -92,9 +92,9 @@ def Run(ct, *args):
                         + "<br />　dtheta2が大きいため, 傾きが大きい状態で最初の流出が始まり, 一気に流出したため目標量を大きく超えた."
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
-        # ("scatter c1\n0.05<smsz<0.06", (0.05<df["size_srcmouth"])<0.06),
-        # ("scatter c2\n0.002<dtheta2<0.005", (0.002<df["dtheta2"])<0.005),
-        # ("scatter c1&c2", ((0.05<df["size_srcmouth"])<0.06) & ((0.002<df["dtheta2"])<0.005)),
+        ("scatter c1 -0.2<lp_pour_x<0", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0))),
+        ("scatter c2 0.2<lp_pour_z<0.3", ((0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
+        ("scatter c1&c2", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0) & (0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
         ("no scatter", [False]*len(df)),
     ]
     scatter_obj_list = [
