@@ -2,9 +2,9 @@
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from ....util import *
-from .....tasks_domain.util import Rmodel
-from .....tasks_domain.pouring import task_domain as td
+from .....util import *
+from ......tasks_domain.util import Rmodel
+from ......tasks_domain.pouring import task_domain as td
 
 
 def Help():
