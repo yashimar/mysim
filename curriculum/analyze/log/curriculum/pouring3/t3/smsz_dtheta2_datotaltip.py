@@ -15,7 +15,7 @@ def Run(ct, *args):
     model_path = "curriculum/pouring3/full_scratch/curriculum_test/t3/next150"
     save_sh_dir = "curriculum/pouring3/full_scratch/curriculum_test/t3"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "ketchup_"
+    file_name_pref = "nobounce_"
     model_name = "Ftip"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
@@ -29,14 +29,14 @@ def Run(ct, *args):
         "lp_pour_z": [0.25],
         "da_trg": [0.3],
         "size_srcmouth": [0.055],
-        "material2": KETCHUP,
+        "material2": NOBOUNCE,
         "dtheta1": [1.4e-2],
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
     X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,40)}
     Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,40)}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.1]}}
+    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",
         "model": Rmodel("Fdatotal_gentle"),
@@ -65,8 +65,8 @@ def Run(ct, *args):
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
-        # "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),

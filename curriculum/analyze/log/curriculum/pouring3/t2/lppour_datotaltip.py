@@ -15,7 +15,7 @@ def Run(ct, *args):
     model_path = "curriculum/pouring3/full_scratch/curriculum_test/t2/next150"
     save_sh_dir = "curriculum/pouring3/full_scratch/curriculum_test/t2"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "ketchup_smsz0055_dtheta0002"
+    file_name_pref = "nobounce_smsz0055_dtheta0002"
     model_name = "Ftip"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
@@ -29,14 +29,14 @@ def Run(ct, *args):
         "lp_pour_z": [0.],
         "da_trg": [0.3],
         "size_srcmouth": [0.055],
-        "material2": KETCHUP,
+        "material2": NOBOUNCE,
         "dtheta1": [1.4e-2],
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
     X = {"feature": "lp_pour_x", "values": np.linspace(-0.5,0.7,40)}
     Y = {"feature": "lp_pour_z", "values": np.linspace(-0.2,0.6,40)}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [0.,0.1]}}
+    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [0.,0.1]}}
     reward_function = {
         "name": "Rdatotal",
         "model": Rmodel("Fdatotal_gentle"),
@@ -59,13 +59,13 @@ def Run(ct, *args):
         ["n4sar1", [(".r", 1), ]],
         ["n4sar2", [(".r", 1), ]],
     ]
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, None, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [model_path], node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
-        # "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
@@ -78,8 +78,8 @@ def Run(ct, *args):
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
         ("scatter c1\n0.05<smsz<0.06", ((0.05<df["size_srcmouth"])&(df["size_srcmouth"]<0.06))),
-        ("scatter c2\n0.002<dtheta2<0.005", ((0.002<df["dtheta2"])&(df["dtheta2"]<0.005))),
-        ("scatter c1&c2", ((0.05<df["size_srcmouth"])&(df["size_srcmouth"]<0.06) & (0.002<df["dtheta2"])&(df["dtheta2"]<0.005))),
+        ("scatter c2\n0.002<dtheta2<0.005", ((0.002<=df["dtheta2"])&(df["dtheta2"]<0.005))),
+        ("scatter c1&c2", ((0.05<df["size_srcmouth"])&(df["size_srcmouth"]<0.06) & (0.002<=df["dtheta2"])&(df["dtheta2"]<0.005))),
         ("no scatter", [False]*len(df)),
     ]
     scatter_obj_list = [
