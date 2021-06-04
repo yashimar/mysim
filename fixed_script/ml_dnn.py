@@ -1,6 +1,9 @@
 import roslib; roslib.load_manifest('ay_trick')
 from ay_py.core.ml_dnn import *
 from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+from collections import defaultdict
+from copy import deepcopy
 
 
 class TNNRegression2(TNNRegression):
@@ -20,6 +23,22 @@ class TNNRegression2(TNNRegression):
         mms = MinMaxScaler(feature_range=(-1,1))
         mms.fit(self.DataX)
         return mms.transform([pred_input]).flatten().tolist()
+      
+      
+  def DebugTrainingData(self):
+    DataX = deepcopy(self.DataX)
+    mmsX_transition = defaultdict(list)
+    X_transiton = []
+    for X in DataX:
+      X_transiton.append(X)
+      mms = MinMaxScaler(feature_range=(-1,1))
+      if len(X_transiton)==1:
+        mmsx = deepcopy(X_transiton)
+      else:
+        mmsx = mms.fit_transform(X_transiton).tolist()
+      for i, mmsxi in enumerate(np.array(mmsx).T.tolist()):
+        mmsX_transition[i].append(mmsxi)
+    return mmsX_transition
   
       
   def UpdateMain(self):
