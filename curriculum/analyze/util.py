@@ -3,7 +3,7 @@ from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
 from ..tasks_domain.before_normalize.util import ModelManager as PrevModelManager
-from ..tasks_domain.util import ModelManager3 as ModelManager
+from ..tasks_domain.bad_scaling_approach.util import ModelManager3 as ModelManager
 # from ...fixed_script.ml_dnn import TNNRegression2
 # from ...fixed_script.dpl4 import TModelManager3
 import os
