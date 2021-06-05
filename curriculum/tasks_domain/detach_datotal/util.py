@@ -3,8 +3,6 @@ import joblib
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from ...fixed_script.ml_dnn import TNNRegression2
-from ...fixed_script.dpl4 import TModelManager3
 
 
 def CurrentPredict(l, key, xs):
@@ -35,7 +33,7 @@ def SetupDPL(ct, l, domain):
             # 'type': l.type,
             'base_dir': l.logdir+'models/',
         }
-        mm = TModelManager3(domain.SpaceDefs, domain.Models)
+        mm = TModelManager(domain.SpaceDefs, domain.Models)
         mm.Load({'options': mm_options})
         if l.opt_conf['model_dir'] not in ('', None):
             if os.path.exists(l.opt_conf['model_dir']+'model_mngr.yaml'):
@@ -123,8 +121,8 @@ def CreateDPLLog(l, count):
         yaml.dump({count: {key: data for (key, data) in l.pred_true_log}}, f, default_flow_style=False)
 
 
-def ModelManager3(domain, model_path):
-    mm = TModelManager3(domain.SpaceDefs, domain.Models)
+def ModelManager(domain, model_path):
+    mm = TModelManager(domain.SpaceDefs, domain.Models)
     mm.Load(LoadYAML(model_path+'/models/model_mngr.yaml'), model_path+"/models/")
     mm.Init()
 
@@ -135,17 +133,6 @@ def Rmodel(model_name):
     modeldir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
                 + 'reward_model'+"/"
     FRwd = TNNRegression()
-    prefix = modeldir+'p1_model/'+model_name
-    FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
-    FRwd.Init()
-
-    return FRwd
-
-
-def Rmodel2(model_name):
-    modeldir = '/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/'\
-                + 'reward_model'+"/"
-    FRwd = TNNRegression2()
     prefix = modeldir+'p1_model/'+model_name
     FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
     FRwd.Init()
