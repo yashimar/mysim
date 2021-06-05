@@ -171,8 +171,9 @@ def base_trace(x, y, color, text):
     return trace
 
 
-def plot_and_save_df_scatter(vis_df_title_pair, xy_limit_pairs, save_img_dir, concat_title, go_layout, updatemenu=None):
+def plot_and_save_df_scatter(vis_df_title_pair, xy_limit_pairs, save_img_dir, concat_title, go_layout, color=None, updatemenu=None):
     n_graph = len(xy_limit_pairs)
+    color = color if color != None else lambda df: df.index
     fig = make_subplots(
             rows=n_graph, cols=1,
             # subplot_titles=["[{}] {} / {}".format(title, x, y) for x, y, _, _ in xy_limit_pairs for _, title in vis_df_title_pair],
@@ -184,7 +185,7 @@ def plot_and_save_df_scatter(vis_df_title_pair, xy_limit_pairs, save_img_dir, co
         r_idx = xy_i+1
         for df, _ in vis_df_title_pair:
             text = ["".join(["{}: {}<br />".format(c, df[c][i]) for c in df.columns if c!="comment"])+("<b>comment</b>: {}".format(df["comment"][i]) if df["comment"][i] != "" else "") for i in df.index]
-            fig.add_trace(base_trace(df[x],df[y],df.index,text), r_idx, 1)
+            fig.add_trace(base_trace(df[x],df[y],color(df),text), r_idx, 1)
             fig['layout']['xaxis{}'.format(r_idx)]['title'] = x
             fig['layout']['yaxis{}'.format(r_idx)]['title'] = y
             fig['layout']['xaxis{}'.format(r_idx)]['range'] = xlim

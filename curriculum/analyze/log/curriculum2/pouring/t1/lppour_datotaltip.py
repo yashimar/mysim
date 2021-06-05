@@ -15,7 +15,7 @@ def Run(ct, *args):
     model_path = "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"
     save_sh_dir = "curriculum2/pouring/full_scratch/curriculum_test/t1"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "nobounce_smsz0055_dtheta0002"
+    file_name_pref = "ketchup_smsz0075_dtheta0002"
     model_name = "Ftip"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
@@ -28,8 +28,8 @@ def Run(ct, *args):
         "lp_pour_y": [0.],
         "lp_pour_z": [0.],
         "da_trg": [0.3],
-        "size_srcmouth": [0.055],
-        "material2": NOBOUNCE,
+        "size_srcmouth": [0.075],
+        "material2": KETCHUP,
         "dtheta1": [1.4e-2],
         "dtheta2": [0.002],
     }
@@ -64,8 +64,8 @@ def Run(ct, *args):
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
-        "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        # "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
@@ -92,9 +92,9 @@ def Run(ct, *args):
     
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
-        ("scatter c1\n0.05<smsz<0.06", ((0.05<df["size_srcmouth"])&(df["size_srcmouth"]<0.06))),
+        ("scatter c1\n0.07<smsz<0.08", ((0.07<df["size_srcmouth"])&(df["size_srcmouth"]<0.08))),
         ("scatter c2\n0.002<dtheta2<0.005", ((0.002<=df["dtheta2"])&(df["dtheta2"]<0.005))),
-        ("scatter c1&c2", ((0.05<df["size_srcmouth"])&(df["size_srcmouth"]<0.06) & (0.002<=df["dtheta2"])&(df["dtheta2"]<0.005))),
+        ("scatter c1&c2", ((0.07<df["size_srcmouth"])&(df["size_srcmouth"]<0.08) & (0.002<=df["dtheta2"])&(df["dtheta2"]<0.005))),
         ("no scatter", [False]*len(df)),
     ]
     scatter_obj_list = [

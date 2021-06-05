@@ -17,6 +17,8 @@ def Run(ct, *args):
     file_name_pref = ""
     dynamics_iodim_pair = {"Fmvtopour2": (3, 3), "Ftip": (12, 4), "Fshake": (14, 4), "Famount": (12, 2)}
     vis_state_dynamics_outdim_lim_pair = [
+        ("lp_pour_x", "Fmvtopour2", 0, (-0.5,0.7)),
+        ("lp_pour_z", "Fmvtopour2", 2, (-0.2,0.6)),
         ("da_total_tip", "Ftip", 0, (-0.1,0.9)),
         ("lp_flow_x_tip", "Ftip", 1, (-0.3,1.5)),
         ("lp_flow_y_tip", "Ftip", 2, (-0.1,0.1)),

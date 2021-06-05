@@ -159,5 +159,7 @@ def Run(ct, *args):
         'margin': dict(t=150, b=20),
         'hoverdistance': 5,
     }
-    plot_and_save_df_scatter(vis_df_title_pair, xy_limit_pairs, save_img_dir, concat_title="sample_scatter", go_layout=go_layout, updatemenu=updatemenu)
+    color = lambda df: [1. if ((-0.114<lpx<-0.107) or (0.139<lpz<0.145) or ((-0.1<lpx<0) and (0.25<lpz<0.32)) or ((0<lpx<0.08) and (0.315<lpz<0.32)) or ((0.16<lpx<0.2) and (0.32<lpz<0.35))) else 0. for lpx,lpz in zip(df["lp_pour_x"],df["lp_pour_z"])]
+    
+    plot_and_save_df_scatter(vis_df_title_pair, xy_limit_pairs, save_img_dir, concat_title="sample_scatter"+"_c_lppourx", color=color, go_layout=go_layout, updatemenu=updatemenu)
     
