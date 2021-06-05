@@ -33,8 +33,8 @@ def Run(ct, *args):
         "flow_var": []
     }
     input_features = ["lp_pour_x","lp_pour_y","lp_pour_z","da_trg","material2","da_total","lp_flow_x","lp_flow_y","flow_var"]
-    X = {"feature": "lp_flow_x", "values": np.linspace(-0.36,0.26,40)}
-    Y = {"feature": "flow_var", "values": np.linspace(-0.05,0.55,40)}
+    X = {"feature": "lp_flow_x", "values": np.linspace(-0.36,0.26,100)}
+    Y = {"feature": "flow_var", "values": np.linspace(-0.05,0.55,100)}
     z = {"feature": "da_spill_tip", "output_dim": 1, "range": {MEAN: [-0.05,5.0], SIGMA: [0.,0.4]}}
     reward_function = {
         "name": "Rdaspill",

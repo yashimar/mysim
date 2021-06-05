@@ -13,11 +13,12 @@ def Run(ct, *args):
     model = ModelManager(td.Domain(), ROOT_PATH+model_path).Models[model_name][2]
     mmsX_transition = model.DebugTrainingData()
     lppourx = mmsX_transition[1]
+    lppoury = mmsX_transition[2]
     lppourz = mmsX_transition[3]
     m = mmsX_transition[8]
     
     plt.close()
     for i in [50,100,150,200]:
         fig = plt.figure()
-        plt.hist(m[i])
+        plt.hist(lppoury[i])
         plt.show()

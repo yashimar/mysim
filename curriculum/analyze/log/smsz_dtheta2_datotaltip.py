@@ -32,8 +32,8 @@ def Run(ct, *args):
         "dtheta2": [0.002],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,40)}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,40)}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,100)}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,100)}
     z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.8], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",

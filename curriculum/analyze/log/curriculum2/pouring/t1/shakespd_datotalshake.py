@@ -30,8 +30,8 @@ def Run(ct, *args):
         "shake_angle": [0.7],  
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1",'shake_spd','shake_range','shake_angle']
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.08,40)}
-    Y = {"feature": "shake_spd", "values": np.linspace(0.4,1.3,40)}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.08,100)}
+    Y = {"feature": "shake_spd", "values": np.linspace(0.4,1.3,100)}
     z = {"feature": "da_total_shake", "output_dim": 0, "range": {MEAN: [0.45,0.455], SIGMA: [0.078,0.085]}}
     reward_function = {
         "name": "Rdatotal",
