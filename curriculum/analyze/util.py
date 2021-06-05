@@ -358,9 +358,13 @@ def remake_model(td, model_name, model_path, save_path, suff):
     
     return model, DataX, DataY
 
-def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, suff_annotation, save_dir, file_name_pref, vis_condition_title_pair, updatemenu):
+def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, suff_annotation, save_dir, file_name_pref, vis_condition_title_pair, updatemenu, is_prev_model=False):
     domain = td.Domain()
-    mm = ModelManager(domain, ROOT_PATH+log_name_list[-1])
+    model_path = log_name_list[-1]
+    if is_prev_model:
+        mm = PrevModelManager(domain, ROOT_PATH+model_path)
+    else:
+        mm = ModelManager(domain, ROOT_PATH+model_path)
     
     pred_true_history = defaultdict(lambda: defaultdict(lambda: {MEAN: [], SIGMA: [], TRUE: [], L_MEAN: [], L_SIGMA: []}))
     for log_name in log_name_list:
