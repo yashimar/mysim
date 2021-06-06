@@ -3,8 +3,8 @@ import joblib
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from ...fixed_script.ml_dnn import TNNRegression2
-from ...fixed_script.dpl4 import TModelManager3
+from ....fixed_script.ml_dnn import TNNRegression2
+from ....fixed_script.dpl4 import TModelManager3
 
 
 def CurrentPredict(l, key, xs):
