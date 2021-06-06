@@ -48,7 +48,7 @@ def Run(ct, *args):
     ############################################################################
     t_index = 3
     suff = "curriculum_test/t"+str(t_index)+"/first300"+"/"
-    l.logdir = ROOT_PATH + "curriculum3/pouring/full_scratch"+"/"+suff
+    l.logdir = ROOT_PATH + "curriculum4/pouring/full_scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory

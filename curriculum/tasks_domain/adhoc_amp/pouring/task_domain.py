@@ -4,14 +4,99 @@ SmartImportReload('tsim.dpl_cmn')
 from ..util import CreatePredictionLog, CurrentPredict, Rmodel
 
 
+setup_path = 'mysim.curriculum.tasks_domain.adhoc_amp.pouring.setup'
+AMP_DTHETA2 = 50.
+AMP_SMSZ = 10.
+AMP_SHAKE_RANGE = 10.
+
+
+def ObserveXSSA(l,xs_prev,keys):
+  if any(key in keys for key in ('ps_rcv','dps_rcv','lp_pour','lp_pour_trg')):
+    ps_rcv= Get4RcvEdgePoints(l, GPoseToX(l.sensors.x_rcv))
+  xs= {}
+  for key in keys:
+    if key=='ps_rcv':  #4 edge point positions (x,y,z)*4 of receiver
+      xs[key]= SSA(ps_rcv)
+    elif key=='gh_abs':  #Gripper height (absolute value)
+      xs[key]= SSA([l.config.GripperHeight])
+    elif key=='dps_rcv':  #Displacement of ps_rcv from previous time
+      xs[key]= SSA([math.atan(p1-p2) for p1,p2 in
+                    zip(ps_rcv, ToList(xs_prev['ps_rcv'].X))])
+    elif key=='v_rcv':  #Velocity norm of receiver
+      xs[key]= SSA([math.atan(Norm(l.filtered.v_rcv))])
+    elif key=='p_pour':  #Pouring axis position (x,y,z)
+      xs[key]= SSA([p_pour for p_pour in l.sensors.p_pour])
+    elif key=='p_pour_z':  #Pouring axis position (z)
+      xs[key]= SSA([l.sensors.p_pour[2]])
+    elif key=='lp_pour':  #Pouring axis position (x,y,z) in receiver frame
+      xs[key]= SSA([p_pour-pc_rcv for p_pour,pc_rcv in
+                    zip(l.sensors.p_pour,
+                        np.array(ps_rcv).reshape(4,3).mean(axis=0)  #Center of ps_rcv
+                        )])
+    elif key=='lp_pour_trg':  #Pouring axis target position (x,y,z) in receiver frame
+      xs[key]= SSA([p_pour-pc_rcv for p_pour,pc_rcv in
+                    zip(l.p_pour_trg,
+                        np.array(ps_rcv).reshape(4,3).mean(axis=0)  #Center of ps_rcv
+                        )])
+    elif key=='p_flow':  #Flow position (x,y)
+      xs[key]= SSA([term_flow_center for term_flow_center in l.filtered.term_flow_center[:2]])
+    elif key=='lp_flow':  #Flow position (x,y) in receiver frame
+      xs[key]= SSA([math.atan(0.5*(term_flow_center-pc_rcv))
+                    for term_flow_center, pc_rcv in
+                    zip(l.filtered.term_flow_center[:2],
+                        np.array(ps_rcv).reshape(4,3).mean(axis=0)  #Center of ps_rcv
+                        )])
+    elif key=='lp_flow2':  #Flow position (x,y) in receiver frame (no atan)
+      xs[key]= SSA([term_flow_center-pc_rcv
+                    for term_flow_center, pc_rcv in
+                    zip(l.filtered.term_flow_center[:2],
+                        np.array(ps_rcv).reshape(4,3).mean(axis=0)  #Center of ps_rcv
+                        )])
+    elif key=='lpp_flow':  #Flow position (x,y) relative to previous (before flowctrl) p_pour
+      xs[key]= SSA([term_flow_center-p_pour
+                    for term_flow_center, p_pour in zip(l.filtered.term_flow_center[:2],ToList(xs_prev['p_pour'].X)[:2])])
+    elif key=='flow_var':  #Variance of flow
+      xs[key]= SSA([2.0*math.sqrt(l.filtered.term_flow_var)])
+    elif key=='a_pour':  #Amount poured in receiver
+      xs[key]= SSA([l.filtered.amount])  #==0.0055*l.sensors.num_rcv
+    elif key=='a_spill':  #Amount spilled out
+      xs[key]= SSA([0.0 if l.filtered.num_spill<1 else -math.atan(0.5*l.filtered.num_spill)])
+    elif key=='a_spill2':  #Amount spilled out
+      xs[key]= SSA([0.1*l.filtered.num_spill])
+    elif key=='a_total':  #Total amount moved from source
+      xs[key]= SSA([0.0055*(l.config.BallNum-l.sensors.num_src)])
+    elif key=='a_trg':  #Target amount
+      xs[key]= SSA([l.amount_trg])
+    elif key=='da_pour':  #Amount poured in receiver (displacement)
+      xs[key]= SSA([l.filtered.amount - xs_prev['a_pour'].X[0,0]])
+    elif key=='da_spill':  #Amount spilled out (displacement)
+      xs[key]= SSA([(0.0 if l.filtered.num_spill<1 else -math.atan(0.5*l.filtered.num_spill))
+                    - xs_prev['a_spill'].X[0,0]])
+    elif key=='da_spill2':  #Amount spilled out (displacement)
+      xs[key]= SSA([0.1*l.filtered.num_spill - xs_prev['a_spill2'].X[0,0]])
+    elif key=='da_total':  #Total amount moved from source (displacement)
+      xs[key]= SSA([0.0055*(l.config.BallNum-l.sensors.num_src) - xs_prev['a_total'].X[0,0]])
+    elif key=='da_trg':  #Target amount (displacement)
+      if 'amount' in l.filtered:
+        xs[key]= SSA([max(0.0, l.amount_trg - l.filtered.amount)])
+      else:
+        xs[key]= SSA([max(0.0, l.amount_trg)])
+    elif key=='size_srcmouth':  #Size of mouth of the source container
+      xs[key]= SSA([l.config.SrcSize2H*AMP_SMSZ])
+    elif key=='material':  #Material property (e.g. viscosity)
+      xs[key]= SSA([l.config.ContactBounce, l.config.ContactBounceVel,
+                    l.config.ViscosityParam1, l.config.ViscosityMaxDist])
+    elif key=='material2':  #Material property (e.g. viscosity)
+      xs[key]= SSA([l.config.ContactBounce, l.config.ContactBounceVel,
+                    l.config.ViscosityParam1*1.0e6, l.config.ViscosityMaxDist])
+  return xs
+
+
 def Delta1(dim, s):
     assert(abs(s-int(s)) < 1.0e-6)
     p = [0.0]*dim
     p[int(s)] = 1.0
     return p
-
-
-setup_path = 'mysim.curriculum.tasks_domain.detach_datotal.pouring.setup'
 
 
 def Domain():  # SpaceDefs and Models (reward function) will be modified by curriculum. (For example, 'action' -> 'state', Rdamount -> Rdaspill, and so on.)
@@ -26,9 +111,9 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
         # NOTE: we stopped to plan p_pour_trg0
         'p_pour_trg': SP('action', 2, min=[0.2, 0.1], max=[1.2, 0.7]),  # Target pouring axis position (x,z)
         'dtheta1': SP('action', 1, min=[0.01], max=[0.02]),  # Pouring skill parameter for all skills
-        'dtheta2': SP('action', 1, min=[0.002], max=[0.02]),  # Pouring skill parameter for 'tip'
+        'dtheta2': SP('action', 1, min=[0.002*AMP_DTHETA2], max=[0.02*AMP_DTHETA2]),  # Pouring skill parameter for 'tip'
         'shake_spd': SP('action', 1, min=[0.5], max=[1.2]),  # Pouring skill parameter for 'shake'
-        'shake_range': SP('action', 1, min=[0.05], max=[0.12]),
+        'shake_range': SP('action', 1, min=[0.05*AMP_SHAKE_RANGE], max=[0.12*AMP_SHAKE_RANGE]),
         'shake_angle': SP('action', 1, min=[-0.5*math.pi], max=[0.5*math.pi]),
         # 'shake_axis2': SP('action',2,min=[0.05,-0.5*math.pi],max=[0.1,0.5*math.pi]),
         'p_pour': SP('state', 3),  # Pouring axis position (z)
@@ -65,26 +150,16 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
         'Fmvtopour2': [  # Move to pouring point
             ['gh_abs', 'p_pour_trg'],
             ['lp_pour'], None],
-        'Ftip_amount': [  # Amount control with tip.
-            ['gh_abs',  # Removed 'p_pour_trg0','p_pour_trg','lp_pour'
-             'da_trg', 'size_srcmouth', 'material2',
-             'dtheta1', 'dtheta2'],
-            ['da_total'], None],
-        'Ftip_flow': [  # Flow control with tip.
+        'Ftip': [  # Flow control with tip.
             ['gh_abs', 'lp_pour',  # Removed 'p_pour_trg0','p_pour_trg'
              'da_trg', 'size_srcmouth', 'material2',
              'dtheta1', 'dtheta2'],
-            ['lp_flow', 'flow_var'], None],
-        'Fshake_amount': [  # Amount control with shake.
-            ['gh_abs',  # Removed 'p_pour_trg0','p_pour_trg','lp_pour'
-             'da_trg', 'size_srcmouth', 'material2',
-             'dtheta1', 'shake_spd', 'shake_range', 'shake_angle'],
-            ['da_total'], None],
-        'Fshake_flow': [  # Flow control with shake.
+            ['da_total', 'lp_flow', 'flow_var'], None],
+        'Fshake': [  # Flow control with shake.
             ['gh_abs', 'lp_pour',  # Removed 'p_pour_trg0','p_pour_trg'
              'da_trg', 'size_srcmouth', 'material2',
              'dtheta1', 'shake_spd', 'shake_range', 'shake_angle'],
-            ['lp_flow', 'flow_var'], None],
+            ['da_total', 'lp_flow', 'flow_var'], None],
         'Famount': [  # Amount model common for tip and shake
             ['lp_pour',  # Removed 'gh_abs','p_pour_trg0','p_pour_trg'
              'da_trg', 'material2',  # Removed 'size_srcmouth'
@@ -101,17 +176,15 @@ def Domain():  # SpaceDefs and Models (reward function) will be modified by curr
         'n1': TDynNode('n0', 'P1', ('Fnone', 'n2a')),
         'n2a': TDynNode('n1', 'P1', ('Fmvtopour2', 'n2b')),
         'n2b': TDynNode('n2a', 'P1', ('Fnone', 'n2c')),
-        'n2c': TDynNode('n2b', 'Pskill', ('Ftip_amount', 'n3ti1'), ('Fshake_amount', 'n3sa1')),
+        'n2c': TDynNode('n2b', 'Pskill', ('Ftip', 'n3ti'), ('Fshake', 'n3sa')),
         # Tipping:
-        'n3ti1': TDynNode('n2c', 'P1', ('Ftip_flow', 'n3ti2')),
-        'n3ti2': TDynNode('n3ti1', 'P1', ('Famount', 'n4ti')),
-        'n4ti': TDynNode('n3ti2', 'P2', ('Rdapour_gentle', 'n4tir1'), ('Rdaspill', 'n4tir2')),
+        'n3ti': TDynNode('n2c', 'P1', ('Famount', 'n4ti')),
+        'n4ti': TDynNode('n3ti', 'P2', ('Rdapour_gentle', 'n4tir1'), ('Rdaspill', 'n4tir2')),
         'n4tir1': TDynNode('n4ti'),
         'n4tir2': TDynNode('n4ti'),
         # Shaking-A:
-        'n3sa1': TDynNode('n2c', 'P1', ('Fshake_flow', 'n3sa2')),
-        'n3sa2': TDynNode('n3sa1', 'P1', ('Famount', 'n4sa')),
-        'n4sa': TDynNode('n3sa2', 'P2', ('Rdapour_gentle', 'n4sar1'), ('Rdaspill', 'n4sar2')),
+        'n3sa': TDynNode('n2c', 'P1', ('Famount', 'n4sa')),
+        'n4sa': TDynNode('n3sa', 'P2', ('Rdapour_gentle', 'n4sar1'), ('Rdaspill', 'n4sar2')),
         'n4sar1': TDynNode('n4sa'),
         'n4sar2': TDynNode('n4sa'),
     }
@@ -327,43 +400,25 @@ def Execute(ct, l):
             if selected_skill == 'tip':
                 dtheta1 = l.xs.n2c['dtheta1'].X[0, 0]
                 dtheta2 = l.xs.n2c['dtheta2'].X[0, 0]
-                actions['tip']({'dtheta1': dtheta1, 'dtheta2': dtheta2})
+                actions['tip']({'dtheta1': dtheta1, 'dtheta2': dtheta2/AMP_DTHETA2})
 
                 ############################################################################
-                # n3ti1: Update Ftip_amount
+                # n3ti: Update Ftip
                 ############################################################################
-                CPrint(2, 'Node:', 'n3ti1')
-                l.xs.n3ti1 = CopyXSSA(l.xs.prev)
-                InsertDict(l.xs.n3ti1, ObserveXSSA(l, l.xs.prev, obs_keys_after_flow))
+                CPrint(2, 'Node:', 'n3ti')
+                l.xs.n3ti = CopyXSSA(l.xs.prev)
+                InsertDict(l.xs.n3ti, ObserveXSSA(l, l.xs.prev, obs_keys_after_flow))
                 xs_in = CopyXSSA(l.xs.prev)
                 xs_in['lp_pour'] = l.xs.n2c['lp_pour']
-                CreatePredictionLog(l, "Ftip_amount", xs_in, l.xs.n3ti1)
-                l.dpl.MM.Models['Ftip_amount'][2].Options.update(l.nn_options)
-                l.dpl.MM.Update('Ftip_amount', xs_in, l.xs.n3ti1, not_learn=l.not_learn)
-                if "n3ti1" in l.planning_node:
-                    res = l.dpl.Plan('n3ti1', l.xs.n3ti1, l.interactive)
+                CreatePredictionLog(l, "Ftip", xs_in, l.xs.n3ti)
+                l.dpl.MM.Models['Ftip'][2].Options.update(l.nn_options)
+                l.dpl.MM.Update('Ftip', xs_in, l.xs.n3ti, not_learn=l.not_learn)
+                if "n3ti" in l.planning_node:
+                    res = l.dpl.Plan('n3ti', l.xs.n3ti, l.interactive)
                     l.node_best_tree.append(res.PTree)
-                l.idb.n3ti1 = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3ti1', xs=l.xs.n3ti1)
-                l.xs.prev = l.xs.n3ti1
-                l.idb.prev = l.idb.n3ti1
-                
-                ############################################################################
-                # n3ti2: Update Ftip_flow
-                ############################################################################
-                CPrint(2, 'Node:', 'n3ti2')
-                l.xs.n3ti2 = CopyXSSA(l.xs.prev)
-                InsertDict(l.xs.n3ti2, ObserveXSSA(l, l.xs.prev, ()))  # Observation is omitted since there is no change
-                xs_in = CopyXSSA(l.xs.prev)
-                xs_in['lp_pour'] = l.xs.n2c['lp_pour']
-                CreatePredictionLog(l, "Ftip_flow", xs_in, l.xs.n3ti2)
-                l.dpl.MM.Models['Ftip_flow'][2].Options.update(l.nn_options)
-                l.dpl.MM.Update('Ftip_flow', xs_in, l.xs.n3ti2, not_learn=l.not_learn)
-                if "n3ti2" in l.planning_node:
-                    res = l.dpl.Plan('n3ti2', l.xs.n3ti2, l.interactive)
-                    l.node_best_tree.append(res.PTree)
-                l.idb.n3ti2 = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3ti2', xs=l.xs.n3ti2)
-                l.xs.prev = l.xs.n3ti2
-                l.idb.prev = l.idb.n3ti2
+                l.idb.n3ti = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3ti', xs=l.xs.n3ti)
+                l.xs.prev = l.xs.n3ti
+                l.idb.prev = l.idb.n3ti
 
                 ############################################################################
                 # n4ti: Update Famount
@@ -399,44 +454,26 @@ def Execute(ct, l):
                 dtheta1 = l.xs.n2c['dtheta1'].X[0, 0]
                 shake_spd = l.xs.n2c['shake_spd'].X[0, 0]
                 # shake_axis2 = ToList(l.xs.n2c['shake_axis2'].X)
-                shake_axis2 = ToList([l.xs.n2c['shake_range'].X.item(), l.xs.n2c['shake_angle'].X.item()])
+                shake_axis2 = ToList([l.xs.n2c['shake_range'].X.item()/AMP_SHAKE_RANGE, l.xs.n2c['shake_angle'].X.item()])
                 actions['shake']({'dtheta1': dtheta1, 'shake_spd': shake_spd, 'shake_axis2': shake_axis2})
 
                 ############################################################################
-                # n3sa1: Update Fshake_amount
+                # n3sa: Update Fshake
                 ############################################################################
-                CPrint(2, 'Node:', 'n3sa1')
-                l.xs.n3sa1 = CopyXSSA(l.xs.prev)
-                InsertDict(l.xs.n3sa1, ObserveXSSA(l, l.xs.prev, obs_keys_after_flow))
+                CPrint(2, 'Node:', 'n3sa')
+                l.xs.n3sa = CopyXSSA(l.xs.prev)
+                InsertDict(l.xs.n3sa, ObserveXSSA(l, l.xs.prev, obs_keys_after_flow))
                 xs_in = CopyXSSA(l.xs.prev)
                 xs_in['lp_pour'] = l.xs.n2c['lp_pour']
-                CreatePredictionLog(l, "Fshake_amount", xs_in, l.xs.n3sa1)
-                l.dpl.MM.Models['Fshake_amount'][2].Options.update(l.nn_options)
-                l.dpl.MM.Update('Fshake_amount', xs_in, l.xs.n3sa1, not_learn=l.not_learn)
-                if "n3sa1" in l.planning_node:
-                    res = l.dpl.Plan('n3sa1', l.xs.n3sa1, l.interactive)
+                CreatePredictionLog(l, "Fshake", xs_in, l.xs.n3sa)
+                l.dpl.MM.Models['Fshake'][2].Options.update(l.nn_options)
+                l.dpl.MM.Update('Fshake', xs_in, l.xs.n3sa, not_learn=l.not_learn)
+                if "n3sa" in l.planning_node:
+                    res = l.dpl.Plan('n3sa', l.xs.n3sa, l.interactive)
                     l.node_best_tree.append(res.PTree)
-                l.idb.n3sa1 = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3sa1', xs=l.xs.n3sa1)
-                l.xs.prev = l.xs.n3sa1
-                l.idb.prev = l.idb.n3sa1
-                
-                ############################################################################
-                # n3sa2: Update Fshake_flow
-                ############################################################################
-                CPrint(2, 'Node:', 'n3sa2')
-                l.xs.n3sa2 = CopyXSSA(l.xs.prev)
-                InsertDict(l.xs.n3sa2, ObserveXSSA(l, l.xs.prev, ()))  # Observation is omitted since there is no change
-                xs_in = CopyXSSA(l.xs.prev)
-                xs_in['lp_pour'] = l.xs.n2c['lp_pour']
-                CreatePredictionLog(l, "Fshake_flow", xs_in, l.xs.n3sa2)
-                l.dpl.MM.Models['Fshake_flow'][2].Options.update(l.nn_options)
-                l.dpl.MM.Update('Fshake_flow', xs_in, l.xs.n3sa2, not_learn=l.not_learn)
-                if "n3sa2" in l.planning_node:
-                    res = l.dpl.Plan('n3sa2', l.xs.n3sa2, l.interactive)
-                    l.node_best_tree.append(res.PTree)
-                l.idb.n3sa2 = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3sa2', xs=l.xs.n3sa2)
-                l.xs.prev = l.xs.n3sa2
-                l.idb.prev = l.idb.n3sa2
+                l.idb.n3sa = l.dpl.DB.AddToSeq(parent=l.idb.prev, name='n3sa', xs=l.xs.n3sa)
+                l.xs.prev = l.xs.n3sa
+                l.idb.prev = l.idb.n3sa
 
                 ############################################################################
                 # n4sa: Update Famount
