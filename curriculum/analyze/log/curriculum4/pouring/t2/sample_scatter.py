@@ -20,7 +20,7 @@ def Run(ct, *args):
     save_img_dir = PICTURE_DIR + save_sh_dir.replace("/", "_") + "/"
 
     node_states_dim_pair = [
-        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1)]],
+        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1), ("p_pour_trg", 0)]],
         ["n2b", [("lp_pour", 3), ]],
         ["n2c", [("skill", 1), ]],
         ["n3ti", [("da_total", 1), ("lp_flow", 2), ("flow_var", 1)]],
@@ -35,6 +35,8 @@ def Run(ct, *args):
 
     sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
+        "p_pour_trg_x": sh["n0"]["p_pour_trg_0"][MEAN],
+        "p_pour_trg_z": sh["n0"]["p_pour_trg_1"][MEAN],
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         # "da_total_tip": sh["n3ti"]["da_total"][MEAN],
@@ -83,6 +85,7 @@ def Run(ct, *args):
     
     xy_limit_pairs = [
         ("episode", "Rdapour_Rdaspill", [-10, len(df)+10], [-40,0.5]),
+        ("p_pour_trg_x", "p_pour_trg_z", [0, 1.4], [-0.1, 0.9]),
         ("lp_pour_x", "lp_pour_z", [-0.5, 0.7], [-0.2, 0.6]),
         ("lp_pour_x", "da_total", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_z", "da_total", [-0.2, 0.6], [-0.1, 0.6]),
@@ -99,9 +102,9 @@ def Run(ct, *args):
         ("lp_flow_x", "flow_var", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_flow_x", "da_pour", [-0.5, 0.7], [-0.1, 0.6]),
-        ("lp_flow_x", "da_spill", [-0.5, 0.7], [-0.1, 1]),
+        ("lp_flow_x", "da_spill", [-0.5, 0.7], [-0.1, 10]),
         ("flow_var", "da_pour", [-0.1, 0.6], [-0.1, 0.6]),
-        ("flow_var", "da_spill", [-0.1, 0.6], [-0.1, 1]),
+        ("flow_var", "da_spill", [-0.1, 0.6], [-0.1, 10]),
         ("shake_spd", "da_total", [0.4, 1.3], [-0.1, 0.6]),
         ("shake_range", "da_total", [0.04*AMP_SHAKE_RANGE, 0.13*AMP_SHAKE_RANGE], [-0.1, 0.6]),
         ("shake_angle", "da_total", [-0.6*math.pi, 0.6*math.pi], [-0.1, 0.6]),
