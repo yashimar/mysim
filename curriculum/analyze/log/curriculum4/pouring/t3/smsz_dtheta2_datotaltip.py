@@ -13,10 +13,10 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum4/pouring/full_scratch/curriculum_test/t1/first300"
-    save_sh_dir = "curriculum4/pouring/full_scratch/curriculum_test/t1"
+    model_path = "curriculum4/pouring/full_scratch/curriculum_test/t3/first300"
+    save_sh_dir = "curriculum4/pouring/full_scratch/curriculum_test/t3"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "ketchup_smsz0065_dtheta0002"
+    file_name_pref = "nobounce_"
     model_name = "Ftip"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
@@ -25,26 +25,26 @@ def Run(ct, *args):
     
     xs_value = {
         "gh_abs": [0.25],
-        "lp_pour_x": [0.],
+        "lp_pour_x": [-0.1],
         "lp_pour_y": [0.],
-        "lp_pour_z": [0.],
+        "lp_pour_z": [0.25],
         "da_trg": [0.3],
-        "size_srcmouth": [0.065*AMP_SMSZ],
-        "material2": KETCHUP,
+        "size_srcmouth": [0.055*AMP_SMSZ],
+        "material2": NOBOUNCE,
         "dtheta1": [1.4e-2],
         "dtheta2": [0.002*AMP_DTHETA2],
     }
     input_features = ["gh_abs","lp_pour_x","lp_pour_y","lp_pour_z","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "lp_pour_x", "values": np.linspace(-0.5,0.7,100)}
-    Y = {"feature": "lp_pour_z", "values": np.linspace(-0.2,0.6,100)}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [0.,0.1]}}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,100)*AMP_SMSZ}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,100)*AMP_DTHETA2}
+    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",
         "model": Rmodel("Fdatotal_gentle"),
         "input_features": ["da_trg","da_total_tip"],
         "format_mean": lambda pred: [pred.Y[0]],
         "format_var": lambda pred: [pred.Var[0,0]],
-        "range": {MEAN: [-3.,0.], SIGMA: [-0.05,0.1]}
+        "range": {MEAN: [-3.,0.], SIGMA: [-0.05,2.0]}
     }
     
     node_states_dim_pair = [
@@ -60,13 +60,14 @@ def Run(ct, *args):
         ["n4sar1", [(".r", 1), ]],
         ["n4sar2", [(".r", 1), ]],
     ]
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [model_path], node_states_dim_pair, recreate=True)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [model_path], node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
+        "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti"]["da_total"][MEAN],
-        # "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
@@ -74,12 +75,12 @@ def Run(ct, *args):
     })
     df.dropna(inplace=True)
     # df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
-    
+
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
-        ("scatter c1\n0.07*AMP_DTHETA2<smsz<0.08*AMP_DTHETA2", ((0.07*AMP_SMSZ<df["size_srcmouth"])&(df["size_srcmouth"]<0.08*AMP_SMSZ))),
-        ("scatter c2\n0.002*AMP_SMSZ<dtheta2<0.005*AMP_SMSZ", ((0.002*AMP_DTHETA2<=df["dtheta2"])&(df["dtheta2"]<0.005*AMP_DTHETA2))),
-        ("scatter c1&c2", ((0.07*AMP_SMSZ<df["size_srcmouth"])&(df["size_srcmouth"]<0.08*AMP_SMSZ) & (0.002*AMP_DTHETA2<=df["dtheta2"])&(df["dtheta2"]<0.005*AMP_DTHETA2))),
+        ("scatter c1 -0.2<lp_pour_x<0", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0))),
+        ("scatter c2 0.2<lp_pour_z<0.3", ((0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
+        ("scatter c1&c2", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0) & (0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
         ("no scatter", [False]*len(df)),
     ]
     scatter_obj_list = [
@@ -101,6 +102,22 @@ def Run(ct, *args):
             ),
         )
     for _, condition in scatter_condition_title_pair]
+    # scatter_obj = go.Scatter(
+    #     x=df[X["feature"]], y=df[Y["feature"]], 
+    #     mode='markers', 
+    #     # marker_color="blue",
+    #     opacity = 0.5,
+    #     hoverinfo='text',
+    #     text=["true {}: {}<br />{}: {}<br />{}: {}<br />{}: {}".format(z["feature"], v_z, X["feature"], v_x, Y["feature"], v_y, "ep", v_ep) for v_z, v_x, v_y, v_ep in zip(df[z["feature"]], df[X["feature"]], df[Y["feature"]], df["episode"])],
+    #     showlegend=False,
+    #     marker = dict(
+    #         size = 10,
+    #         color = df[z["feature"]].values,
+    #         colorscale="Viridis",
+    #         cmin = 0,
+    #         cmax = 0.55,
+    #     ),
+    # )
     
     def updatemenu(fig):
         buttons = [{
@@ -121,12 +138,13 @@ def Run(ct, *args):
         }]
         fig['layout']['updatemenus'] = updatemenus
     # updatemenu = None
-
+    
     go_layout = {
         'height': 14000,
         'width': 9000,
         'margin': dict(t=150, b=20),
         'hoverdistance': 5,
     }
-    
+        
     plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=scatter_obj_list, updatemenu=updatemenu, model=model, is_prev_model=True)
+    

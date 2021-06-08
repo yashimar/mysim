@@ -13,8 +13,8 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum4/pouring/full_scratch/curriculum_test/t1/first300"
-    save_sh_dir = "curriculum4/pouring/full_scratch/curriculum_test/t1"
+    model_path = "curriculum4/pouring/full_scratch/curriculum_test/t3/first300"
+    save_sh_dir = "curriculum4/pouring/full_scratch/curriculum_test/t3"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
     file_name_pref = "ketchup_smsz0065_dtheta0002"
     model_name = "Ftip"
