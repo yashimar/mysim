@@ -283,8 +283,8 @@ def Execute(ct, l):
         # Heuristic init guess
         pc_rcv = np.array(l.xs.n0['ps_rcv'].X).reshape(4, 3).mean(axis=0)  # Center of ps_rcv
         l.xs.n0['p_pour_trg0'] = SSA(Vec([-0.3, 0.35])+Vec([pc_rcv[0], pc_rcv[2]]))
+        l.xs.n0['p_pour_trg'] = SSA(Vec([Rand(0.33, 0.6), Rand(0.4, 0.5)]))
         l.xs.n0['gh_ratio'] = SSA([0.5])
-        # l.xs.n0['p_pour_trg'] = SSA(Vec([Rand(0.2, 1.2), Rand(0.1, 0.7)]))
         l.xs.n0['dtheta1'] = SSA([0.014])
         # l.xs.n0['dtheta2'] = SSA([0.004])
         # l.xs.n0['shake_spd'] = SSA([0.8])

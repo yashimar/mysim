@@ -4,6 +4,7 @@ SmartImportReload('tsim.dpl_cmn')
 from ....util import CreateExperimentsEvidenceFile
 from ..util import SetupDPL, CreateDPLLog
 import task_domain as td
+Rmodel = td.Rmodel
 from copy import deepcopy
 
 
@@ -16,7 +17,7 @@ def Help():
 
 class Task:
     def __init__(self, name, group_id):
-        self.name = name
+        self.name = "[{}]".format(name)
         self.group_id = group_id
         self.skill_params_def = {}
         self.config_callback = lambda: None
@@ -25,10 +26,11 @@ class Task:
         self.border_return = -1.
         self.n_consider = 3
         self.return_log = []
+        self.n_least_episode = 5
 
 
     def TerminalCheck(self):
-        if len(self.return_log) < self.n_consider:
+        if len(self.return_log) < self.n_least_episode:
             return False
         elif all(r>self.border_return for r in self.return_log[-self.n_consider:]):
             return True
@@ -107,7 +109,7 @@ def Run(ct, *args):
     ############################################################################
     t_index = 1
     suff = "curriculum_test/t"+str(t_index)+"/first50"+"/"
-    l.logdir = ROOT_PATH + "curriculum4/pouring/c1"+"/"+suff
+    l.logdir = ROOT_PATH + "curriculum4/c1"+"/"+suff
 
     ############################################################################
     # Specify src directory
@@ -207,16 +209,26 @@ def Run(ct, *args):
     ###########################
     ### Group_id: 0
     ###########################
-    l.tasks.append(Task(name="init sample: tip", group_id=0))
+    l.tasks.append(Task(name="mtr=nobounce, smsz=0.04+/-0.002, initial sample(tip)", group_id=0))
+    l.tasks[-1].skill_params_def = {
+        'p_pour_trg': SP('state', 2, min=[0.33, 0.4], max=[0.6, 0.5]),
+    }
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce",), (0.038, 0.042))
     l.tasks[-1].border_return = -100.
     l.tasks[-1].pour_skill = "tip"
+    l.tasks[-1].n_least_episode = 3
     
     ###########################
     ### Group_id: 1
     ###########################
-    l.tasks.append(Task(name="init sample: shake", group_id=1))
+    l.tasks.append(Task(name="mtr=ketchup, smsz=0.07+/-0.002, initial sample(shake)", group_id=1))
+    l.tasks[-1].skill_params_def = {
+        'p_pour_trg': SP('state', 2, min=[0.33, 0.4], max=[0.6, 0.5]),
+    }
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("ketchup",), (0.068, 0.072))
     l.tasks[-1].border_return = -100.
     l.tasks[-1].pour_skill = "shake"
+    l.tasks[-1].n_least_episode = 3
 
     ###########################
     ### Group_id: 2
@@ -268,48 +280,49 @@ def Run(ct, *args):
     ### Group_id: 6
     ###########################
     ### group_task_id: 0
-    l.tasks.append(Task(name="mtr=(nobounce, ketchup), smsz=0.04+/-0.002, Rdatotal_gentle", group_id=6))
-    l.tasks[-1].skill_params_def = {
-        'p_pour_trg': SP('state', 2, min=[0.33, 0.4], max=[0.6, 0.5]),
-    }
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce","ketchup",), (0.038, 0.042))
+    l.tasks.append(Task(name="mtr=nobounce, smsz=(0.03,0.055), Rdatotal_gentle + Rdaspill", group_id=6))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce",), (0.03, 0.055))
     l.tasks[-1].reward_callback = lambda: update_model({
+        "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
         "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
     })
-    
+
     ### group_task_id: 1
-    l.tasks.append(Task(name="mtr=(nobounce, ketchup), smsz=0.07+/-0.002, Rdatotal_gentle", group_id=6))
-    l.tasks[-1].skill_params_def = {
-        'p_pour_trg': SP('state', 2, min=[0.33, 0.4], max=[0.6, 0.5]),
-    }
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce","ketchup",), (0.068, 0.072))
+    l.tasks.append(Task(name="mtr=ketchup, smsz=(0.055,0.08), Rdatotal_gentle + Rdaspill", group_id=6))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("ketchup",), (0.055, 0.08))
     l.tasks[-1].reward_callback = lambda: update_model({
+        "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
         "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
-    })
-    
-    ### group_task_id: 2
-    l.tasks.append(Task(name="mtr=(nobounce, ketchup), smsz=0.04+/-0.002, Rdaspill", group_id=6))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce","ketchup",), (0.038, 0.042))
-    l.tasks[-1].reward_callback = lambda: update_model({
-        "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
-    })
-    
-    ### group_task_id: 3
-    l.tasks.append(Task(name="mtr=(nobounce, ketchup), smsz=0.07+/-0.002, Rdaspill", group_id=6))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce","ketchup",), (0.068, 0.072))
-    l.tasks[-1].reward_callback = lambda: update_model({
-        "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
     })
     
     ###########################
     ### Group_id: 7
     ###########################
-    l.tasks.append(Task(name="mtr=(nobounce, ketchup), smsz=0.07+/-0.002, Rdatotal + Rdaspill", group_id=7))
+    ### group_task_id: 0
+    l.tasks.append(Task(name="mtr=nobounce, smsz=(0.055,0.08), Rdatotal_gentle + Rdaspill", group_id=7))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce",), (0.055, 0.08))
     l.tasks[-1].reward_callback = lambda: update_model({
-        "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
         "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
+        "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
     })
-    l.tasks[-1].n_consider = 100
+
+    ### group_task_id: 1
+    l.tasks.append(Task(name="mtr=ketchup, smsz=(0.03,0.055), Rdatotal_gentle + Rdaspill", group_id=7))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("ketchup",), (0.03, 0.055))
+    l.tasks[-1].reward_callback = lambda: update_model({
+        "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
+        "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
+    })
+    
+    ###########################
+    ### Group_id: 8
+    ###########################
+    l.tasks.append(Task(name="mtr=(nobounce,ketchup), smsz=(0.03,0.08), Rdatotal_gentle + Rdaspill", group_id=8))
+    l.tasks[-1].reward_callback = lambda: update_model({
+        "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
+        "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
+    })
+    l.tasks[-1].n_least_episode = 100
 
     ############################################################################
     # Execute
