@@ -480,7 +480,7 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
             ), 2*r+2, 1)
             fig.add_shape(type='line',
                 x0=0,
-                x1=max(df["episode"]),
+                x1=max(df["episode"]) if not len(df["episode"]) == 0 else 1,
                 y0=0,
                 y1=0,
                 line=dict(color='blue'),
