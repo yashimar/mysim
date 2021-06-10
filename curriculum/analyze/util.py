@@ -400,7 +400,7 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
         for stat_type in [MEAN, SIGMA, L_MEAN, L_SIGMA]:
             features["{}_pred {}".format(stat_type, state)] = pred_true_history[dynamics]["out{}".format(outdim)][stat_type]
         features["true {}".format(state)] = pred_true_history[dynamics]["out{}".format(outdim)][TRUE]
-        features["episode"] = np.arange(0,len(pred_true_history["Ftip"]["out0"][TRUE]))
+        features["episode"] = np.arange(0,len(pred_true_history["Fmvtopour2"]["out0"][TRUE]))
     # df = pd.DataFrame(features)
     # df.dropna(inplace=True)
 
