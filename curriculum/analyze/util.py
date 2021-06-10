@@ -156,7 +156,7 @@ def base_trace(x, y, color, text):
         x=x, y=y, 
         mode='markers', 
         # marker_color="blue",
-        opacity = 0.5,
+        # opacity = 0.5,
         hoverinfo='text',
         text=text,
         showlegend=False,
