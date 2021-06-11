@@ -9,7 +9,7 @@ def Help():
 
 def Run(ct, *args):
     model_path = "curriculum3/pouring/full_scratch/curriculum_test/t1/first300"
-    save_path = "curriculum3/pouring/relearn/nobounce_only"
+    save_path = "curriculum3/pouring/relearn/nobounce_only_product5"
     model_name = "Ftip_amount"
     pref = ""
     
@@ -17,6 +17,8 @@ def Run(ct, *args):
     print(model.Options)
     for x,y in zip(DataX, DataY):
         if x[5]==0.0:
+            x[2] *= 5.
+            x[8] *= 5.
             model.Update(x.tolist(),y.tolist(),not_learn=False)
     
     check_or_create_dir(ROOT_PATH+save_path)

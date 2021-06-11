@@ -15,25 +15,25 @@ def Run(ct, *args):
     model_path = "curriculum3/pouring/full_scratch/curriculum_test/t1/first300"
     save_sh_dir = "curriculum3/pouring/full_scratch/curriculum_test/t1"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "relearn_onlynobounce_"
+    file_name_pref = "relearn_onlynobounce_product5_"
     pref_relearned_model = ""
     model_name = "Ftip_amount"
     # model = None
-    with open(ROOT_PATH+"curriculum3/pouring/relearn/nobounce_only"+"/{}_{}.pkl".format(model_name,pref_relearned_model), "rb") as f:
+    with open(ROOT_PATH+"curriculum3/pouring/relearn/nobounce_only_product5"+"/{}_{}.pkl".format(model_name,pref_relearned_model), "rb") as f:
         model = pickle.load(f)
         model_path = "relearned model"
     
     xs_value = {
         "gh_abs": [0.25],
         "da_trg": [0.3],
-        "size_srcmouth": [0.055],
+        "size_srcmouth": [0.055*5],
         "material2": NOBOUNCE,
         "dtheta1": [1.4e-2],
-        "dtheta2": [0.002],
+        "dtheta2": [0.002*5],
     }
     input_features = ["gh_abs","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,100)}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,100)}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02*5,0.09*5,100)}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0*5.,0.025*5.,100)}
     z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",
@@ -61,20 +61,18 @@ def Run(ct, *args):
     ]
     sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [model_path], node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
-        "dtheta2": np.array(sh["n0"]["dtheta2"][MEAN]),
+        "dtheta2": np.array(sh["n0"]["dtheta2"][MEAN])*5,
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti1"]["da_total"][MEAN],
         "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        "size_srcmouth": np.array(sh["n0"]["size_srcmouth"][MEAN]),
+        "size_srcmouth": np.array(sh["n0"]["size_srcmouth"][MEAN])*5,
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })
     df.dropna(inplace=True)
     # df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
-    print(df["da_total_tip"].mean())
-    hoge
 
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
