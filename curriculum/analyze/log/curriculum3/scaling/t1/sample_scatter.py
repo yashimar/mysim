@@ -33,7 +33,7 @@ def Run(ct, *args):
         ["n4sar2", [(".r", 1), ]],
     ]
 
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=True)
     df = pd.DataFrame({
         "p_pour_trg_x": sh["n0"]["p_pour_trg_0"][MEAN],
         "p_pour_trg_z": sh["n0"]["p_pour_trg_1"][MEAN],

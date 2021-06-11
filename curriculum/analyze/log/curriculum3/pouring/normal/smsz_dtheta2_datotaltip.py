@@ -15,25 +15,25 @@ def Run(ct, *args):
     model_path = "curriculum3/pouring/full_scratch/curriculum_test/t1/first300"
     save_sh_dir = "curriculum3/pouring/full_scratch/curriculum_test/t1"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "relearn_addone_"
+    file_name_pref = "relearn_normal_"
     pref_relearned_model = ""
     model_name = "Ftip_amount"
     # model = None
-    with open(ROOT_PATH+"curriculum3/pouring/relearn/addone"+"/{}_{}.pkl".format(model_name,pref_relearned_model), "rb") as f:
+    with open(ROOT_PATH+"curriculum3/pouring/relearn/normal"+"/{}_{}.pkl".format(model_name,pref_relearned_model), "rb") as f:
         model = pickle.load(f)
         model_path = "relearned model"
     
     xs_value = {
         "gh_abs": [0.25],
         "da_trg": [0.3],
-        "size_srcmouth": [0.055+1.],
+        "size_srcmouth": [0.055],
         "material2": NOBOUNCE,
         "dtheta1": [1.4e-2],
-        "dtheta2": [0.002+1.],
+        "dtheta2": [0.002],
     }
     input_features = ["gh_abs","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02+1.,0.09+1.,100)}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0+1.,0.025+1.,100)}
+    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,100)}
+    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,100)}
     z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [-0.05,0.1]}}
     reward_function = {
         "name": "Rdatotal",
@@ -61,13 +61,13 @@ def Run(ct, *args):
     ]
     sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, [model_path], node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
-        "dtheta2": np.array(sh["n0"]["dtheta2"][MEAN])+1.0,
+        "dtheta2": np.array(sh["n0"]["dtheta2"][MEAN]),
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti1"]["da_total"][MEAN],
         "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        "size_srcmouth": np.array(sh["n0"]["size_srcmouth"][MEAN])+1.0,
+        "size_srcmouth": np.array(sh["n0"]["size_srcmouth"][MEAN]),
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })

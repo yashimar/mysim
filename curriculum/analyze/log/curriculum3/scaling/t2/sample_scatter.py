@@ -33,7 +33,7 @@ def Run(ct, *args):
         ["n4sar2", [(".r", 1), ]],
     ]
 
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=True)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "p_pour_trg_x": sh["n0"]["p_pour_trg_0"][MEAN],
         "p_pour_trg_z": sh["n0"]["p_pour_trg_1"][MEAN],
@@ -69,7 +69,14 @@ def Run(ct, *args):
         elif "dtheta2" in c:
             df[c][df["skill"]!=0] = None
     # df.dropna(inplace=True)
-    # df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
+    df["comment"][115] = "<br />　datotalの予測誤差が大きい."+\
+                         "<br />　Famountの予測誤差は収益に大きな影響を与えるものではない."
+    df["comment"][175] = "<br />　datotalの予測誤差が大きい."+\
+                         "<br />　Famountの予測誤差は収益に大きな影響を与えるものではない."
+    df["comment"][206] = "<br />　datotalの予測誤差が大きい."+\
+                         "<br />　Famountの予測誤差は収益に大きな影響を与えるものではない."
+    df["comment"][222] = "<br />　datotalの予測誤差が大きい."+\
+                         "<br />　Famountの予測誤差は収益に大きな影響を与えるものではない."
     
     vis_df_title_pair = [
         (df, "full data"), 
@@ -87,6 +94,8 @@ def Run(ct, *args):
         ("episode", "Rdapour_Rdaspill", [-10, len(df)+10], [-40,0.5]),
         ("p_pour_trg_x", "p_pour_trg_z", [0, 1.4], [-0.1, 0.9]),
         ("lp_pour_x", "lp_pour_z", [-0.5, 0.7], [-0.2, 0.6]),
+        ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
+        ("lp_pour_z", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_pour_x", "da_total", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_z", "da_total", [-0.2, 0.6], [-0.1, 0.6]),
         ("dtheta2", "da_total", [0.*AMP_DTHETA2, 0.025*AMP_DTHETA2], [-0.1, 0.6]),
@@ -100,7 +109,6 @@ def Run(ct, *args):
         ("dtheta2", "da_spill", [0.*AMP_DTHETA2, 0.025*AMP_DTHETA2], [-0.1, 10]),
         ("size_srcmouth", "da_spill", [0.01*AMP_SMSZ, 0.10*AMP_SMSZ], [-0.1, 10]),
         ("lp_flow_x", "flow_var", [-0.5, 0.7], [-0.1, 0.6]),
-        ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_flow_x", "da_pour", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_flow_x", "da_spill", [-0.5, 0.7], [-0.1, 10]),
         ("flow_var", "da_pour", [-0.1, 0.6], [-0.1, 0.6]),
