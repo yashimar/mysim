@@ -12,7 +12,7 @@ def Help():
 
 def Run(ct, *args):
     log_name_list = [
-        "curriculum3/scaling/full_scratch/t1/first100",
+        "curriculum3/scaling/full_scratch/t1/second200",
     ]
     save_sh_dir = "curriculum3/scaling/full_scratch/t1"
     save_img_dir = PICTURE_DIR + save_sh_dir.replace("/", "_") + "/"
@@ -33,7 +33,7 @@ def Run(ct, *args):
         ["n4sar2", [(".r", 1), ]],
     ]
 
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=True)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "p_pour_trg_x": sh["n0"]["p_pour_trg_0"][MEAN],
         "p_pour_trg_z": sh["n0"]["p_pour_trg_1"][MEAN],
@@ -69,8 +69,26 @@ def Run(ct, *args):
         elif "dtheta2" in c:
             df[c][df["skill"]!=0] = None
     # df.dropna(inplace=True)
-    # df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
-    
+    df["comment"][71] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
+                         "<br />　目標量より出ているが, 殆ど溢す."
+    df["comment"][90] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
+                         "<br />　目標量より出ているが, 殆ど溢す."
+    df["comment"][100] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
+                         "<br />　da_totalの予測は0.3だが実際は少ない."+\
+                         "<br />　(これはlppourとは無関係.)"
+    df["comment"][101] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
+                         "<br />　da_totalの予測は0.3だが実際は少ない."+\
+                         "<br />　(これはlppourとは無関係.)"
+    df["comment"][109] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
+                         "<br />　目標量より出ているが, 殆ど溢す."
+    df["comment"][152] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
+                         "<br />　目標量より出ているが, 殆ど溢す."
+    df["comment"][154] = "<br />　da_totalの予測は0.27だが実際は少ない."
+    df["comment"][158] = "<br />　予測lppour_xzと実際のlppour_xzが大きく異なる."+\
+                         "<br />　衝突は起きていない."+\
+                         "<br />　目標量より出ているが, 殆ど溢す."
+    df["comment"][188] = "<br />　lppour_x,lpflow_xのどちらの予測誤差も大きい."
+        
     vis_df_title_pair = [
         (df, "full data"), 
         (df[df["skill"]==0], "tip"),
@@ -87,6 +105,8 @@ def Run(ct, *args):
         ("episode", "Rdapour_Rdaspill", [-10, len(df)+10], [-40,0.5]),
         ("p_pour_trg_x", "p_pour_trg_z", [0, 1.4], [-0.1, 0.9]),
         ("lp_pour_x", "lp_pour_z", [-0.5, 0.7], [-0.2, 0.6]),
+        ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
+        ("lp_pour_z", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_pour_x", "da_total", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_z", "da_total", [-0.2, 0.6], [-0.1, 0.6]),
         ("dtheta2", "da_total", [0.*AMP_DTHETA2, 0.025*AMP_DTHETA2], [-0.1, 0.6]),
@@ -100,7 +120,6 @@ def Run(ct, *args):
         ("dtheta2", "da_spill", [0.*AMP_DTHETA2, 0.025*AMP_DTHETA2], [-0.1, 10]),
         ("size_srcmouth", "da_spill", [0.01*AMP_SMSZ, 0.10*AMP_SMSZ], [-0.1, 10]),
         ("lp_flow_x", "flow_var", [-0.5, 0.7], [-0.1, 0.6]),
-        ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_flow_x", "da_pour", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_flow_x", "da_spill", [-0.5, 0.7], [-0.1, 10]),
         ("flow_var", "da_pour", [-0.1, 0.6], [-0.1, 0.6]),

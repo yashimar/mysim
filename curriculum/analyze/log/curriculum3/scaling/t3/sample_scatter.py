@@ -12,7 +12,7 @@ def Help():
 
 def Run(ct, *args):
     log_name_list = [
-        "curriculum3/scaling/full_scratch/t3/first100",
+        "curriculum3/scaling/full_scratch/t3/second200",
     ]
     save_sh_dir = "curriculum3/scaling/full_scratch/t3"
     save_img_dir = PICTURE_DIR + save_sh_dir.replace("/", "_") + "/"

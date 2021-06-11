@@ -34,8 +34,8 @@ def LoadActions(database, i_episode=0, i_node=0):
 
 def Run(ct,*args):
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "curriculum2/pouring/full_scratch/curriculum_test/t1/first300"+"/"
-  i_episode_list = [74]
+              + "curriculum3/scaling/full_scratch/t1/second200"+"/"
+  i_episode_list = [158]
   i_node = 0
   n_roop = 1
 
@@ -58,7 +58,7 @@ def Run(ct,*args):
       l.config_callback= TestConfigCallback
       # ct.Run('mysim.setup.setup2', l)
 
-      ct.Run('mysim.curriculum.tasks_domain.pouring.setup', l)
+      ct.Run('mysim.curriculum.tasks_domain.detach_datotal.scaling.setup', l)
 
       sim= ct.sim
       l= ct.sim_local

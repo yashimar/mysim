@@ -13,6 +13,7 @@ def Help():
 def Run(ct, *args):
     log_name_list = [
         "curriculum3/scaling/full_scratch/t1/first100",
+        "curriculum3/scaling/full_scratch/t1/second200",
     ]
     save_dir = PICTURE_DIR + "curriculum3/scaling/full_scratch/t1".replace("/","_") + "/"
     save_sh_dir = "curriculum3/scaling/full_scratch/t1"
