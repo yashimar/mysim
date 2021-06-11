@@ -346,8 +346,11 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
     plotly.offline.plot(fig, filename = save_dir + file_name_pref + X["feature"].replace("_","") + "_" + Y["feature"].replace("_","") + "_" + z["feature"].replace("_","") + ".html", auto_open=False)
     
 
-def remake_model(td, model_name, model_path, save_path, suff):
-    mm = ModelManager(td.Domain(), ROOT_PATH+model_path)
+def remake_model(td, model_name, model_path, save_path, suff, is_prev_model=True):
+    if is_prev_model:
+        mm = PrevModelManager(td.Domain(), ROOT_PATH+model_path)
+    else:
+        mm = ModelManager(td.Domain(), ROOT_PATH+model_path)
     model = mm.Models[model_name][2]
     model.Options["base_dir"] = ROOT_PATH+save_path+"/"+suff+"/models/"
     DataX, DataY = model.DataX, model.DataY
