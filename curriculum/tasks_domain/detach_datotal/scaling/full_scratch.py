@@ -19,9 +19,9 @@ def ExecuteLearning(ct, l):
     l.dpl, fp = SetupDPL(ct, l, domain)
 
     for count in range(l.num_episodes):
-        if count <= 2:
+        if len(l.dpl.DB.Entry) <= 2:
             l.pour_skill = "tip"
-        elif count <= 5:
+        elif len(l.dpl.DB.Entry) <= 5:
             l.pour_skill = "shake"
         else:
             l.pour_skill = ""
@@ -46,17 +46,17 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    t_index = 1
-    suff = "t"+str(t_index)+"/first100"+"/"
+    t_index = 3
+    suff = "t"+str(t_index)+"/second200"+"/"
     l.logdir = ROOT_PATH + "curriculum3/scaling/full_scratch"+"/"+suff
 
     ############################################################################
     # Specify src directory
     ############################################################################
-    # l.db_src = ROOT_PATH + "curriculum/pouring3/full_scratch/curriculum_test/t"+str(t_index)+"/first150"
-    # l.model_src = ROOT_PATH + "curriculum/pouring3/full_scratch/curriculum_test/t"+str(t_index)+"/first150"
-    l.db_src = ""
-    l.model_src = ""
+    l.db_src = ROOT_PATH + "curriculum3/scaling/full_scratch/t"+str(t_index)+"/first100"
+    l.model_src = ROOT_PATH + "curriculum3/scaling/full_scratch/t"+str(t_index)+"/first100"
+    # l.db_src = ""
+    # l.model_src = ""
 
     ############################################################################
     # Modify ConfigCallback
@@ -68,7 +68,7 @@ def Run(ct, *args):
     ############################################################################
     # Modify learning config
     ############################################################################
-    l.num_episodes = 100
+    l.num_episodes = 200
     l.interactive = False
     l.not_learn = False
     l.planning_node = ["n0"]
