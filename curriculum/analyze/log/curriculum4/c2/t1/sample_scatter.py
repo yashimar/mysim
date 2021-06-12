@@ -20,7 +20,7 @@ def Run(ct, *args):
     save_img_dir = PICTURE_DIR + save_sh_dir.replace("/", "_") + "/"
 
     node_states_dim_pair = [
-        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1), ("p_pour_trg", 0)]],
+        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1), ("p_pour_trg", 2)]],
         ["n2b", [("lp_pour", 3), ]],
         ["n2c", [("skill", 1), ]],
         ["n3ti", [("da_total", 1), ("lp_flow", 2), ("flow_var", 1)]],
@@ -69,7 +69,39 @@ def Run(ct, *args):
         elif "dtheta2" in c:
             df[c][df["skill"]!=0] = None
     # df.dropna(inplace=True)
-    # df["comment"][19] = "<br />　ソース位置が高く, レシーバー奥に溢れ."
+    for i,row in df.iterrows():
+        if i < 88:
+            pass
+        if row["Rdapour_Rdaspill"] < -1.0:
+            df["comment"][i] += "<br />　{}, {:.3f}, {}".format("nobouce" if row["nobounce"] == True else "ketchup", row["size_srcmouth"], "Tip" if row["skill"]==0 else "Shake")
+            if (row["size_srcmouth"] < 0.55 and row["nobounce"] == True) or (row["size_srcmouth"] >= 0.55 and row["ketchup"] == True):
+                df["comment"][i] += "<br />　id6で習得すべき状況."
+                if (0.38 < row["size_srcmouth"] < 0.42 and row["nobounce"] == True):
+                    df["comment"][i] += "<br />　id2,4でできているはずのサブタスク."
+                if (0.68 < row["size_srcmouth"] < 0.72 and row["ketchup"] == True):
+                    df["comment"][i] += "<br />　id3,5でできているはずのサブタスク."
+            if (row["size_srcmouth"] >= 0.55 and row["nobounce"] == True) or (row["size_srcmouth"] < 0.55 and row["ketchup"] == True):
+                df["comment"][i] += "<br />　id7で習得すべき状況."
+            if (row["da_total"] <= 0.25):
+                df["comment"][i] += "<br />　量が出ていない."
+            
+    df["comment"][97] += "<br />　lppourxの予測誤差が大きい."+\
+                        "<br />　それまでに到達していない位置(右端)."+\
+                        "<br />　datotalの予測はそれなりに妥当."
+    df["comment"][107] += "<br />　lpflowxの予測誤差が大きく, 溢れ."
+    df["comment"][112] += "<br />　lpflowxの予測誤差が大きく, 溢れ."+\
+                         "<br />　id5,6では, Shakeで"+\
+                         "<br />　到達したことがない位置だった."
+    df["comment"][117] += "<br />　lpflowxの予測誤差が大きく, 溢れ."
+    df["comment"][126] += "<br />　lpflowxの予測誤差が大きく, 溢れ."+\
+                         "<br />　id5,6では, Shakeで"+\
+                         "<br />　到達したことがない位置だった."
+    df["comment"][158] += "<br />　lpflowxの予測誤差が大きく, 溢れ."
+    df["comment"][170] += "<br />　lpflowxの予測誤差が大きく, 溢れ."+\
+                         "<br />　flowvarの予測誤差も大きい."
+    df["comment"][172] += "<br />　lpflowxの予測誤差が大きく, 溢れ."
+    df["comment"][186] += "<br />　lpflowxの予測誤差が大きく, 溢れ."+\
+                            "<br />　極端にずれた予測はなかった."
     
     vis_df_title_pair = [
         (df, "full data"), 

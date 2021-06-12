@@ -49,7 +49,7 @@ def Run(ct, *args):
         ["n4sar2", [(".r", 1), ]],
     ]
     
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=True)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
     num_graph_type = 5
     c_tip = [True if s == 0 else False for s in sh["n2c"]["skill"][MEAN]]
     c_shake = [True if s == 1 else False for s in sh["n2c"]["skill"][MEAN]]
