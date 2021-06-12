@@ -222,7 +222,7 @@ def Run(ct, *args):
     ### group_task_id: 0
     l.tasks.append(Task(name="mtr=nobounce, smsz=0.04+/-0.002, initial sample(tip)", group_id=0, group_task_id=0))
     l.tasks[-1].skill_params_def = {
-        'p_pour_trg': SP('action', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
+        'p_pour_trg': SP('state', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
     }
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce",), (0.038, 0.042))
     l.tasks[-1].border_return = -100.
@@ -232,7 +232,7 @@ def Run(ct, *args):
     ### group_task_id: 1
     l.tasks.append(Task(name="mtr=ketchup, smsz=0.07+/-0.002, initial sample(shake)", group_id=0, group_task_id=1))
     l.tasks[-1].skill_params_def = {
-        'p_pour_trg': SP('action', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
+        'p_pour_trg': SP('state', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
     }
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("ketchup",), (0.068, 0.072))
     l.tasks[-1].border_return = -100.
@@ -245,7 +245,7 @@ def Run(ct, *args):
     ### group_task_id: 0
     l.tasks.append(Task(name="mtr=nobounce, smsz=0.04+/-0.002, Rdatotal_gentle + Rskill(tip)", group_id=1, group_task_id=0))
     l.tasks[-1].skill_params_def = {
-        'p_pour_trg': SP('action', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
+        'p_pour_trg': SP('state', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
     }
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("nobounce",), (0.038, 0.042))
     l.tasks[-1].reward_callback = lambda: update_model({
@@ -256,7 +256,7 @@ def Run(ct, *args):
     ### group_task_id: 1
     l.tasks.append(Task(name="mtr=ketchup, smsz=0.07+/-0.002, Rdatotal_gentle + Rskill(shake)", group_id=1, group_task_id=1))
     l.tasks[-1].skill_params_def = {
-        'p_pour_trg': SP('action', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
+        'p_pour_trg': SP('state', 2, min=[0.2, 0.1], max=[1.2, 0.7]),
     }
     l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "custom", ("ketchup",), (0.068, 0.072))
     l.tasks[-1].reward_callback = lambda: update_model({
