@@ -3,6 +3,12 @@ import joblib
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
+import os
+
+
+def check_or_create_dir(dir_path):
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
 
 def CurrentPredict(l, key, xs):
@@ -24,8 +30,8 @@ def CreatePredictionLog(l, key, xs, ys):
     l.pred_true_log.append(log)
 
 
-def SetupDPL(ct, l, domain):
-    if 'log_dpl' in ct.__dict__ and (CPrint(1, 'Restart from existing DPL?'), AskYesNo())[1]:
+def SetupDPL(ct, l, domain, do_new_create = False):
+    if not do_new_create and 'log_dpl' in ct.__dict__ and (CPrint(1, 'Restart from existing DPL?'), AskYesNo())[1]:
         dpl = ct.log_dpl
         is_restarted = True
     else:
@@ -63,6 +69,7 @@ def SetupDPL(ct, l, domain):
 
     ct.log_dpl = dpl
 
+    check_or_create_dir(l.logdir)
     print 'Copying', PycToPy(__file__), 'to', PycToPy(l.logdir+os.path.basename(__file__))
     CopyFile(PycToPy(__file__), PycToPy(l.logdir+os.path.basename(__file__)))
 
