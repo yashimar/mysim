@@ -25,10 +25,10 @@ class Task:
         self.config_callback = lambda: None
         self.reward_callback = lambda: None
         self.pour_skill = ""
-        self.border_return = -100.
-        self.n_consider = 1
+        self.border_return = -1.
+        self.n_consider = 5
         self.return_log = []
-        self.n_least_episode = 1
+        self.n_least_episode = 10
 
 
     def TerminalCheck(self):
@@ -82,7 +82,7 @@ def ExecuteLearning(ct, l):
         tasks = dict([(task.group_task_id, task) for task in l.tasks if task.group_id == group_id])
         done_tmp_subtask, count = False, 0
         while not done_tmp_subtask:
-            task = random.choice(tasks)
+            task = tasks[random.choice(tasks.keys())]   # random.choice(tasks) has bug after done tasks.pop(...)
             l.dpl.d.SpaceDefs.update(task.skill_params_def)
             task.config_callback()
             task.reward_callback()
@@ -301,6 +301,7 @@ def Run(ct, *args):
         "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
         "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
     })
+    l.tasks[-1].n_least_episode = 20
     
     ###########################
     ### Group_id: 4
@@ -312,6 +313,7 @@ def Run(ct, *args):
         "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
         "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
     })
+    l.tasks[-1].n_least_episode = 20
 
     ### group_task_id: 1
     l.tasks.append(Task(name="mtr=ketchup, smsz=(0.03,0.055), Rdatotal_gentle + Rdaspill", group_id=4, group_task_id=1))
@@ -320,6 +322,7 @@ def Run(ct, *args):
         "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
         "Rdatotal_gentle": [['da_trg', 'da_total'], [REWARD_KEY], Rmodel("Fdatotal_gentle")],
     })
+    l.tasks[-1].n_least_episode = 20
     
     ###########################
     ### Group_id: 5
@@ -329,7 +332,7 @@ def Run(ct, *args):
         "Rdaspill": [['da_spill2'], [REWARD_KEY], Rmodel("Fdaspill")],
         "Rdapour_gentle": [['da_trg', 'da_pour'], [REWARD_KEY], Rmodel("Fdapour_gentle")],
     })
-    # l.tasks[-1].n_least_episode = 200
+    l.tasks[-1].n_least_episode = 100
 
     ############################################################################
     # Execute
