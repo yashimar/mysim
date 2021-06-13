@@ -2,7 +2,7 @@ from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
 from ....util import CreateExperimentsEvidenceFile
-from ..util import SetupDPL, CreateDPLLog
+from ..util import SetupDPL, CreateDPLLog, check_or_create_dir
 import task_domain as td
 Rmodel = td.Rmodel
 from copy import deepcopy
@@ -52,33 +52,32 @@ class Task:
         fp.close()
         
 
-def SetupSubtaskDPL(ct, l, domain, default_space_defs, group_id):
+def SetupSubtaskDPL(ct, l, td, group_id):
     l.logdir = l.logdir_base + "g{}/".format(group_id)
     if group_id == 0:
         l.db_src, l.opt_conf['model_dir'], l.opt_conf['db_src'] = "", "", ""
     else:
-        l.db_src = l.logdir_base + "g{}/".format(group_id-1)
+        l.db_src = l.logdir_base + "g{}".format(group_id-1)
         l.opt_conf['model_dir'] = "{}/models/".format(l.db_src)
         l.opt_conf['db_src'] = "{}/database.yaml".format(l.db_src)
+    check_or_create_dir(l.logdir)
+    CreateExperimentsEvidenceFile(l, __file__)
+    
+    domain = td.Domain()
+    domain.SpaceDefs.update(l.skill_params_def)
     l.dpl, fp = SetupDPL(ct, l, domain, do_new_create = True)
     l.default_config_callback()
     l.default_reward_callback()
-    l.dpl.d.SpaceDefs.update(default_space_defs)
     l.pour_skill = ""
-    CreateExperimentsEvidenceFile(l, __file__)
     return fp
 
 
 def ExecuteLearning(ct, l):
-    domain = td.Domain()
-    domain.SpaceDefs.update(l.skill_params_def)
-    default_space_defs = deepcopy(domain.SpaceDefs)
-    
     group_id = l.init_group_id
     max_group_id = max([task.group_id for task in l.tasks])
     done_all_subtask = False
     while not done_all_subtask:
-        fp = SetupSubtaskDPL(ct, l, domain, default_space_defs, group_id)
+        fp = SetupSubtaskDPL(ct, l, td, group_id)
         tasks = dict([(task.group_task_id, task) for task in l.tasks if task.group_id == group_id])
         done_tmp_subtask, count = False, 0
         while not done_tmp_subtask:
@@ -121,7 +120,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    t_index = 1
+    t_index = 5
     suff = "t{}/".format(str(t_index))
     l.logdir_base = ROOT_PATH + "curriculum5/c1"+"/"+suff
     
