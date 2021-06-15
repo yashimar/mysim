@@ -116,6 +116,7 @@ def ExecuteLearning(ct, l):
 
 def Run(ct, *args):
     l = TContainer(debug=True)
+    l.manual_skillparam = None
 
     ############################################################################
     # Specify save directory
