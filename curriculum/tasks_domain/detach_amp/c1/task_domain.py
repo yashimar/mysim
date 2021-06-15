@@ -236,6 +236,9 @@ def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For e
     elif l.mtr_smsz == 'custom':
         m_setup.SetMaterial(l, preset=l.custom_mtr[RandI(len(l.custom_mtr))])
         l.config.SrcSize2H = Rand(l.custom_smsz[0], l.custom_smsz[1])
+    elif l.mtr_smsz == 'ordering':
+        m_setup.SetMaterial(l, preset=l.custom_mtr[RandI(len(l.custom_mtr))])
+        l.config.SrcSize2H = l.custom_smsz[l.ep_count]
     else:
         raise(Exception("l.mtr_smsz is '"+l.mtr_smsz+"', but this is invalid name."))
     CPrint(3, 'l.config.ViscosityParam1=', l.config.ViscosityParam1)
@@ -243,6 +246,7 @@ def ConfigCallback(ct, l, sim):  # This will be modified by task's setup. (For e
 
 
 def Execute(ct, l):
+    l.ep_count = len(l.dpl.DB.Entry)
     l.node_best_tree = []
     l.pred_true_log = []
     l.user_viz = []  # Use in dpl_cmn
@@ -311,12 +315,16 @@ def Execute(ct, l):
         # l.xs.n0['shake_spd'] = SSA([0.8])
         # l.xs.n0['shake_range'] = SSA([0.08])
         # l.xs.n0['shake_angle'] = SSA([0.0])
-        res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
+        if l.manual_skillparam == None:
+            res = l.dpl.Plan('n0', l.xs.n0, l.interactive)
+            l.node_best_tree.append(res.PTree)
+        else:
+            for k,v in l.manual_skillparam(l.ep_count).items():
+                l.xs.n0[k] = v
         if l.pour_skill == "tip":
             l.xs.n0['skill'] = SSA([0])
         elif l.pour_skill == "shake":
             l.xs.n0['skill'] = SSA([1])
-        l.node_best_tree.append(res.PTree)
         l.idb.n0 = l.dpl.DB.AddToSeq(parent=None, name='n0', xs=l.xs.n0)
         l.xs.prev = l.xs.n0
         l.idb.prev = l.idb.n0
