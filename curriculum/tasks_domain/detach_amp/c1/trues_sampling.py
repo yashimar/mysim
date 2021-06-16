@@ -127,7 +127,7 @@ def Run(ct, *args):
     ##########################################################
     ### Manual skill parameter and setup parameter
     ##########################################################
-    s_idx, e_idx = 5*9, 5*10
+    s_idx, e_idx = 5*19, 5*20
     l.manual_skillparam = lambda i: {
         'gh_ratio': ([SSA([0.5])]*nx_episode*ny_episode)[i],
         'p_pour_trg': ([SSA(Vec([0.3,0.5]))]*nx_episode*ny_episode)[i],
