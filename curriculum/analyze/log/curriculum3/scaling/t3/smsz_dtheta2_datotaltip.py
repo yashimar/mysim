@@ -16,7 +16,7 @@ def Run(ct, *args):
     model_path = "curriculum3/scaling/full_scratch/t3/first100"
     save_sh_dir = "curriculum3/scaling/full_scratch/t3"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "nobounce_"
+    file_name_pref = "ketchup_"
     model_name = "Ftip_amount"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
@@ -27,7 +27,7 @@ def Run(ct, *args):
         "gh_abs": [0.25],
         "da_trg": [0.3],
         "size_srcmouth": [0.055*AMP_SMSZ],
-        "material2": NOBOUNCE,
+        "material2": KETCHUP,
         "dtheta1": [1.4e-2],
         "dtheta2": [0.002*AMP_DTHETA2],
     }
@@ -65,8 +65,8 @@ def Run(ct, *args):
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
         "da_total_tip": sh["n3ti1"]["da_total"][MEAN],
-        "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
-        # "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        # "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
+        "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
