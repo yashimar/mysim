@@ -2,9 +2,9 @@
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from ......util import *
-from .......tasks_domain.detach_datotal.util import Rmodel
-from .......tasks_domain.detach_datotal.scaling import task_domain as td
+from .....util import *
+from ......tasks_domain.detach_amp.util import Rmodel
+from ......tasks_domain.detach_amp.c1 import task_domain as td
 AMP_DTHETA2, AMP_SMSZ, AMP_SHAKE_RANGE = td.AMP_DTHETA2, td.AMP_SMSZ, td.AMP_SHAKE_RANGE
 
 
@@ -16,12 +16,13 @@ def Run(ct, *args):
     model_path = "curriculum5/c1/t5/g5"
     save_sh_dir = "curriculum5/c1/t5"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "ketchup_"
+    file_name_pref = "relearn5_ketchup_"
     model_name = "Ftip_amount"
-    model = None
-    # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
-    #     model = pickle.load(f)
-    #     model_path = "relearned model"
+    # model = None
+    suff = ""
+    with open(ROOT_PATH+"curriculum5/c1/t5/relearn/Ftipamount_test5"+"/{}_{}.pkl".format(model_name,suff), "rb") as f:
+        model = pickle.load(f)
+        model_path = "relearned model"
     
     xs_value = {
         "gh_abs": [0.25],
