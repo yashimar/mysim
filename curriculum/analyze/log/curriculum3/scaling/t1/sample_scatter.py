@@ -33,7 +33,7 @@ def Run(ct, *args):
         ["n4sar2", [(".r", 1), ]],
     ]
 
-    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=True)
+    sh, esh = get_true_and_bestpolicy_est_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate=False)
     df = pd.DataFrame({
         "p_pour_trg_x": sh["n0"]["p_pour_trg_0"][MEAN],
         "p_pour_trg_z": sh["n0"]["p_pour_trg_1"][MEAN],
@@ -99,6 +99,8 @@ def Run(ct, *args):
         (df[(df["skill"]==1)&(df["nobounce"]==True)], "shake, nobounce only"),
         (df[(df["skill"]==0)&(df["ketchup"]==True)], "tip, ketchup only"),
         (df[(df["skill"]==1)&(df["ketchup"]==True)], "shake, ketchup only"),
+        (df[(df["skill"]==0)&(df["ketchup"]==True)&(df["da_total"]<0.28)], "tip, ketchup, da_total < 0.28"),
+        (df[(df["skill"]==0)&(df["ketchup"]==True)&(df["da_total"]>=0.28)], "tip, ketchup, da_total >= 0.28"),
     ]
     
     xy_limit_pairs = [

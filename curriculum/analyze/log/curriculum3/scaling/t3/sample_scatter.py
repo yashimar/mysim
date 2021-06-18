@@ -84,6 +84,8 @@ def Run(ct, *args):
         (df[(df["skill"]==1)&(df["nobounce"]==True)], "shake, nobounce only"),
         (df[(df["skill"]==0)&(df["ketchup"]==True)], "tip, ketchup only"),
         (df[(df["skill"]==1)&(df["ketchup"]==True)], "shake, ketchup only"),
+        (df[(df["skill"]==0)&(df["ketchup"]==True)&(df["da_total"]<0.28)], "tip, ketchup, da_total < 0.28"),
+        (df[(df["skill"]==0)&(df["ketchup"]==True)&(df["da_total"]>=0.28)], "tip, ketchup, da_total >= 0.28"),
     ]
     
     xy_limit_pairs = [
