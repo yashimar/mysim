@@ -8,16 +8,18 @@ def Help():
 
 def Run(ct, *args):
     model_path_list = [
+        "curriculum3/scaling/full_scratch/t3/first100",
         "curriculum3/scaling/full_scratch/t3/second200",
     ]
     save_path = "curriculum3/scaling/full_scratch/t3"
     save_img_dir = PICTURE_DIR + save_path.replace("/","_") + "/"
     model_name = "Ftip_amount"
+    suff = "_relearn"
     
     train_dir_list = [ROOT_PATH + model_path + "/models/train" + "/" for model_path in model_path_list]
-    all_nn_log_files = sorted([nn_log_file for train_dir in train_dir_list for nn_log_file in glob.glob(train_dir+"*") if model_name in nn_log_file])
+    all_nn_log_files = sorted([nn_log_file for train_dir in train_dir_list for nn_log_file in glob.glob(train_dir+"*") if ((model_name in nn_log_file) and ("nn_log-" in nn_log_file))])
     
-    plt.close()
+    # plt.close()
     fig = plt.figure(figsize=(15,10))
     fig.suptitle(model_name+"\n"+save_path)
     for i, model_type in enumerate(MODEL_TYPES):
@@ -39,7 +41,7 @@ def Run(ct, *args):
         ax.set_ylabel("batch loss")
     
     check_or_create_dir(save_img_dir)
-    plt.savefig(save_img_dir + "batchloss_" + model_name +".png")
+    plt.savefig(save_img_dir + "batchloss_" + model_name + suff +".png")
     
     # fig = make_subplots(
     #     rows=2, cols=1, 
