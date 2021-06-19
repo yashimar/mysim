@@ -127,7 +127,7 @@ def Run(ct, *args):
     ##########################################################
     ### Manual skill parameter and setup parameter
     ##########################################################
-    s_idx, e_idx = 5*19, 5*20
+    s_idx, e_idx = int(5*5.8), int(5*6)
     l.manual_skillparam = lambda i: {
         'gh_ratio': ([SSA([0.5])]*nx_episode*ny_episode)[i],
         'p_pour_trg': ([SSA(Vec([0.3,0.5]))]*nx_episode*ny_episode)[i],
@@ -139,7 +139,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "{}/{}_{}".format("tip_ketchup_smsz_dthtea2", s_idx, e_idx)
+    suff = "{}/{}_{}".format("tip_nobounce_smsz_dthtea2", s_idx, e_idx)
     l.logdir_base = ROOT_PATH + "curriculum5/c1/trues_sampling/"+suff
     
     ##########################################################
@@ -237,8 +237,8 @@ def Run(ct, *args):
     ### Group_id: 0
     ###########################
     ### group_task_id: 0
-    l.tasks.append(Task(name="mtr=ketchup, smsz=(0.03,0.08), Tip", group_id=0, group_task_id=0))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "ordering", ("ketchup",), smsz_ordering)
+    l.tasks.append(Task(name="mtr=nobounce, smsz=(0.03,0.08), Tip", group_id=0, group_task_id=0))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "ordering", ("nobounce",), smsz_ordering)
     l.tasks[-1].border_return = -100.
     l.tasks[-1].pour_skill = "tip"
     l.tasks[-1].n_least_episode = nx_episode*(e_idx-s_idx)

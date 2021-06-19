@@ -8,18 +8,27 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum5/c1/t5/g5"
-    save_path = "curriculum5/c1/t5/relearn/Ftipamount_test"+str(args[0])
-    model_name = "Ftip_amount"
-    pref = ""
+    model_path = "curriculum3/scaling/full_scratch/t1/second200"
+    save_path = "curriculum3/scaling/full_scratch/t1/relearn/1e32e5"
+    model_name = "Famount"
     
-    model, DataX, DataY = remake_model(td, model_name, model_path, save_path, pref, is_prev_model=True)
+    model, DataX, DataY = remake_model(td, model_name, model_path, save_path, is_prev_model=True)
+    model.Options.update({
+        "batchsize": 10,  # default 10
+        "num_max_update": 5000,  # default 5000
+        'num_check_stop': 50,  # default 50
+        'loss_stddev_stop': 1e-3,  # default 1e-3
+        'loss_stddev_stop_err': 2e-5, #default None
+        'AdaDelta_rho': 0.9,  # default 0.9
+    })
     print(model.Options)
-    for x,y in zip(DataX, DataY):
+    for i,(x,y) in enumerate(zip(DataX, DataY)):
+        # if i>100:
+        #     continue
         model.Update(x.tolist(),y.tolist(),not_learn=False)
     
     check_or_create_dir(ROOT_PATH+save_path)
-    with open(ROOT_PATH+save_path+"/{}_{}.pkl".format(model_name, pref), "wb") as f:
+    with open(ROOT_PATH+save_path+"/{}.pkl".format(model_name), "wb") as f:
         pickle.dump(model, f)
         
         
