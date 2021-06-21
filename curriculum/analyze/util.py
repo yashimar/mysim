@@ -31,6 +31,8 @@ MEAN = "mean"
 SIGMA = "sigma"
 L_MEAN = "latent_mean"
 L_SIGMA = "latent_sigma"
+P_MEAN = "policy_mean"
+P_SIGMA = "policy_sigma"
 FORCE_TO_NONE = "froce_to_None"
 DEAL_AS_ZERO = "deal_as_zero"
 STAT_TYPES = [MEAN, SIGMA]
@@ -41,6 +43,7 @@ MINUS = "minus"
 TRUE = "true"
 NOBOUNCE = [0.1, 0.2, 0.0, 0.1]
 KETCHUP = [0.1, 0.01, 0.25, 0.2]
+
 
 def get_state_histories(save_sh_dir, log_name_list, node_states_dim_pair, recreate = False, root_path = ROOT_PATH):
     sh_path = root_path + save_sh_dir + "/state_history.yaml"
@@ -145,6 +148,17 @@ def operate_list(d_lists, operator=PLUS, deal_with_None=FORCE_TO_NONE):
     
     return s.tolist()
 
+
+def sh_skill_filter(sh, condition_list):
+    mean = [org if c else None for org, c in zip(sh[MEAN], condition_list)]
+    sigma = [org if c else None for org, c in zip(sh[SIGMA], condition_list)]
+    return (mean, sigma)
+
+
+def merged_sh_skill_filter(sh_condition_set_list):
+    mean = operate_list([sh_skill_filter(sh, c)[0] for sh, c in sh_condition_set_list], deal_with_None=DEAL_AS_ZERO)
+    sigma = operate_list([sh_skill_filter(sh, c)[1] for sh, c in sh_condition_set_list], deal_with_None=DEAL_AS_ZERO)
+    return (mean, sigma)
 
 def check_or_create_dir(dir_path):
     if not os.path.exists(dir_path):
@@ -361,7 +375,7 @@ def remake_model(td, model_name, model_path, save_path, is_prev_model=True):
     
     return model, DataX, DataY
 
-def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_pair, go_layout, suff_annotation, save_dir, file_name_pref, vis_condition_title_pair, updatemenu, is_prev_model=False):
+def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_outdim_lim_policyestMS_pair, go_layout, suff_annotation, save_dir, file_name_pref, vis_condition_title_pair, updatemenu, is_prev_model=False):
     domain = td.Domain()
     model_path = log_name_list[-1]
     if is_prev_model:
@@ -399,24 +413,26 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
                         pred_true_history[dynamics]["in{}".format(j)][TRUE].append(np.nan)
                         
     features = dict()
-    for state, dynamics, outdim, _ in vis_state_dynamics_outdim_lim_pair:
+    for state, dynamics, outdim, _, (policyestM, policyestS) in vis_state_dynamics_outdim_lim_policyestMS_pair:
         for stat_type in [MEAN, SIGMA, L_MEAN, L_SIGMA]:
             features["{}_pred {}".format(stat_type, state)] = pred_true_history[dynamics]["out{}".format(outdim)][stat_type]
         features["true {}".format(state)] = pred_true_history[dynamics]["out{}".format(outdim)][TRUE]
+        features["{}_pred {}".format(P_MEAN, state)] = policyestM
+        features["{}_pred {}".format(P_SIGMA, state)] = policyestS
         features["episode"] = np.arange(0,len(pred_true_history["Fmvtopour2"]["out0"][TRUE]))
     # df = pd.DataFrame(features)
     # df.dropna(inplace=True)
 
     fig = make_subplots(
-        rows=2*len(vis_state_dynamics_outdim_lim_pair), cols=1,
-        subplot_titles=sum([["{} {}".format(dynamics, state), "{} {} est_error".format(dynamics, state)] for dynamics, state, _, _ in vis_state_dynamics_outdim_lim_pair],[]),
+        rows=4*len(vis_state_dynamics_outdim_lim_policyestMS_pair), cols=1,
+        subplot_titles=sum([["{} {}".format(dynamics, state), "{} {} est_error".format(dynamics, state), "{} {} policy_pred".format(dynamics, state), "{} {} policy_pred_error".format(dynamics, state)] for dynamics, state, _, _, _ in vis_state_dynamics_outdim_lim_policyestMS_pair],[]),
         # horizontal_spacing = 0.5,
         # specs = [[{},] for _ in range(2*len(vis_state_dynamics_outdim_lim_pair))],
         # vertical_spacing = 0.05,
     )
     go_layout.update({'annotations': [{"xanchor": "center", "opacity": 0.8, 'bordercolor': "rgba(0,0,0,0)", 'bgcolor': "rgba(0,0,0,0)"}]})
     fig.update_layout(**go_layout)
-    for r, (state, dynamics, _, lim) in enumerate(vis_state_dynamics_outdim_lim_pair):
+    for r, (state, dynamics, _, lim, _) in enumerate(vis_state_dynamics_outdim_lim_policyestMS_pair):
         for _, condition, _ in vis_condition_title_pair:
             df = pd.DataFrame(features)[condition]
             anno_text = ["<b>true inputs</b><br />"+"".join(["　in{}: {}<br />".format(j, pred_true_history[dynamics]["in{}".format(j)][TRUE][i]) for j in range(dynamics_iodim_pair[dynamics][0])]) for i in df.index]
@@ -426,7 +442,7 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
                 mode='markers',
                 name='pred mean+/-sigma',
                 text = anno_text,
-                legendgroup=str(2*r+1),
+                legendgroup=str(4*r+1),
                 error_y=dict(
                     type="data",
                     symmetric=True,
@@ -436,13 +452,13 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
                     width=3,
                 ),
                 marker=dict(color='orange', size=8)
-            ), 2*r+1, 1)
+            ), 4*r+1, 1)
             fig.add_trace(go.Scatter(
                 x = df["episode"], y=df["latent_mean_pred {}".format(state)],
                 mode='markers',
                 name='latent_pred mean+/-sigma',
                 text = anno_text,
-                legendgroup=str(2*r+1),
+                legendgroup=str(4*r+1),
                 error_y=dict(
                     type="data",
                     symmetric=True,
@@ -452,47 +468,104 @@ def transition_plot(td, log_name_list, dynamics_iodim_pair, vis_state_dynamics_o
                     width=3,
                 ),
                 marker=dict(color='purple', size=8)
-            ), 2*r+1, 1)
+            ), 4*r+1, 1)
             fig.add_trace(go.Scatter(
                 x = df["episode"], y=df["true {}".format(state)],
                 mode='markers',
                 name='true',
                 text = anno_text,
-                legendgroup=str(2*r+1),
+                legendgroup=str(4*r+1),
                 marker=dict(color='blue', size=8)
-            ), 2*r+1, 1)
-            fig['layout']['xaxis{}'.format(2*r+1)]['title'] = "episode"
-            fig['layout']['yaxis{}'.format(2*r+1)]['title'] = "{}".format(state)
-            fig['layout']['yaxis{}'.format(2*r+1)]['range'] = lim
+            ), 4*r+1, 1)
+            fig['layout']['xaxis{}'.format(4*r+1)]['title'] = "episode"
+            fig['layout']['yaxis{}'.format(4*r+1)]['title'] = "{}".format(state)
+            fig['layout']['yaxis{}'.format(4*r+1)]['range'] = lim
             
             fig.add_trace(go.Scatter(
                 x = df["episode"], y=df["mean_pred {}".format(state)]-df["true {}".format(state)],
                 mode='markers',
                 name='pred mean - true',
                 text = anno_text,
-                legendgroup=str(2*r+2),
+                legendgroup=str(4*r+2),
                 marker=dict(color='orange', size=8)
-            ), 2*r+2, 1)
+            ), 4*r+2, 1)
             fig.add_trace(go.Scatter(
                 x = df["episode"], y=df["latent_mean_pred {}".format(state)]-df["true {}".format(state)],
                 mode='markers',
                 name='latent_pred mean - true',
                 text = anno_text,
-                legendgroup=str(2*r+2),
+                legendgroup=str(4*r+2),
                 marker=dict(color='purple', size=8)
-            ), 2*r+2, 1)
+            ), 4*r+2, 1)
             fig.add_shape(type='line',
                 x0=0,
                 x1=max(df["episode"]) if not len(df["episode"]) == 0 else 1,
                 y0=0,
                 y1=0,
                 line=dict(color='blue'),
-                row=2*r+2,
+                row=4*r+2,
                 col=1,
             )
-            fig['layout']['xaxis{}'.format(2*r+2)]['title'] = "episode"
-            fig['layout']['yaxis{}'.format(2*r+2)]['title'] = "est_error {}".format(state)
-            fig['layout']['yaxis{}'.format(2*r+2)]['range'] = lim
+            fig['layout']['xaxis{}'.format(4*r+2)]['title'] = "episode"
+            fig['layout']['yaxis{}'.format(4*r+2)]['title'] = "est_error {}".format(state)
+            fig['layout']['yaxis{}'.format(4*r+2)]['range'] = lim
+            
+            fig.add_trace(go.Scatter(
+                x = df["episode"], y=df["mean_pred {}".format(state)],
+                mode='markers',
+                name='pred mean+/-sigma',
+                text = anno_text,
+                legendgroup=str(4*r+3),
+                error_y=dict(
+                    type="data",
+                    symmetric=True,
+                    array=df["sigma_pred {}".format(state)].values.tolist(),
+                    color='orange',
+                    thickness=1.5,
+                    width=3,
+                ),
+                marker=dict(color='orange', size=8)
+            ), 4*r+3, 1)
+            fig.add_trace(go.Scatter(
+                x = df["episode"], y=df["policy_mean_pred {}".format(state)],
+                mode='markers',
+                name='policy_pred mean+/-sigma',
+                text = anno_text,
+                legendgroup=str(4*r+3),
+                error_y=dict(
+                    type="data",
+                    symmetric=True,
+                    array=df["policy_sigma_pred {}".format(state)].values.tolist(),
+                    color='green',
+                    thickness=1.5,
+                    width=3,
+                ),
+                marker=dict(color='green', size=8)
+            ), 4*r+3, 1)
+            fig['layout']['xaxis{}'.format(4*r+3)]['title'] = "episode"
+            fig['layout']['yaxis{}'.format(4*r+3)]['title'] = "{}".format(state)
+            fig['layout']['yaxis{}'.format(4*r+3)]['range'] = lim
+            
+            fig.add_trace(go.Scatter(
+                x = df["episode"], y=df["mean_pred {}".format(state)]-df["policy_mean_pred {}".format(state)],
+                mode='markers',
+                name='pred mean - true',
+                text = anno_text,
+                legendgroup=str(4*r+4),
+                marker=dict(color='orange', size=8)
+            ), 4*r+4, 1)
+            fig.add_shape(type='line',
+                x0=0,
+                x1=max(df["episode"]) if not len(df["episode"]) == 0 else 1,
+                y0=0,
+                y1=0,
+                line=dict(color='green'),
+                row=4*r+4,
+                col=1,
+            )
+            fig['layout']['xaxis{}'.format(4*r+4)]['title'] = "episode"
+            fig['layout']['yaxis{}'.format(4*r+4)]['title'] = "pred - policy_pred {}".format(state)
+            fig['layout']['yaxis{}'.format(4*r+4)]['range'] = lim
     updatemenu(fig)
     check_or_create_dir(save_dir)
     plotly.offline.plot(fig, filename = save_dir + file_name_pref + "transition.html", auto_open=False)
