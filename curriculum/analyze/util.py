@@ -229,7 +229,7 @@ def pred_test(model):
     # print(loss.requires_grad)
     
 
-def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=None, updatemenu=None, model=None, is_prev_model=False):
+def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, input_vars, X, Y, z, reward_function, scatter_obj_list=None, updatemenu=None, model=None, is_prev_model=False):
     if model == None:
         domain = td.Domain()
         if is_prev_model:
@@ -257,7 +257,7 @@ def plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, 
             "range": reward_function["range"]}
         }
     for input in inputs:
-        pred = model.Predict(input, with_var=True)
+        pred = model.Predict(input, input_vars, with_var=True)
         output_idx = z["output_dim"]
         Z["dynamics"][MEAN].append(pred.Y[output_idx])
         Z["dynamics"][SIGMA].append(np.sqrt(pred.Var[output_idx,output_idx]))
