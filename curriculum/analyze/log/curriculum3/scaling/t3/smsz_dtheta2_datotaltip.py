@@ -13,7 +13,7 @@ def Help():
 
 
 def Run(ct, *args):
-    model_path = "curriculum3/scaling/full_scratch/t3/first100"
+    model_path = "curriculum3/scaling/full_scratch/t3/second200"
     save_sh_dir = "curriculum3/scaling/full_scratch/t3"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
     file_name_pref = "ketchup_"

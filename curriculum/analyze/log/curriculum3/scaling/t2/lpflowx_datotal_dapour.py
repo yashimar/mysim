@@ -16,29 +16,34 @@ def Run(ct, *args):
     model_path = "curriculum3/scaling/full_scratch/t2/second200"
     save_sh_dir = "curriculum3/scaling/full_scratch/t2"
     save_dir = PICTURE_DIR + save_sh_dir.replace("/","_") + "/"
-    file_name_pref = "ketchup_"
-    model_name = "Ftip_amount"
+    file_name_pref = "ketchup_datotalstd02_"
+    model_name = "Famount"
     model = None
     # with open(ROOT_PATH+"test/mms4"+"/{}_{}.pkl".format(model_name,file_name_pref), "rb") as f:
     #     model = pickle.load(f)
     #     model_path = "relearned model"
     
     xs_value = {
-        "gh_abs": [0.25],
+        'lp_pour_x': [-0.11],
+        'lp_pour_y': [0.0],
+        'lp_pour_z': [0.142],
         "da_trg": [0.3],
-        "size_srcmouth": [0.055*AMP_SMSZ],
         "material2": KETCHUP,
-        "dtheta1": [1.4e-2],
-        "dtheta2": [0.002*AMP_DTHETA2],
+        "da_total": [0.3],
+        "lp_flow_x": [-0.022],
+        "lp_flow_y": [0.0],
+        "flow_var": [0.206],
     }
-    input_features = ["gh_abs","da_trg","size_srcmouth","material2","dtheta1","dtheta2"]
-    X = {"feature": "size_srcmouth", "values": np.linspace(0.02,0.09,100)*AMP_SMSZ}
-    Y = {"feature": "dtheta2", "values": np.linspace(0.0,0.025,100)*AMP_DTHETA2}
-    z = {"feature": "da_total_tip", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [-0.05,0.1]}}
+    input_features = ["lp_pour_x","lp_pour_y","lp_pour_z","da_trg","material2","da_total","lp_flow_x","lp_flow_y","flow_var"]
+    input_vars = [0.,0.,0.,0.,0.,0.,0.,0.,0.2**2,0.,0.,0.]
+    # input_vars = [0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]
+    X = {"feature": "lp_flow_x", "values": np.linspace(-0.4,0.6,100)}
+    Y = {"feature": "da_total", "values": np.linspace(-0.2,0.6,100)}
+    z = {"feature": "da_pour", "output_dim": 0, "range": {MEAN: [-0.05,0.6], SIGMA: [-0.05,0.1]}}
     reward_function = {
-        "name": "Rdatotal",
-        "model": Rmodel("Fdatotal_gentle"),
-        "input_features": ["da_trg","da_total_tip"],
+        "name": "Rdapour",
+        "model": Rmodel("Fdapour_gentle"),
+        "input_features": ["da_trg","da_pour"],
         "format_mean": lambda pred: [pred.Y[0]],
         "format_var": lambda pred: [pred.Var[0,0]],
         "range": {MEAN: [-3.,0.], SIGMA: [-0.05,2.0]}
@@ -64,11 +69,16 @@ def Run(ct, *args):
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
         "lp_pour_x": sh["n2b"]["lp_pour_0"][MEAN],
         "lp_pour_z": sh["n2b"]["lp_pour_2"][MEAN],
-        "da_total_tip": sh["n3ti1"]["da_total"][MEAN],
+        "da_total": operate_list([sh["n3ti1"]["da_total"][MEAN], sh["n3sa1"]["da_total"][MEAN]], deal_with_None=DEAL_AS_ZERO),
+        "lp_flow_x": operate_list([sh["n3ti2"]["lp_flow_0"][MEAN], sh["n3sa2"]["lp_flow_0"][MEAN]], deal_with_None=DEAL_AS_ZERO),
+        # "lp_flow_y": operate_list([sh["n3ti2"]["lp_flow_1"][MEAN], sh["n3sa2"]["lp_flow_1"][MEAN]], deal_with_None=DEAL_AS_ZERO),
+        "flow_var": operate_list([sh["n3ti2"]["flow_var"][MEAN], sh["n3sa2"]["flow_var"][MEAN]], deal_with_None=DEAL_AS_ZERO),
+        "da_pour": operate_list([sh["n4ti"]["da_pour"][MEAN], sh["n4sa"]["da_pour"][MEAN]], deal_with_None=DEAL_AS_ZERO),
         # "nobounce": [True if m2 == 0.0 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "ketchup": [True if m2 == 0.25 else None for m2 in sh["n0"]["material2_2"][MEAN]],
         "size_srcmouth": sh["n0"]["size_srcmouth"][MEAN],
         "dtheta2": sh["n0"]["dtheta2"][MEAN],
+        "skill": sh["n2c"]["skill"][MEAN],
         "episode": np.arange(0,len(sh["n0"]["dtheta2"][MEAN])),
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })
@@ -77,9 +87,11 @@ def Run(ct, *args):
 
     scatter_condition_title_pair = [
         ("full scatter", [True]*len(df)),
-        ("scatter c1 -0.2<lp_pour_x<0", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0))),
-        ("scatter c2 0.2<lp_pour_z<0.3", ((0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
-        ("scatter c1&c2", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0) & (0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
+        ("Tip", df["skill"]==0),
+        ("Shake", df["skill"]==1),
+        # ("scatter c1 -0.2<lp_pour_x<0", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0))),
+        # ("scatter c2 0.2<lp_pour_z<0.3", ((0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
+        # ("scatter c1&c2", ((-0.2<df["lp_pour_x"])&(df["lp_pour_x"]<0.0) & (0.2<df["lp_pour_z"])&(df["lp_pour_z"]<0.3))),
         ("no scatter", [False]*len(df)),
     ]
     scatter_obj_list = [
@@ -129,5 +141,5 @@ def Run(ct, *args):
         'hoverdistance': 5,
     }
         
-    plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, X, Y, z, reward_function, scatter_obj_list=scatter_obj_list, updatemenu=updatemenu, model=model, is_prev_model=True)
+    plot_dynamics_heatmap(td, model_path, save_dir, file_name_pref, model_name, xs_value, input_features, input_vars, X, Y, z, reward_function, scatter_obj_list=scatter_obj_list, updatemenu=updatemenu, model=model, is_prev_model=True)
     

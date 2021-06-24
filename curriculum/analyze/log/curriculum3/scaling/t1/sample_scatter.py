@@ -18,7 +18,7 @@ def Run(ct, *args):
     save_img_dir = PICTURE_DIR + save_sh_dir.replace("/", "_") + "/"
 
     node_states_dim_pair = [
-        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1), ("p_pour_trg", 0)]],
+        ["n0", [("size_srcmouth", 1), ("material2", 4), ("dtheta2", 1), ("shake_spd", 1), ("shake_range", 1), ("shake_angle", 1), ("p_pour_trg", 2)]],
         ["n2b", [("lp_pour", 3), ]],
         ["n2c", [("skill", 1), ]],
         ["n3ti1", [("da_total", 1),]],
@@ -60,6 +60,8 @@ def Run(ct, *args):
         "skill": sh["n2c"]["skill"][MEAN],
         "episode": np.arange(0, len(sh["n0"]["size_srcmouth"][MEAN])),
         # "Rdapour_Rdaspill": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN]], deal_with_None=FORCE_TO_NONE),
+        "Rdapour": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4sar1"][".r"][MEAN]], deal_with_None=DEAL_AS_ZERO),
+        "Rdaspill": operate_list([sh["n4tir2"][".r"][MEAN], sh["n4sar2"][".r"][MEAN]], deal_with_None=DEAL_AS_ZERO),
         "Rdapour_Rdaspill": operate_list([sh["n4tir1"][".r"][MEAN], sh["n4tir2"][".r"][MEAN], sh["n4sar1"][".r"][MEAN], sh["n4sar2"][".r"][MEAN]], deal_with_None=DEAL_AS_ZERO),
         "comment": [""]*len(sh["n0"]["size_srcmouth"][MEAN]),
     })
@@ -69,6 +71,11 @@ def Run(ct, *args):
         elif "dtheta2" in c:
             df[c][df["skill"]!=0] = None
     # df.dropna(inplace=True)
+    for i,row in df.iterrows():
+        if (row["da_total"] <= 0.25):
+            df["comment"][i] += "<br />　量が出ていない."
+        if (row["da_spill"] >= 0.7):
+            df["comment"][i] += "<br />　こぼしている."
     df["comment"][71] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
                          "<br />　目標量より出ているが, 殆ど溢す."
     df["comment"][90] = "<br />　予測lppour_xと実際のlppour_xが大きく異なる."+\
@@ -88,20 +95,37 @@ def Run(ct, *args):
                          "<br />　衝突は起きていない."+\
                          "<br />　目標量より出ているが, 殆ど溢す."
     df["comment"][188] = "<br />　lppour_x,lpflow_xのどちらの予測誤差も大きい."
-        
     vis_df_title_pair = [
         (df, "full data"), 
+        (df[df["Rdapour"]<-1], "Rdapour < -1"),
+        (df[df["Rdaspill"]<-1], "Rdaspill < -1"),
+        (df[df["Rdapour_Rdaspill"]<-1], "Rdapour+Rdaspill < -1"),
+        (df[df["da_total"]<0.28], "da_total < 0.28"),
+        (df[df["da_spill"]>=0.7], "da_spill >= 0.7"),
         (df[df["skill"]==0], "tip"),
         (df[df["skill"]==1], "shake"),
         (df[df["nobounce"]==True], "all skill, nobounce only"),
         (df[df["ketchup"]==True], "all skill, ketchup only"),
-        (df[(df["skill"]==0)&(df["nobounce"]==True)], "tip, nobounce only"),
-        (df[(df["skill"]==1)&(df["nobounce"]==True)], "shake, nobounce only"),
-        (df[(df["skill"]==0)&(df["ketchup"]==True)], "tip, ketchup only"),
-        (df[(df["skill"]==1)&(df["ketchup"]==True)], "shake, ketchup only"),
-        (df[(df["skill"]==0)&(df["ketchup"]==True)&(df["da_total"]<0.28)], "tip, ketchup, da_total < 0.28"),
-        (df[(df["skill"]==0)&(df["ketchup"]==True)&(df["da_total"]>=0.28)], "tip, ketchup, da_total >= 0.28"),
-    ]
+    ] + sum([[
+        (df[(df["skill"]==i)&(df["Rdapour"]<-1)], "{}, Rdapour < -1".format(skill)),
+        (df[(df["skill"]==i)&(df["Rdaspill"]<-1)], "{}, Rdaspill < -1".format(skill)),
+        (df[(df["skill"]==i)&(df["Rdapour_Rdaspill"]<-1)&(df["nobounce"]==True)], "{}, nobounce, Rdapour+Rdaspill < -1".format(skill)),
+        (df[(df["skill"]==i)&(df["Rdapour_Rdaspill"]<-1)&(df["ketchup"]==True)], "{}, ketchup, Rdapour+Rdaspill < -1".format(skill)),
+        (df[(df["skill"]==i)&(df["nobounce"]==True)], "{}, nobounce only".format(skill)),
+        (df[(df["skill"]==i)&(df["ketchup"]==True)], "{}, ketchup only".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]<0.28)], "{}, da_total < 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]>=0.28)], "{}, da_total >= 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]<0.28)&(df["ketchup"]==True)], "{}, ketchup, da_total < 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]>=0.28)&(df["ketchup"]==True)], "{}, ketchup, da_total >= 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]<0.28)&(df["nobounce"]==True)], "{}, nobounce, da_total < 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]>=0.28)&(df["nobounce"]==True)], "{}, nobounce, da_total >= 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]>=0.7)], "{}, da_spill >= 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]<0.7)], "{}, da_spill < 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]>=0.7)&(df["ketchup"]==True)], "{}, ketchup, da_spill >= 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]<0.7)&(df["ketchup"]==True)], "{}, ketchup, da_spill < 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]>=0.7)&(df["nobounce"]==True)], "{}, nobounce, da_spill >= 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]<0.7)&(df["nobounce"]==True)], "{}, nobounce, da_spill < 0.7".format(skill)),
+    ] for skill,i in [("Tip",0),("Shake",1)]],[])
     
     xy_limit_pairs = [
         ("episode", "Rdapour_Rdaspill", [-10, len(df)+10], [-40,0.5]),
@@ -109,6 +133,7 @@ def Run(ct, *args):
         ("lp_pour_x", "lp_pour_z", [-0.5, 0.7], [-0.2, 0.6]),
         ("lp_pour_x", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
         ("lp_pour_z", "lp_flow_x", [-0.5, 0.7], [-0.5, 0.7]),
+        ("size_srcmouth", "dtheta2", [0.01*AMP_SMSZ, 0.10*AMP_SMSZ], [0.*AMP_DTHETA2, 0.025*AMP_DTHETA2]),
         ("lp_pour_x", "da_total", [-0.5, 0.7], [-0.1, 0.6]),
         ("lp_pour_z", "da_total", [-0.2, 0.6], [-0.1, 0.6]),
         ("dtheta2", "da_total", [0.*AMP_DTHETA2, 0.025*AMP_DTHETA2], [-0.1, 0.6]),

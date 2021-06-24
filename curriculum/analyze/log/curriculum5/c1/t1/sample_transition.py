@@ -20,19 +20,19 @@ def Run(ct, *args):
     save_sh_dir = "curriculum5/c1/t1"
     file_name_pref = ""
     dynamics_iodim_pair = {"Fmvtopour2": (3, 3), "Ftip_amount": (9, 1), "Ftip_flow": (12, 3), "Fshake_amount": (11, 1), "Fshake_flow": (14, 3), "Famount": (12, 2)}
-    vis_state_dynamics_outdim_lim_pair = [
-        ("lp_pour_x", "Fmvtopour2", 0, (-0.5,0.7)),
-        ("lp_pour_z", "Fmvtopour2", 2, (-0.2,0.6)),
-        ("da_total_tip", "Ftip_amount", 0, (-0.1,0.9)),
-        ("lp_flow_x_tip", "Ftip_flow", 0, (-0.3,1.5)),
-        ("lp_flow_y_tip", "Ftip_flow", 1, (-0.1,0.1)),
-        ("flow_var_tip", "Ftip_flow", 2, (0.1,1.0)),
-        ("da_total_shake", "Fshake_amount", 0, (-0.1,0.9)),
-        ("lp_flow_x_shake", "Fshake_flow", 0, (-0.3,1.5)),
-        ("lp_flow_y_shake", "Fshake_flow", 1, (-0.1,0.1)),
-        ("flow_var_shake", "Fshake_flow", 2, (0.1,1.0)),
-        ("da_pour", "Famount", 0, (-0.1,0.9)),
-        ("da_spill2", "Famount", 1, (-0.1,7)),
+    vis_state_dynamics_outdim_lim_policyestMS_pair = lambda esh, c_tip, c_shake: [
+        ("lp_pour_x", "Fmvtopour2", 0, (-0.5,0.7), (esh["n2b"]["lp_pour_0"][MEAN], esh["n2b"]["lp_pour_0"][SIGMA])),
+        ("lp_pour_z", "Fmvtopour2", 2, (-0.2,0.6), (esh["n2b"]["lp_pour_2"][MEAN], esh["n2b"]["lp_pour_2"][SIGMA])),
+        ("da_total_tip", "Ftip_amount", 0, (-0.1,0.9), sh_skill_filter(esh["n3ti1"]["da_total"], c_tip)),
+        ("lp_flow_x_tip", "Ftip_flow", 0, (-0.3,1.5), sh_skill_filter(esh["n3ti2"]["lp_flow_0"], c_tip)),
+        ("lp_flow_y_tip", "Ftip_flow", 1, (-0.1,0.1), sh_skill_filter(esh["n3ti2"]["lp_flow_1"], c_tip)),
+        ("flow_var_tip", "Ftip_flow", 2, (0.1,1.0), sh_skill_filter(esh["n3ti2"]["flow_var"], c_tip)),
+        ("da_total_shake", "Fshake_amount", 0, (-0.1,0.9), sh_skill_filter(esh["n3sa1"]["da_total"], c_shake)),
+        ("lp_flow_x_shake", "Fshake_flow", 0, (-0.3,1.5), sh_skill_filter(esh["n3sa2"]["lp_flow_0"], c_shake)),
+        ("lp_flow_y_shake", "Fshake_flow", 1, (-0.1,0.1), sh_skill_filter(esh["n3sa2"]["lp_flow_1"], c_shake)),
+        ("flow_var_shake", "Fshake_flow", 2, (0.1,1.0), sh_skill_filter(esh["n3sa2"]["flow_var"], c_shake)),
+        ("da_pour", "Famount", 0, (-0.1,0.9), merged_sh_skill_filter([(esh["n4ti"]["da_pour"],c_tip), (esh["n4sa"]["da_pour"],c_shake)])),
+        ("da_spill2", "Famount", 0, (-0.1,0.9), merged_sh_skill_filter([(esh["n4ti"]["da_spill2"],c_tip), (esh["n4sa"]["da_spill2"],c_shake)])),
     ]
     
     node_states_dim_pair = [

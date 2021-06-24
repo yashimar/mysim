@@ -75,22 +75,10 @@ def Run(ct, *args):
             df[c][df["skill"]!=0] = None
     # df.dropna(inplace=True)
     for i,row in df.iterrows():
-    #     if i < 125:
-    #         continue
-    #     if row["Rdapour_Rdaspill"] < -1.0:
-    #         df["comment"][i] += "<br />　{}, {:.3f}, {}".format("nobouce" if row["nobounce"] == True else "ketchup", row["size_srcmouth"], "Tip" if row["skill"]==0 else "Shake")
-    #         if (row["size_srcmouth"] < 0.55 and row["nobounce"] == True) or (row["size_srcmouth"] >= 0.55 and row["ketchup"] == True):
-    #             df["comment"][i] += "<br />　id3で習得すべき状況."
-    #             if (0.38 < row["size_srcmouth"] < 0.42 and row["nobounce"] == True):
-    #                 df["comment"][i] += "<br />　id1,2でできているはずのサブタスク."
-    #             if (0.68 < row["size_srcmouth"] < 0.72 and row["ketchup"] == True):
-    #                 df["comment"][i] += "<br />　id1,2でできているはずのサブタスク."
-    #         if (row["size_srcmouth"] >= 0.55 and row["nobounce"] == True) or (row["size_srcmouth"] < 0.55 and row["ketchup"] == True):
-    #             df["comment"][i] += "<br />　id4で習得すべき状況."
-            if (row["da_total"] <= 0.25):
-                df["comment"][i] += "<br />　量が出ていない."
-            if (row["da_spill"] >= 0.7):
-                df["comment"][i] += "<br />　こぼしている."
+        if (row["da_total"] <= 0.25):
+            df["comment"][i] += "<br />　量が出ていない."
+        if (row["da_spill"] >= 0.7):
+            df["comment"][i] += "<br />　こぼしている."
     
     vis_df_title_pair = [
         (df, "full data"), 
@@ -112,8 +100,16 @@ def Run(ct, *args):
         (df[(df["skill"]==i)&(df["ketchup"]==True)], "{}, ketchup only".format(skill)),
         (df[(df["skill"]==i)&(df["da_total"]<0.28)], "{}, da_total < 0.28".format(skill)),
         (df[(df["skill"]==i)&(df["da_total"]>=0.28)], "{}, da_total >= 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]<0.28)&(df["ketchup"]==True)], "{}, ketchup, da_total < 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]>=0.28)&(df["ketchup"]==True)], "{}, ketchup, da_total >= 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]<0.28)&(df["nobounce"]==True)], "{}, nobounce, da_total < 0.28".format(skill)),
+        (df[(df["skill"]==i)&(df["da_total"]>=0.28)&(df["nobounce"]==True)], "{}, nobounce, da_total >= 0.28".format(skill)),
         (df[(df["skill"]==i)&(df["da_spill"]>=0.7)], "{}, da_spill >= 0.7".format(skill)),
         (df[(df["skill"]==i)&(df["da_spill"]<0.7)], "{}, da_spill < 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]>=0.7)&(df["ketchup"]==True)], "{}, ketchup, da_spill >= 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]<0.7)&(df["ketchup"]==True)], "{}, ketchup, da_spill < 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]>=0.7)&(df["nobounce"]==True)], "{}, nobounce, da_spill >= 0.7".format(skill)),
+        (df[(df["skill"]==i)&(df["da_spill"]<0.7)&(df["nobounce"]==True)], "{}, nobounce, da_spill < 0.7".format(skill)),
     ] for skill,i in [("Tip",0),("Shake",1)]],[])
     
     xy_limit_pairs = [
