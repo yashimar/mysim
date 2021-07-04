@@ -46,7 +46,7 @@ class Domain:
         
         idx_smsz = RandI(len(self.smsz))
         smsz = self.smsz[idx_smsz]
-        true_opt_dtheta2_idx = np.argmax(self.datotal[RFUNC][:,idx_smsz])
+        true_opt_dtheta2_idx = np.argmax(self.datotal[RFUNC][:, idx_smsz])
         true_opt_dtheta2 = self.dtheta2[true_opt_dtheta2_idx]
         true_opt_r = self.datotal[RFUNC][true_opt_dtheta2_idx, idx_smsz]
         
@@ -56,20 +56,19 @@ class Domain:
             est_datotal = 0
             est_opt_Er = 0
         else:
-            # raise(Exception("Not implemented"))
             est_nn_Er, est_nn_Sr = [], []
             for dtheta2 in self.dtheta2:
-                est_datotal = self.nnmodel.model.Predict(x=[smsz, dtheta2], with_var=True)
-                est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var=np.sqrt(est_datotal.Var[0].item()), with_var=True)
+                est_datotal = self.nnmodel.model.Predict(x=[dtheta2, smsz], with_var=True)
+                est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var=est_datotal.Var[0].item(), with_var=True)
                 est_nn_Er.append(est_nn.Y.item())
-                est_nn_Sr.append(est_nn.Var[0,0].item())
+                est_nn_Sr.append(np.sqrt(est_nn.Var[0,0]).item())
             idx_est_opt_dtheta2 = np.argmax(est_nn_Er)
             est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
-            est_datotal = self.nnmodel.model.Predict(x=[smsz, est_opt_dtheta2], with_var=True).Y[0].item()
+            est_datotal = self.nnmodel.model.Predict(x=[est_opt_dtheta2, smsz], with_var=True).Y[0].item()
             est_opt_Er = est_nn_Er[idx_est_opt_dtheta2]
         
-        true_datotal = self.datotal[TRUE][idx_smsz, idx_est_opt_dtheta2]
-        self.nnmodel.learn([smsz, est_opt_dtheta2], [true_datotal])
+        true_datotal = self.datotal[TRUE][idx_est_opt_dtheta2, idx_smsz]
+        self.nnmodel.learn([est_opt_dtheta2, smsz], [true_datotal])
         true_r_at_est_opt_dthtea2 = rfunc(true_datotal)
         
         self.log["ep"].append(ep)
@@ -131,7 +130,7 @@ class NNModel:
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
     name = "test"
-    num_ep = 10
+    num_ep = 200
     
     logdir = base_logdir + "logs/{}/".format(name)
     modeldir = logdir + "{}/".format("model")
