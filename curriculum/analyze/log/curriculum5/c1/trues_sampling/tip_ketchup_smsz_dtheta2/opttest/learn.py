@@ -15,7 +15,7 @@ def Help():
 
 
 class Domain:
-    def __init__(self, nnmodel, logdir, n_rand_sample = 5):
+    def __init__(self, nnmodel, logdir, n_rand_sample = 5, n_learn_step = 1):
         self.smsz = np.linspace(0.03,0.08,100)
         self.dtheta2 = np.linspace(0.1,1,100)[::-1]
         self.datotal = {TRUE: np.ones((100,100))*(-100), RFUNC: np.ones((100,100))*(-100)}
@@ -33,6 +33,7 @@ class Domain:
         }
         self.logdir = logdir
         self.n_rand_sample = n_rand_sample
+        self.n_learn_step = n_learn_step
 
     def setup(self):
         self.datotal[TRUE] = np.load(SRC_PATH+"datotal.npy")
@@ -68,8 +69,12 @@ class Domain:
             est_opt_Er = est_nn_Er[idx_est_opt_dtheta2]
         
         true_datotal = self.datotal[TRUE][idx_est_opt_dtheta2, idx_smsz]
-        self.nnmodel.learn([est_opt_dtheta2, smsz], [true_datotal])
         true_r_at_est_opt_dthtea2 = rfunc(true_datotal)
+        
+        if ep % self.n_learn_step == 0:
+            self.nnmodel.update([est_opt_dtheta2, smsz], [true_datotal], not_learn = False)
+        else:
+            self.nnmodel.update([est_opt_dtheta2, smsz], [true_datotal], not_learn = True)
         
         self.log["ep"].append(ep)
         self.log["smsz"].append(smsz.item())
@@ -96,8 +101,9 @@ class Domain:
             pickle.dump(dm, f)
         
 class NNModel:
-    def __init__(self, modeldir):
-        self.basedir = "{}/".format(modeldir)
+    def __init__(self, modeldir, nn_options):
+        self.basedir = modeldir
+        self.nn_options = nn_options
         self.model = None
     
     def setup(self):
@@ -109,10 +115,12 @@ class NNModel:
             'name': 'Fdatotal',
             'loss_stddev_stop': 1.0e-3,
             'loss_stddev_init': 2.0,
+            'error_loss_neg_weight': 0.1,
             'num_max_update': 5000,
             "batchsize": 10,
             'num_check_stop': 50,
         }
+        options.update(self.nn_options)
         self.model = TNNRegression()
         self.model.Load(data={'options':options})
         if os.path.exists(self.basedir+'setup.yaml'):
@@ -122,28 +130,34 @@ class NNModel:
         Print("len(DataX): ", len(self.model.DataX))
         check_or_create_dir(self.basedir)
         
-    def learn(self, x, y):
-        self.model.Update(x, y)
+    def update(self, x, y, not_learn = False):
+        self.model.Update(x, y, not_learn)
         SaveYAML(self.model.Save(self.basedir), self.basedir+'setup.yaml')
         
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "test"
-    num_ep = 200
+    name = "Er/t0.5"
+    num_ep = 500
+    nn_options = {
+        'n_units': [2] + [200, 200, 200] + [1],
+        'n_units_err': [2] + [200, 200, 200] + [1],
+        'loss_stddev_stop_err': 1.0e-4,
+        'error_loss_neg_weight': 0.8,
+    }
     
     logdir = base_logdir + "logs/{}/".format(name)
-    modeldir = logdir + "{}/".format("model")
+    modeldir = logdir + "{}/".format("models")
     
     if os.path.exists(logdir+"dm.pickle"):
         dm = Domain.load(logdir+"dm.pickle")
     else:
-        nnmodel = NNModel(modeldir)
+        nnmodel = NNModel(modeldir, nn_options)
         nnmodel.setup()
-        dm = Domain(nnmodel, logdir)
+        dm = Domain(nnmodel, logdir, n_rand_sample = 1000, n_learn_step = 1)
         dm.setup()
     
     for i in range(num_ep):
         dm.execute()
-
-    Domain.save(dm, logdir+"dm.pickle")
+        Domain.save(dm, logdir+"dm.pickle")
+        

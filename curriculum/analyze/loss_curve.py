@@ -17,30 +17,34 @@ def Run(ct, *args):
         # "curriculum5/c1/t5/g4",
         # "curriculum5/c1/t5/g5",
         # "curriculum4/c2/subtask/t1/first200"
-        "curriculum3/scaling/full_scratch/t1/relearn/2e5_1000"
+        # "curriculum3/scaling/full_scratch/t1/relearn/2e5_1000",
+        "curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/Er/t15",
     ]
-    save_path = "curriculum3/scaling/full_scratch/t1"
+    ROOT_PATH = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/"
+    save_path = "opttest"
     save_img_dir = PICTURE_DIR + save_path.replace("/","_") + "/batchloss/"
     model_name_list = [
         # "Fmvtopour2",
-        "Ftip_amount",
+        # "Ftip_amount",
         # "Ftip_flow",
         # "Fshake_amount",
         # "Fshake_flow",
         # "Famount",
+        "Fdatotal",
     ]
-    suff = "_2e5_1000"
+    suff = ""
     
     for model_name in model_name_list:
         train_dir_list = [ROOT_PATH + model_path + "/models/train" + "/" for model_path in model_path_list]
         all_nn_log_files = []
         for train_dir in train_dir_list:
+            print(train_dir)
             for nn_log_file in glob.glob(train_dir+"*"):
                 if not os.path.exists(nn_log_file):
                     raise(Exception("Not Found {}".format(nn_log_file)))
                 if ((model_name in nn_log_file) and ("nn_log-" in nn_log_file)):
                     all_nn_log_files.append(nn_log_file)
-        all_nn_log_files = sorted(all_nn_log_files)    
+        all_nn_log_files = sorted(all_nn_log_files)
         # all_nn_log_files = sorted([nn_log_file for train_dir in train_dir_list for nn_log_file in glob.glob(train_dir+"*") if ((model_name in nn_log_file) and ("nn_log-" in nn_log_file))])
         
         fig = make_subplots(
