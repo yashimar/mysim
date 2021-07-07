@@ -11,6 +11,7 @@ K10ERR = "k10_error"
 NNMEAN = "NN_mean"
 NNERR = "NN_error"
 NNSD = "NN_sd"
+JP1 = "|JumpPoint - NNmean|"
 JP1DIFF = "|JumpPoint - (NNmean+/-1NNerr)|"
 JP2DIFF = "|JumpPoint - (NNmean+/-2NNerr)|"
 BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
@@ -21,16 +22,18 @@ def idx_of_the_nearest(data, value):
     return idx
 
 def Run(ct, *args):
-    name = "Er/t0.1"
+    name = "Er/t0.1_fixed"
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
+    gmm = GMM(dm.nnmodel)
+    gmm.train(diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
     if True:
         with open(logdir+"datotal.pickle", mode="rb") as f:
             datotal = pickle.load(f)
     else:
-        nnmean, nnerr, nnsd = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
+        nnmean, nnerr, nnsd, gmmjp1 = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
         for idx_dtheta2 in range(len(dm.dtheta2)):
             for idx_smsz in range(len(dm.smsz)):
                 print(idx_dtheta2, idx_smsz)
@@ -39,6 +42,7 @@ def Run(ct, *args):
                 nnmean[idx_dtheta2, idx_smsz] = dm.nnmodel.model.Forward(x_data = xdatota_for_Forward, train = False).data.item() #model.Predict(..., x_var=zero).Yと同じ
                 nnerr[idx_dtheta2, idx_smsz] = dm.nnmodel.model.ForwardErr(x_data = xdatota_for_Forward, train = False).data.item()
                 nnsd[idx_dtheta2, idx_smsz] = np.sqrt(dm.nnmodel.model.Predict(x = x_in, with_var = True).Var[0,0].item())
+                gmmjp1[idx_dtheta2, idx_smsz] = dm.datotal[TRUE][idx_dtheta2, idx_smsz] - nnmean[idx_dtheta2, idx_smsz]
         datotal = {
             TRUE: dm.datotal[TRUE],
             K10MEAN: np.load(BASE_DIR+"npdata/datotal_mean.npy"),
@@ -46,9 +50,12 @@ def Run(ct, *args):
             NNMEAN: nnmean,
             NNERR: nnerr,
             NNSD: nnsd,
+            JP1: gmmjp1,
         }
         with open(logdir+"datotal.pickle", mode="wb") as f:
             pickle.dump(datotal, f)
+    
+    hoge
     
     datotal[JP1DIFF], datotal[JP2DIFF] = np.ones((100,100))*(-100), np.ones((100,100))*(-100) 
     for idx_dtheta2 in range(len(dm.dtheta2)):
@@ -128,14 +135,14 @@ def Run(ct, *args):
         trace[0].append(go.Scatter(
             x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
             mode='lines', 
-            name="NNmean+/-1NNerr",
-            line=dict(color="orangered", dash="dash"),
+            name="NNmean+/-2NNerr",
+            line=dict(color="grey", dash="dash"),
             visible=False,
             error_y=dict(
                 type="data",
                 symmetric=True,
                 array=2*datotal[NNERR][:,smsz_idx],
-                color="orangered",
+                color="grey",
                 thickness=1.5,
                 width=3,
             )
@@ -143,7 +150,7 @@ def Run(ct, *args):
         trace[1].append(go.Scatter(
             x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
             mode='lines', 
-            name="NNmean+/-2NNerr",
+            name="NNmean+/-1NNerr",
             line=dict(color="orange", dash="dash"),
             visible=False,
             error_y=dict(
@@ -172,7 +179,15 @@ def Run(ct, *args):
                 visible=False,
             ))
         else:
-            trace[4].append(go.Scatter(x=[], y=[]))
+            trace[3].append(go.Scatter(x=[], y=[]))
+        print(smsz_idx)
+        trace[4].append(go.Scatter(
+            x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx] + np.array([gmm.predict([dtheta2, smsz]).item() for dtheta2 in dm.dtheta2]),
+            mode='lines', 
+            name="GMM JumpPoint",
+            line=dict(color="red", dash="dashdot"),
+            visible=False,
+        ))
         
     
     for i in range(len(trace)):
@@ -208,3 +223,5 @@ def Run(ct, *args):
         fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
     check_or_create_dir(save_img_dir)
     plotly.offline.plot(fig, filename = save_img_dir + "curve.html", auto_open=False)
+
+    

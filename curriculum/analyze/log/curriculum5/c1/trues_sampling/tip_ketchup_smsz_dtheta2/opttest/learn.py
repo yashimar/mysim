@@ -1,7 +1,9 @@
+#coding: UTF-8
 from core_tool import *
 from ay_py.core import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
+from scipy.stats import multivariate_normal
 from .......util import *
 from ........tasks_domain.util import Rmodel
 from ..greedyopt import *
@@ -16,7 +18,7 @@ def Help():
 
 class Domain:
     def __init__(self, nnmodel, logdir, n_rand_sample = 5, n_learn_step = 1):
-        self.smsz = np.linspace(0.03,0.08,100)
+        self.smsz = np.linspace(0.3,0.8,100)
         self.dtheta2 = np.linspace(0.1,1,100)[::-1]
         self.datotal = {TRUE: np.ones((100,100))*(-100), RFUNC: np.ones((100,100))*(-100)}
         self.nnmodel = nnmodel
@@ -133,17 +135,48 @@ class NNModel:
     def update(self, x, y, not_learn = False):
         self.model.Update(x, y, not_learn)
         SaveYAML(self.model.Save(self.basedir), self.basedir+'setup.yaml')
-        
+
+
+class GMM:
+    def __init__(self, nnmodel):
+        self.nnmodel = nnmodel
+        self.jumppoints = {"X": [], "Y": []}
+        self.gaussian_components = []
+    
+    def extract_jps(self, Gerr):
+        model = self.nnmodel.model
+        for i, (x, y) in enumerate(zip(model.DataX, model.DataY)):
+            p_mean = model.Forward(x_data = model.DataX[i:i+1], train = False).data.item() #Chainerのバグ回避用
+            p_err = model.ForwardErr(x_data = model.DataX[i:i+1], train = False).data.item()
+            if (y < (p_mean - Gerr*p_err) or (y > (p_mean + Gerr*p_err))):
+                self.jumppoints["X"].append(x)
+                self.jumppoints["Y"].append(y - p_mean)
+                
+    def train(self, diag_sigma, Gerr = 1.0): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        from copy import deepcopy
+        self.extract_jps(Gerr)
+        tmp = []
+        Var = np.diag(diag_sigma)**2
+        for jpx, jpy in zip(self.jumppoints["X"], self.jumppoints["Y"]):
+            self.gaussian_components.append(lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy)
+    
+    def predict(self, x):
+        pred = 0
+        for gc in self.gaussian_components:
+            pred += gc(x)
+        return pred
+            
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "Er/t0.5"
+    # name = "onpolicy/Er/t5"
+    name = "Er/t0.1_fixed"
     num_ep = 500
     nn_options = {
-        'n_units': [2] + [200, 200, 200] + [1],
-        'n_units_err': [2] + [200, 200, 200] + [1],
-        'loss_stddev_stop_err': 1.0e-4,
-        'error_loss_neg_weight': 0.8,
+        'n_units': [2] + [200, 200] + [1],
+        'n_units_err': [2] + [200, 200] + [1],
+        # 'loss_stddev_stop_err': 1.0e-4,
+        'error_loss_neg_weight': 0.1,
     }
     
     logdir = base_logdir + "logs/{}/".format(name)
@@ -154,7 +187,7 @@ def Run(ct, *args):
     else:
         nnmodel = NNModel(modeldir, nn_options)
         nnmodel.setup()
-        dm = Domain(nnmodel, logdir, n_rand_sample = 1000, n_learn_step = 1)
+        dm = Domain(nnmodel, logdir, n_rand_sample = 50000, n_learn_step = 1)
         dm.setup()
     
     for i in range(num_ep):
