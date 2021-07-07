@@ -62,7 +62,7 @@ class Domain:
             est_nn_Er, est_nn_Sr = [], []
             for dtheta2 in self.dtheta2:
                 est_datotal = self.nnmodel.model.Predict(x=[dtheta2, smsz], with_var=True)
-                est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var=est_datotal.Var[0].item(), with_var=True)
+                est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var=[0, est_datotal.Var[0].item()], with_var=True)
                 est_nn_Er.append(est_nn.Y.item())
                 est_nn_Sr.append(np.sqrt(est_nn.Var[0,0]).item())
             idx_est_opt_dtheta2 = np.argmax(est_nn_Er)
@@ -150,7 +150,7 @@ class GMM:
             p_err = model.ForwardErr(x_data = model.DataX[i:i+1], train = False).data.item()
             if (y < (p_mean - Gerr*p_err) or (y > (p_mean + Gerr*p_err))):
                 self.jumppoints["X"].append(x)
-                self.jumppoints["Y"].append(y - p_mean)
+                self.jumppoints["Y"].append(abs(y - p_mean))
                 
     def train(self, diag_sigma, Gerr = 1.0): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
         from copy import deepcopy
@@ -169,7 +169,6 @@ class GMM:
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    # name = "onpolicy/Er/t5"
     name = "Er/t0.1_fixed"
     num_ep = 500
     nn_options = {
