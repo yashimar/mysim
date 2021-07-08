@@ -42,17 +42,14 @@ class Domain:
         for i in range(100):
             for j in range(100):
                 self.datotal[RFUNC][i,j] = rfunc(self.datotal[TRUE][i,j].item())
-        
-    def execute(self):
+     
+    def execute_main(self, idx_smsz, smsz):
         ep = len(self.nnmodel.model.DataX)
         print("ep: {}".format(ep))
-        
-        idx_smsz = RandI(len(self.smsz))
-        smsz = self.smsz[idx_smsz]
         true_opt_dtheta2_idx = np.argmax(self.datotal[RFUNC][:, idx_smsz])
         true_opt_dtheta2 = self.dtheta2[true_opt_dtheta2_idx]
         true_opt_r = self.datotal[RFUNC][true_opt_dtheta2_idx, idx_smsz]
-        
+            
         if ep <= self.n_rand_sample:
             idx_est_opt_dtheta2 = RandI(len(self.dtheta2))
             est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
@@ -69,15 +66,15 @@ class Domain:
             est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
             est_datotal = self.nnmodel.model.Predict(x=[est_opt_dtheta2, smsz], with_var=True).Y[0].item()
             est_opt_Er = est_nn_Er[idx_est_opt_dtheta2]
-        
+            
         true_datotal = self.datotal[TRUE][idx_est_opt_dtheta2, idx_smsz]
         true_r_at_est_opt_dthtea2 = rfunc(true_datotal)
-        
+            
         if ep % self.n_learn_step == 0:
             self.nnmodel.update([est_opt_dtheta2, smsz], [true_datotal], not_learn = False)
         else:
             self.nnmodel.update([est_opt_dtheta2, smsz], [true_datotal], not_learn = True)
-        
+            
         self.log["ep"].append(ep)
         self.log["smsz"].append(smsz.item())
         self.log["est_opt_dtheta2"].append(est_opt_dtheta2.item())
@@ -87,9 +84,17 @@ class Domain:
         self.log["est_opt_Er"].append(est_opt_Er)
         self.log["true_opt_r"].append(true_opt_r.item())
         self.log["true_r_at_est_opt_dthtea2"].append(true_r_at_est_opt_dthtea2.item())
-        
+            
         with open(self.logdir+"log.yaml", "w") as f:
             yaml.dump(self.log, f)
+            
+    def execute(self, max_smsz = 0.8):
+        idx_smsz = RandI(len(self.smsz))
+        smsz = self.smsz[idx_smsz]
+        while smsz > max_smsz:
+            idx_smsz = RandI(len(self.smsz))
+            smsz = self.smsz[idx_smsz]
+        self.execute_main(idx_smsz, smsz)
             
     @classmethod
     def load(self, path):
@@ -169,8 +174,11 @@ class GMM:
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "Er/t0.1_fixed"
-    num_ep = 500
+    # name = "Er/t0.1_fixed"
+    name = "onpolicy/Er0.65/t1"
+    num_ep = 200
+    n_rand_sample = 5
+    max_smsz = 0.65
     nn_options = {
         'n_units': [2] + [200, 200] + [1],
         'n_units_err': [2] + [200, 200] + [1],
@@ -186,10 +194,10 @@ def Run(ct, *args):
     else:
         nnmodel = NNModel(modeldir, nn_options)
         nnmodel.setup()
-        dm = Domain(nnmodel, logdir, n_rand_sample = 50000, n_learn_step = 1)
+        dm = Domain(nnmodel, logdir, n_rand_sample = n_rand_sample, n_learn_step = 1)
         dm.setup()
     
     for i in range(num_ep):
-        dm.execute()
+        dm.execute(max_smsz = max_smsz)
         Domain.save(dm, logdir+"dm.pickle")
         
