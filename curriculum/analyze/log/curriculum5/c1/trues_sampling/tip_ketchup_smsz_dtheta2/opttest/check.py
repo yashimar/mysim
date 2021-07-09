@@ -40,11 +40,11 @@ def Run(ct, *args):
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
-    gmm1 = GMM(dm.nnmodel)
-    gmm1.train(diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
-    gmm2 = GMM(dm.nnmodel)
-    gmm2.train(diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 2.0)
-    if False:
+    gmm1 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
+    gmm1.train()
+    gmm2 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 2.0)
+    gmm2.train()
+    if True:
         with open(logdir+"datotal.pickle", mode="rb") as f:
             datotal = pickle.load(f)
         with open(logdir+"reward.pickle", mode="rb") as f:
