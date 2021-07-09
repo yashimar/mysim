@@ -30,10 +30,6 @@ ErJP2_2LCB = "ErJP2_2LCB"
 BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
 
 
-def idx_of_the_nearest(data, value):
-    idx = np.argmin(np.abs(np.array(data) - value))
-    return idx
-
 def Run(ct, *args):
     name = "Er/t0.1_fixed"
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
