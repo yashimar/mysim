@@ -413,18 +413,18 @@ def Run(ct, *args):
     print("最適化された評価関数曲線")
     r_types = (Er, Er_1LCB, Er_2LCB, ErJP1, ErJP1_1LCB, ErJP1_2LCB)
     fig = go.Figure()
-    for i, r_type in enumerate(r_types):
+    for r_type in r_types:
         opt_dtheta2_list = np.argmax(reward[r_type], axis = 0)
         fig.add_trace(
             go.Scatter(
-                x=dm.smsz, y=[smsz_r[opt_idx]-0.001*i for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[RFUNC].T, opt_dtheta2_list))],
+                x=dm.smsz, y=[smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[RFUNC].T, opt_dtheta2_list))],
                 mode='markers', 
                 name=r_type+" [True Value]",
             )
         )
         fig.add_trace(
             go.Scatter(
-                x=dm.smsz, y=[smsz_r[opt_idx]-0.001*i for i, (smsz_r, opt_idx) in enumerate(zip(reward[r_type].T, opt_dtheta2_list))],
+                x=dm.smsz, y=[smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(reward[r_type].T, opt_dtheta2_list))],
                 mode='lines', 
                 name=r_type+" [Est Opt]",
             )
