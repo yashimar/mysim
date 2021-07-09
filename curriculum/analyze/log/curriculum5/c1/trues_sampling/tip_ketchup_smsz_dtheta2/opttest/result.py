@@ -9,9 +9,9 @@ from .learn import *
 BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
 
 def Run(ct, *args):
-    name = "Er"
-    trial_list = ["t1","t2","t3"]
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy/{}_n{}/".format(name.replace("/","_"), len(trial_list))
+    name = "Er0.65"
+    trial_list = ["t1","t2","t3","t4","t5"]
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy/{}/".format(name.replace("/","_"))
     
     results = []
     for trial in trial_list:
