@@ -7,6 +7,8 @@ from scipy.stats import multivariate_normal
 from .......util import *
 from ........tasks_domain.util import Rmodel
 from ..greedyopt import *
+from copy import deepcopy
+import dill
 
 
 RFUNC = "r_func"
@@ -17,11 +19,14 @@ def Help():
 
 
 class Domain:
-    def __init__(self, nnmodel, logdir, n_rand_sample = 5, n_learn_step = 1):
+    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0, n_rand_sample = 5, n_learn_step = 1):
         self.smsz = np.linspace(0.3,0.8,100)
         self.dtheta2 = np.linspace(0.1,1,100)[::-1]
         self.datotal = {TRUE: np.ones((100,100))*(-100), RFUNC: np.ones((100,100))*(-100)}
         self.nnmodel = nnmodel
+        self.gmm = gmm
+        self.use_gmm = use_gmm
+        self.LCB_ratio = LCB_ratio
         self.log = {
             "ep": [],
             "smsz": [],
@@ -32,6 +37,8 @@ class Domain:
             "est_opt_Er": [],
             "true_opt_r": [],
             "true_r_at_est_opt_dthtea2": [],
+            "est_gmm_JP": [],
+            "E": [],
         }
         self.logdir = logdir
         self.n_rand_sample = n_rand_sample
@@ -42,30 +49,45 @@ class Domain:
         for i in range(100):
             for j in range(100):
                 self.datotal[RFUNC][i,j] = rfunc(self.datotal[TRUE][i,j].item())
-     
+    
+    def optimize(self, smsz):
+        est_nn_Er, est_nn_Sr = [], []
+        for dtheta2 in self.dtheta2:
+            x_in = [dtheta2, smsz]
+            est_datotal = self.nnmodel.model.Predict(x = x_in, with_var=True)
+            
+            if self.use_gmm:
+                x_var = [0, max(est_datotal.Var[0].item(), self.gmm.predict(x_in).item()**2)]
+            else:
+                x_var = [0, est_datotal.Var[0].item()]
+            est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var= x_var, with_var=True)
+            est_nn_Er.append(est_nn.Y.item())
+            est_nn_Sr.append(np.sqrt(est_nn.Var[0,0]).item())
+            
+        E = np.array(est_nn_Er) - self.LCB_ratio*np.array(est_nn_Sr)
+        idx_est_opt_dtheta2 = np.argmax(E)
+        est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
+        est_datotal = self.nnmodel.model.Predict(x=[est_opt_dtheta2, smsz], with_var=True).Y[0].item()
+        est_opt_Er = est_nn_Er[idx_est_opt_dtheta2]
+        
+        return idx_est_opt_dtheta2, est_opt_dtheta2, est_datotal, est_opt_Er, E
+                    
     def execute_main(self, idx_smsz, smsz):
         ep = len(self.nnmodel.model.DataX)
         print("ep: {}".format(ep))
         true_opt_dtheta2_idx = np.argmax(self.datotal[RFUNC][:, idx_smsz])
         true_opt_dtheta2 = self.dtheta2[true_opt_dtheta2_idx]
         true_opt_r = self.datotal[RFUNC][true_opt_dtheta2_idx, idx_smsz]
+        self.gmm.train()
             
         if ep <= self.n_rand_sample:
             idx_est_opt_dtheta2 = RandI(len(self.dtheta2))
             est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
             est_datotal = 0
             est_opt_Er = 0
+            E = np.zeros((len(self.dtheta2),len(self.smsz)))
         else:
-            est_nn_Er, est_nn_Sr = [], []
-            for dtheta2 in self.dtheta2:
-                est_datotal = self.nnmodel.model.Predict(x=[dtheta2, smsz], with_var=True)
-                est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var=[0, est_datotal.Var[0].item()], with_var=True)
-                est_nn_Er.append(est_nn.Y.item())
-                est_nn_Sr.append(np.sqrt(est_nn.Var[0,0]).item())
-            idx_est_opt_dtheta2 = np.argmax(est_nn_Er)
-            est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
-            est_datotal = self.nnmodel.model.Predict(x=[est_opt_dtheta2, smsz], with_var=True).Y[0].item()
-            est_opt_Er = est_nn_Er[idx_est_opt_dtheta2]
+            idx_est_opt_dtheta2, est_opt_dtheta2, est_datotal, est_opt_Er, E = self.optimize(smsz)
             
         true_datotal = self.datotal[TRUE][idx_est_opt_dtheta2, idx_smsz]
         true_r_at_est_opt_dthtea2 = rfunc(true_datotal)
@@ -84,6 +106,8 @@ class Domain:
         self.log["est_opt_Er"].append(est_opt_Er)
         self.log["true_opt_r"].append(true_opt_r.item())
         self.log["true_r_at_est_opt_dthtea2"].append(true_r_at_est_opt_dthtea2.item())
+        self.log["est_gmm_JP"].append(deepcopy(self.gmm.jumppoints))
+        self.log["E"].append(E)
             
         with open(self.logdir+"log.yaml", "w") as f:
             yaml.dump(self.log, f)
@@ -99,13 +123,13 @@ class Domain:
     @classmethod
     def load(self, path):
         with open(path, mode="rb") as f:
-            dm = pickle.load(f)
+            dm = dill.load(f)
         return dm
     
     @classmethod
-    def save(self, dm,path):
+    def save(self, dm, path):
         with open(path, mode="wb") as f:
-            pickle.dump(dm, f)
+            dill.dump(dm, f)
         
 class NNModel:
     def __init__(self, modeldir, nn_options):
@@ -143,25 +167,25 @@ class NNModel:
 
 
 class GMM:
-    def __init__(self, nnmodel):
+    def __init__(self, nnmodel, diag_sigma, Gerr):
         self.nnmodel = nnmodel
         self.jumppoints = {"X": [], "Y": []}
         self.gaussian_components = []
+        self.diag_sigma = diag_sigma
+        self.Gerr = Gerr
     
-    def extract_jps(self, Gerr):
+    def extract_jps(self):
         model = self.nnmodel.model
         for i, (x, y) in enumerate(zip(model.DataX, model.DataY)):
             p_mean = model.Forward(x_data = model.DataX[i:i+1], train = False).data.item() #Chainerのバグ回避用
             p_err = model.ForwardErr(x_data = model.DataX[i:i+1], train = False).data.item()
-            if (y < (p_mean - Gerr*p_err) or (y > (p_mean + Gerr*p_err))):
+            if (y < (p_mean - self.Gerr*p_err) or (y > (p_mean + self.Gerr*p_err))):
                 self.jumppoints["X"].append(x)
                 self.jumppoints["Y"].append(abs(y - p_mean))
                 
-    def train(self, diag_sigma, Gerr = 1.0): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
-        from copy import deepcopy
-        self.extract_jps(Gerr)
-        tmp = []
-        Var = np.diag(diag_sigma)**2
+    def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        self.extract_jps()
+        Var = np.diag(self.diag_sigma)**2
         for jpx, jpy in zip(self.jumppoints["X"], self.jumppoints["Y"]):
             self.gaussian_components.append(lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy)
     
@@ -175,10 +199,14 @@ class GMM:
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
     # name = "Er/t0.1_fixed"
-    name = "onpolicy/Er0.65/t1"
-    num_ep = 200
+    name = "onpolicy/ErJP/t1"
+    num_ep = 10
     n_rand_sample = 5
     max_smsz = 0.65
+    
+    use_gmm = True
+    Gerr = 1.0
+    LCB_ratio = 0.0
     nn_options = {
         'n_units': [2] + [200, 200] + [1],
         'n_units_err': [2] + [200, 200] + [1],
@@ -194,7 +222,8 @@ def Run(ct, *args):
     else:
         nnmodel = NNModel(modeldir, nn_options)
         nnmodel.setup()
-        dm = Domain(nnmodel, logdir, n_rand_sample = n_rand_sample, n_learn_step = 1)
+        gmm = GMM(nnmodel, diag_sigma=[(1.0-0.1)/50, (0.8-0.3)/50], Gerr = Gerr)
+        dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio, n_rand_sample = n_rand_sample, n_learn_step = 1)
         dm.setup()
     
     for i in range(num_ep):
