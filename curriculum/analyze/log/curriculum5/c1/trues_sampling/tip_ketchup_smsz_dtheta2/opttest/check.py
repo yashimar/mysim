@@ -30,9 +30,77 @@ ErJP2_2LCB = "ErJP2_2LCB"
 BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
 
 
+def setup(dm, gmm1, gmm2, logdir):
+    nnmean, nnerr, nnsd, gmmjp1, gmmjp2 = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
+    er, sr, er_1LCB, er_2LCB, erJP1, srJP1, erJP1_1LCB, erJP1_2LCB, erJP2, srJP2, erJP2_1LCB, erJP2_2LCB = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
+    for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
+        for idx_smsz, smsz in enumerate(dm.smsz):
+            print(idx_dtheta2, idx_smsz)
+            x_in = [dtheta2, smsz]
+            xdatota_for_Forward = dm.nnmodel.model.DataX[0:1]; xdatota_for_Forward[0, 0] = x_in[0]; xdatota_for_Forward[0, 1] = x_in[1] #Chainerのバグに対処するため
+            nnmean[idx_dtheta2, idx_smsz] = dm.nnmodel.model.Forward(x_data = xdatota_for_Forward, train = False).data.item() #model.Predict(..., x_var=zero).Yと同じ
+            nnerr[idx_dtheta2, idx_smsz] = dm.nnmodel.model.ForwardErr(x_data = xdatota_for_Forward, train = False).data.item()
+            nnsd[idx_dtheta2, idx_smsz] = np.sqrt(dm.nnmodel.model.Predict(x = x_in, with_var = True).Var[0,0].item())
+            gmmjp1[idx_dtheta2, idx_smsz] = gmm1.predict([dtheta2, smsz]).item()
+            gmmjp2[idx_dtheta2, idx_smsz] = gmm2.predict([dtheta2, smsz]).item()
+                
+            r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, nnsd[idx_dtheta2, idx_smsz]**2], with_var=True)
+            rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
+            er[idx_dtheta2, idx_smsz] = rmean
+            sr[idx_dtheta2, idx_smsz] = rsd
+            er_1LCB[idx_dtheta2, idx_smsz] = rmean - 1*rsd
+            er_2LCB[idx_dtheta2, idx_smsz] = rmean - 2*rsd
+                
+            rjp1 = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, max(nnsd[idx_dtheta2, idx_smsz], gmmjp1[idx_dtheta2, idx_smsz])**2], with_var=True)
+            rjp1mean, rjp1sd = rjp1.Y.item(), np.sqrt(rjp1.Var[0,0]).item()
+            erJP1[idx_dtheta2, idx_smsz] = rjp1mean
+            srJP1[idx_dtheta2, idx_smsz] = rjp1sd
+            erJP1_1LCB[idx_dtheta2, idx_smsz] = rjp1mean - 1*rjp1sd
+            erJP1_2LCB[idx_dtheta2, idx_smsz] = rjp1mean - 2*rjp1sd
+            
+            rjp2 = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, max(nnsd[idx_dtheta2, idx_smsz], gmmjp2[idx_dtheta2, idx_smsz])**2], with_var=True)
+            rjp2mean, rjp2sd = rjp2.Y.item(), np.sqrt(rjp2.Var[0,0]).item()
+            erJP2[idx_dtheta2, idx_smsz] = rjp2mean
+            srJP2[idx_dtheta2, idx_smsz] = rjp2sd
+            erJP2_1LCB[idx_dtheta2, idx_smsz] = rjp2mean - 1*rjp2sd
+            erJP2_2LCB[idx_dtheta2, idx_smsz] = rjp2mean - 2*rjp2sd
+    datotal = {
+            TRUE: dm.datotal[TRUE],
+            K10MEAN: np.load(BASE_DIR+"npdata/datotal_mean.npy"),
+            K10ERR: np.abs(dm.datotal[TRUE] - np.load(BASE_DIR+"npdata/datotal_mean.npy")),
+            NNMEAN: nnmean,
+            NNERR: nnerr,
+            NNSD: nnsd,
+            JP1: gmmjp1,
+            JP2: gmmjp2,
+    }
+    reward = {
+            Er: er,
+            Sr: sr,
+            Er_1LCB: er_1LCB,
+            Er_2LCB: er_2LCB,
+            ErJP1: erJP1,
+            SrJP1: srJP1, 
+            ErJP1_1LCB: erJP1_1LCB,
+            ErJP1_2LCB: erJP1_2LCB,
+            ErJP2: erJP2,
+            SrJP2: srJP2, 
+            ErJP2_1LCB: erJP2_1LCB,
+            ErJP2_2LCB: erJP2_2LCB,
+    }
+    with open(logdir+"datotal.pickle", mode="wb") as f:
+        pickle.dump(datotal, f)
+    with open(logdir+"reward.pickle", mode="wb") as f:
+        pickle.dump(reward, f)
+    
+    return datotal, reward
+
+
 def Run(ct, *args):
-    name = "Er/t0.1_fixed"
-    save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
+    name = "t0.1/t3"
+    if len(args) == 1: name = args[0]
+    # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
+    save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
@@ -46,67 +114,7 @@ def Run(ct, *args):
         with open(logdir+"reward.pickle", mode="rb") as f:
             reward = pickle.load(f)
     else:
-        nnmean, nnerr, nnsd, gmmjp1, gmmjp2 = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
-        er, sr, er_1LCB, er_2LCB, erJP1, srJP1, erJP1_1LCB, erJP1_2LCB, erJP2, srJP2, erJP2_1LCB, erJP2_2LCB = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
-        for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
-            for idx_smsz, smsz in enumerate(dm.smsz):
-                print(idx_dtheta2, idx_smsz)
-                x_in = [dtheta2, smsz]
-                xdatota_for_Forward = dm.nnmodel.model.DataX[0:1]; xdatota_for_Forward[0, 0] = x_in[0]; xdatota_for_Forward[0, 1] = x_in[1] #Chainerのバグに対処するため
-                nnmean[idx_dtheta2, idx_smsz] = dm.nnmodel.model.Forward(x_data = xdatota_for_Forward, train = False).data.item() #model.Predict(..., x_var=zero).Yと同じ
-                nnerr[idx_dtheta2, idx_smsz] = dm.nnmodel.model.ForwardErr(x_data = xdatota_for_Forward, train = False).data.item()
-                nnsd[idx_dtheta2, idx_smsz] = np.sqrt(dm.nnmodel.model.Predict(x = x_in, with_var = True).Var[0,0].item())
-                gmmjp1[idx_dtheta2, idx_smsz] = gmm1.predict([dtheta2, smsz]).item()
-                gmmjp2[idx_dtheta2, idx_smsz] = gmm2.predict([dtheta2, smsz]).item()
-                
-                r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, nnsd[idx_dtheta2, idx_smsz]**2], with_var=True)
-                rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
-                er[idx_dtheta2, idx_smsz] = rmean
-                sr[idx_dtheta2, idx_smsz] = rsd
-                er_1LCB[idx_dtheta2, idx_smsz] = rmean - 1*rsd
-                er_2LCB[idx_dtheta2, idx_smsz] = rmean - 2*rsd
-                
-                rjp1 = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, max(nnsd[idx_dtheta2, idx_smsz], gmmjp1[idx_dtheta2, idx_smsz])**2], with_var=True)
-                rjp1mean, rjp1sd = rjp1.Y.item(), np.sqrt(rjp1.Var[0,0]).item()
-                erJP1[idx_dtheta2, idx_smsz] = rjp1mean
-                srJP1[idx_dtheta2, idx_smsz] = rjp1sd
-                erJP1_1LCB[idx_dtheta2, idx_smsz] = rjp1mean - 1*rjp1sd
-                erJP1_2LCB[idx_dtheta2, idx_smsz] = rjp1mean - 2*rjp1sd
-                
-                rjp2 = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, max(nnsd[idx_dtheta2, idx_smsz], gmmjp2[idx_dtheta2, idx_smsz])**2], with_var=True)
-                rjp2mean, rjp2sd = rjp2.Y.item(), np.sqrt(rjp2.Var[0,0]).item()
-                erJP2[idx_dtheta2, idx_smsz] = rjp2mean
-                srJP2[idx_dtheta2, idx_smsz] = rjp2sd
-                erJP2_1LCB[idx_dtheta2, idx_smsz] = rjp2mean - 1*rjp2sd
-                erJP2_2LCB[idx_dtheta2, idx_smsz] = rjp2mean - 2*rjp2sd
-        datotal = {
-            TRUE: dm.datotal[TRUE],
-            K10MEAN: np.load(BASE_DIR+"npdata/datotal_mean.npy"),
-            K10ERR: np.abs(dm.datotal[TRUE] - np.load(BASE_DIR+"npdata/datotal_mean.npy")),
-            NNMEAN: nnmean,
-            NNERR: nnerr,
-            NNSD: nnsd,
-            JP1: gmmjp1,
-            JP2: gmmjp2,
-        }
-        reward = {
-            Er: er,
-            Sr: sr,
-            Er_1LCB: er_1LCB,
-            Er_2LCB: er_2LCB,
-            ErJP1: erJP1,
-            SrJP1: srJP1, 
-            ErJP1_1LCB: erJP1_1LCB,
-            ErJP1_2LCB: erJP1_2LCB,
-            ErJP2: erJP2,
-            SrJP2: srJP2, 
-            ErJP2_1LCB: erJP2_1LCB,
-            ErJP2_2LCB: erJP2_2LCB,
-        }
-        with open(logdir+"datotal.pickle", mode="wb") as f:
-            pickle.dump(datotal, f)
-        with open(logdir+"reward.pickle", mode="wb") as f:
-            pickle.dump(reward, f)
+        setup(dm, gmm1, gmm2, logdir)
         
     datotal[JP1DIFF], datotal[JP2DIFF] = np.ones((100,100))*(-100), np.ones((100,100))*(-100) 
     for idx_dtheta2 in range(len(dm.dtheta2)):
