@@ -18,6 +18,11 @@ def Help():
     pass
 
 
+def idx_of_the_nearest(data, value):
+    idx = np.argmin(np.abs(np.array(data) - value))
+    return idx
+
+
 class Domain:
     def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0, n_rand_sample = 5, n_learn_step = 1):
         self.smsz = np.linspace(0.3,0.8,100)
@@ -38,8 +43,8 @@ class Domain:
             "true_opt_r": [],
             "true_r_at_est_opt_dthtea2": [],
             "est_gmm_JP": [],
-            "E": [],
         }
+        self.logE = []
         self.logdir = logdir
         self.n_rand_sample = n_rand_sample
         self.n_learn_step = n_learn_step
@@ -72,7 +77,7 @@ class Domain:
         
         return idx_est_opt_dtheta2, est_opt_dtheta2, est_datotal, est_opt_Er, E
                     
-    def execute_main(self, idx_smsz, smsz):
+    def execute_main(self, idx_smsz, smsz, fixed_input):
         ep = len(self.nnmodel.model.DataX)
         print("ep: {}".format(ep))
         true_opt_dtheta2_idx = np.argmax(self.datotal[RFUNC][:, idx_smsz])
@@ -80,7 +85,13 @@ class Domain:
         true_opt_r = self.datotal[RFUNC][true_opt_dtheta2_idx, idx_smsz]
         self.gmm.train()
             
-        if ep <= self.n_rand_sample:
+        if fixed_input != None:
+            est_opt_dtheta2 = fixed_input[1]
+            idx_est_opt_dtheta2 = idx_of_the_nearest(self.dtheta2, est_opt_dtheta2)
+            est_datotal = 0
+            est_opt_Er = 0
+            E = np.zeros((len(self.dtheta2),len(self.smsz)))
+        elif ep <= self.n_rand_sample:
             idx_est_opt_dtheta2 = RandI(len(self.dtheta2))
             est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
             est_datotal = 0
@@ -107,18 +118,19 @@ class Domain:
         self.log["true_opt_r"].append(true_opt_r.item())
         self.log["true_r_at_est_opt_dthtea2"].append(true_r_at_est_opt_dthtea2.item())
         self.log["est_gmm_JP"].append(deepcopy(self.gmm.jumppoints))
-        self.log["E"].append(E)
+        self.logE.append(E)
             
-        with open(self.logdir+"log.yaml", "w") as f:
-            yaml.dump(self.log, f)
             
-    def execute(self, max_smsz = 0.8):
+    def execute(self, max_smsz = 0.8, fixed_input = None):
         idx_smsz = RandI(len(self.smsz))
         smsz = self.smsz[idx_smsz]
         while smsz > max_smsz:
             idx_smsz = RandI(len(self.smsz))
             smsz = self.smsz[idx_smsz]
-        self.execute_main(idx_smsz, smsz)
+        if fixed_input != None:
+            smsz = fixed_input[0]
+            idx_smsz = idx_of_the_nearest(self.smsz, smsz)
+        self.execute_main(idx_smsz, smsz, fixed_input)
             
     @classmethod
     def load(self, path):
@@ -126,10 +138,13 @@ class Domain:
             dm = dill.load(f)
         return dm
     
-    @classmethod
-    def save(self, dm, path):
-        with open(path, mode="wb") as f:
-            dill.dump(dm, f)
+    def save(self):
+        with open(self.logdir+"log.yaml", "w") as f:
+            yaml.dump(self.log, f)
+        np.save(self.logdir+"E.npy", np.array(self.logE))
+        
+        with open(self.logdir+"dm.pickle", mode="wb") as f:
+            dill.dump(self, f)
         
 class NNModel:
     def __init__(self, modeldir, nn_options):
@@ -175,18 +190,19 @@ class GMM:
         self.Gerr = Gerr
     
     def extract_jps(self):
+        self.jumppoints = {"X": [], "Y": []}
         model = self.nnmodel.model
         for i, (x, y) in enumerate(zip(model.DataX, model.DataY)):
             p_mean = model.Forward(x_data = model.DataX[i:i+1], train = False).data.item() #Chainerのバグ回避用
             p_err = model.ForwardErr(x_data = model.DataX[i:i+1], train = False).data.item()
             if (y < (p_mean - self.Gerr*p_err) or (y > (p_mean + self.Gerr*p_err))):
-                self.jumppoints["X"].append(x)
-                self.jumppoints["Y"].append(abs(y - p_mean))
+                self.jumppoints["X"].append(x.tolist())
+                self.jumppoints["Y"].append(abs(y - p_mean).tolist())
                 
     def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
         self.extract_jps()
         Var = np.diag(self.diag_sigma)**2
-        for jpx, jpy in zip(self.jumppoints["X"], self.jumppoints["Y"]):
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
             self.gaussian_components.append(lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy)
     
     def predict(self, x):
@@ -199,20 +215,25 @@ class GMM:
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
     # name = "Er/t0.1_fixed"
-    name = "onpolicy/ErJP/t1"
-    num_ep = 10
-    n_rand_sample = 5
-    max_smsz = 0.65
-    
-    use_gmm = True
-    Gerr = 1.0
-    LCB_ratio = 0.0
+    name = "t0.1/t10"
+    num_ep = 500
+    n_rand_sample = 50000
+    max_smsz = 0.8
     nn_options = {
         'n_units': [2] + [200, 200] + [1],
         'n_units_err': [2] + [200, 200] + [1],
         # 'loss_stddev_stop_err': 1.0e-4,
         'error_loss_neg_weight': 0.1,
     }
+    n_save_ep = 500
+    
+    fixed_input = [
+        (),
+    ]
+    
+    use_gmm = True
+    Gerr = 1.0
+    LCB_ratio = 0.0
     
     logdir = base_logdir + "logs/{}/".format(name)
     modeldir = logdir + "{}/".format("models")
@@ -226,7 +247,8 @@ def Run(ct, *args):
         dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio, n_rand_sample = n_rand_sample, n_learn_step = 1)
         dm.setup()
     
-    for i in range(num_ep):
+    while len(dm.log["ep"]) <= num_ep:
         dm.execute(max_smsz = max_smsz)
-        Domain.save(dm, logdir+"dm.pickle")
+        if len(dm.log["ep"])%n_save_ep==0:
+            dm.save()
         
