@@ -23,16 +23,25 @@ ErJP1 = "ErJP1"
 SrJP1 = "SrJP1"
 ErJP1_1LCB = "ErJP1_1LCB"
 ErJP1_2LCB = "ErJP1_2LCB"
+ErJP1ADD = "ErJP1_add"
+SrJP1ADD = "SrJP1_add"
+ErJP1ADD_1LCB = "ErJP1_add_1LCB"
+ErJP1ADD_2LCB = "ErJP1_add_2LCB"
 ErJP2 = "ErJP2"
 SrJP2 = "SrJP2"
 ErJP2_1LCB = "ErJP2_1LCB"
 ErJP2_2LCB = "ErJP2_2LCB"
+ErJP2ADD = "ErJP2_add"
+SrJP2ADD = "SrJP2_add"
+ErJP2ADD_1LCB = "ErJP2_add_1LCB"
+ErJP2ADD_2LCB = "ErJP2_add_2LCB"
 BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
 
 
 def setup(dm, gmm1, gmm2, logdir):
     nnmean, nnerr, nnsd, gmmjp1, gmmjp2 = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
-    er, sr, er_1LCB, er_2LCB, erJP1, srJP1, erJP1_1LCB, erJP1_2LCB, erJP2, srJP2, erJP2_1LCB, erJP2_2LCB = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
+    er, sr, er_1LCB, er_2LCB, erJP1, srJP1, erJP1_1LCB, erJP1_2LCB, erJP2, srJP2, erJP2_1LCB, erJP2_2LCB, \
+    erJP1_add, srJP1_add, erJP1_add_1LCB, erJP1_add_2LCB, erJP2_add, srJP2_add, erJP2_add_1LCB, erJP2_add_2LCB = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
     for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
         for idx_smsz, smsz in enumerate(dm.smsz):
             print(idx_dtheta2, idx_smsz)
@@ -64,6 +73,20 @@ def setup(dm, gmm1, gmm2, logdir):
             srJP2[idx_dtheta2, idx_smsz] = rjp2sd
             erJP2_1LCB[idx_dtheta2, idx_smsz] = rjp2mean - 1*rjp2sd
             erJP2_2LCB[idx_dtheta2, idx_smsz] = rjp2mean - 2*rjp2sd
+            
+            rjp1_add = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, (nnsd[idx_dtheta2, idx_smsz]+gmmjp1[idx_dtheta2, idx_smsz])**2], with_var=True)
+            rjp1mean_add, rjp1sd_add = rjp1_add.Y.item(), np.sqrt(rjp1_add.Var[0,0]).item()
+            erJP1_add[idx_dtheta2, idx_smsz] = rjp1mean_add
+            srJP1_add[idx_dtheta2, idx_smsz] = rjp1sd_add
+            erJP1_add_1LCB[idx_dtheta2, idx_smsz] = rjp1mean_add - 1*rjp1sd_add
+            erJP1_add_2LCB[idx_dtheta2, idx_smsz] = rjp1mean_add - 2*rjp1sd_add
+            
+            rjp2_add = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, (nnsd[idx_dtheta2, idx_smsz]+gmmjp2[idx_dtheta2, idx_smsz])**2], with_var=True)
+            rjp2mean_add, rjp2sd_add = rjp2_add.Y.item(), np.sqrt(rjp2_add.Var[0,0]).item()
+            erJP2_add[idx_dtheta2, idx_smsz] = rjp2mean_add
+            srJP2_add[idx_dtheta2, idx_smsz] = rjp2sd_add
+            erJP2_add_1LCB[idx_dtheta2, idx_smsz] = rjp2mean_add - 1*rjp2sd_add
+            erJP2_add_2LCB[idx_dtheta2, idx_smsz] = rjp2mean_add - 2*rjp2sd_add
     datotal = {
             TRUE: dm.datotal[TRUE],
             K10MEAN: np.load(BASE_DIR+"npdata/datotal_mean.npy"),
@@ -87,6 +110,14 @@ def setup(dm, gmm1, gmm2, logdir):
             SrJP2: srJP2, 
             ErJP2_1LCB: erJP2_1LCB,
             ErJP2_2LCB: erJP2_2LCB,
+            ErJP1ADD: erJP1_add,
+            SrJP1ADD: srJP1_add, 
+            ErJP1ADD_1LCB: erJP1_add_1LCB,
+            ErJP1ADD_2LCB: erJP1_add_2LCB,
+            ErJP2ADD: erJP2_add,
+            SrJP2ADD: srJP2_add, 
+            ErJP2ADD_1LCB: erJP2_add_1LCB,
+            ErJP2ADD_2LCB: erJP2_add_2LCB,
     }
     with open(logdir+"datotal.pickle", mode="wb") as f:
         pickle.dump(datotal, f)
@@ -97,7 +128,7 @@ def setup(dm, gmm1, gmm2, logdir):
 
 
 def Run(ct, *args):
-    name = "t0.1/t3"
+    name = "t0.1/t9"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
@@ -294,7 +325,7 @@ def Run(ct, *args):
 
     
     #評価関数曲線
-    for JP, ErJP, SrJP in [(JP1, ErJP1, SrJP1), (JP2, ErJP2, SrJP2)]:
+    for JP, ErJP, SrJP in [(JP1, ErJP1, SrJP1), (JP2, ErJP2, SrJP2), (JP1+" add", ErJP1ADD, SrJP1ADD)]:
         trace = defaultdict(list)
         print("評価関数曲線 "+JP)
         for smsz_idx, smsz in enumerate(dm.smsz):
