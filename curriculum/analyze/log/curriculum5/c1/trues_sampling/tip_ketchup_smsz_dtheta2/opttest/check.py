@@ -3,150 +3,29 @@ from core_tool import *
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from .learn import *
-
-
-K10MEAN = "k10_mean"
-K10ERR = "k10_error"
-NNMEAN = "NN_mean"
-NNERR = "NN_error"
-NNSD = "NN_sd"
-JP1 = "|JumpPoint(G=1) - NNmean|"
-JP2 = "|JumpPoint(G=2) - NNmean|"
-JP1DIFF = "|JumpPoint - (NNmean+/-1NNerr)|"
-JP2DIFF = "|JumpPoint - (NNmean+/-2NNerr)|"
-Er = "Er"
-Sr = "Sr"
-Er_1LCB = "Er_1LCB"
-Er_2LCB = "Er_2LCB"
-ErJP1 = "ErJP1"
-SrJP1 = "SrJP1"
-ErJP1_1LCB = "ErJP1_1LCB"
-ErJP1_2LCB = "ErJP1_2LCB"
-ErJP1ADD = "ErJP1_add"
-SrJP1ADD = "SrJP1_add"
-ErJP1ADD_1LCB = "ErJP1_add_1LCB"
-ErJP1ADD_2LCB = "ErJP1_add_2LCB"
-ErJP2 = "ErJP2"
-SrJP2 = "SrJP2"
-ErJP2_1LCB = "ErJP2_1LCB"
-ErJP2_2LCB = "ErJP2_2LCB"
-ErJP2ADD = "ErJP2_add"
-SrJP2ADD = "SrJP2_add"
-ErJP2ADD_1LCB = "ErJP2_add_1LCB"
-ErJP2ADD_2LCB = "ErJP2_add_2LCB"
-BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
-
-
-def setup(dm, gmm1, gmm2, logdir):
-    nnmean, nnerr, nnsd, gmmjp1, gmmjp2 = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
-    er, sr, er_1LCB, er_2LCB, erJP1, srJP1, erJP1_1LCB, erJP1_2LCB, erJP2, srJP2, erJP2_1LCB, erJP2_2LCB, \
-    erJP1_add, srJP1_add, erJP1_add_1LCB, erJP1_add_2LCB, erJP2_add, srJP2_add, erJP2_add_1LCB, erJP2_add_2LCB = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
-    for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
-        for idx_smsz, smsz in enumerate(dm.smsz):
-            print(idx_dtheta2, idx_smsz)
-            x_in = [dtheta2, smsz]
-            xdatota_for_Forward = dm.nnmodel.model.DataX[0:1]; xdatota_for_Forward[0, 0] = x_in[0]; xdatota_for_Forward[0, 1] = x_in[1] #Chainerのバグに対処するため
-            nnmean[idx_dtheta2, idx_smsz] = dm.nnmodel.model.Forward(x_data = xdatota_for_Forward, train = False).data.item() #model.Predict(..., x_var=zero).Yと同じ
-            nnerr[idx_dtheta2, idx_smsz] = dm.nnmodel.model.ForwardErr(x_data = xdatota_for_Forward, train = False).data.item()
-            nnsd[idx_dtheta2, idx_smsz] = np.sqrt(dm.nnmodel.model.Predict(x = x_in, with_var = True).Var[0,0].item())
-            gmmjp1[idx_dtheta2, idx_smsz] = gmm1.predict([dtheta2, smsz]).item()
-            gmmjp2[idx_dtheta2, idx_smsz] = gmm2.predict([dtheta2, smsz]).item()
-                
-            r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, nnsd[idx_dtheta2, idx_smsz]**2], with_var=True)
-            rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
-            er[idx_dtheta2, idx_smsz] = rmean
-            sr[idx_dtheta2, idx_smsz] = rsd
-            er_1LCB[idx_dtheta2, idx_smsz] = rmean - 1*rsd
-            er_2LCB[idx_dtheta2, idx_smsz] = rmean - 2*rsd
-                
-            rjp1 = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, max(nnsd[idx_dtheta2, idx_smsz], gmmjp1[idx_dtheta2, idx_smsz])**2], with_var=True)
-            rjp1mean, rjp1sd = rjp1.Y.item(), np.sqrt(rjp1.Var[0,0]).item()
-            erJP1[idx_dtheta2, idx_smsz] = rjp1mean
-            srJP1[idx_dtheta2, idx_smsz] = rjp1sd
-            erJP1_1LCB[idx_dtheta2, idx_smsz] = rjp1mean - 1*rjp1sd
-            erJP1_2LCB[idx_dtheta2, idx_smsz] = rjp1mean - 2*rjp1sd
-            
-            rjp2 = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, max(nnsd[idx_dtheta2, idx_smsz], gmmjp2[idx_dtheta2, idx_smsz])**2], with_var=True)
-            rjp2mean, rjp2sd = rjp2.Y.item(), np.sqrt(rjp2.Var[0,0]).item()
-            erJP2[idx_dtheta2, idx_smsz] = rjp2mean
-            srJP2[idx_dtheta2, idx_smsz] = rjp2sd
-            erJP2_1LCB[idx_dtheta2, idx_smsz] = rjp2mean - 1*rjp2sd
-            erJP2_2LCB[idx_dtheta2, idx_smsz] = rjp2mean - 2*rjp2sd
-            
-            rjp1_add = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, (nnsd[idx_dtheta2, idx_smsz]+gmmjp1[idx_dtheta2, idx_smsz])**2], with_var=True)
-            rjp1mean_add, rjp1sd_add = rjp1_add.Y.item(), np.sqrt(rjp1_add.Var[0,0]).item()
-            erJP1_add[idx_dtheta2, idx_smsz] = rjp1mean_add
-            srJP1_add[idx_dtheta2, idx_smsz] = rjp1sd_add
-            erJP1_add_1LCB[idx_dtheta2, idx_smsz] = rjp1mean_add - 1*rjp1sd_add
-            erJP1_add_2LCB[idx_dtheta2, idx_smsz] = rjp1mean_add - 2*rjp1sd_add
-            
-            rjp2_add = Rmodel("Fdatotal_gentle").Predict(x=[0.3, nnmean[idx_dtheta2, idx_smsz]], x_var=[0, (nnsd[idx_dtheta2, idx_smsz]+gmmjp2[idx_dtheta2, idx_smsz])**2], with_var=True)
-            rjp2mean_add, rjp2sd_add = rjp2_add.Y.item(), np.sqrt(rjp2_add.Var[0,0]).item()
-            erJP2_add[idx_dtheta2, idx_smsz] = rjp2mean_add
-            srJP2_add[idx_dtheta2, idx_smsz] = rjp2sd_add
-            erJP2_add_1LCB[idx_dtheta2, idx_smsz] = rjp2mean_add - 1*rjp2sd_add
-            erJP2_add_2LCB[idx_dtheta2, idx_smsz] = rjp2mean_add - 2*rjp2sd_add
-    datotal = {
-            TRUE: dm.datotal[TRUE],
-            K10MEAN: np.load(BASE_DIR+"npdata/datotal_mean.npy"),
-            K10ERR: np.abs(dm.datotal[TRUE] - np.load(BASE_DIR+"npdata/datotal_mean.npy")),
-            NNMEAN: nnmean,
-            NNERR: nnerr,
-            NNSD: nnsd,
-            JP1: gmmjp1,
-            JP2: gmmjp2,
-    }
-    reward = {
-            Er: er,
-            Sr: sr,
-            Er_1LCB: er_1LCB,
-            Er_2LCB: er_2LCB,
-            ErJP1: erJP1,
-            SrJP1: srJP1, 
-            ErJP1_1LCB: erJP1_1LCB,
-            ErJP1_2LCB: erJP1_2LCB,
-            ErJP2: erJP2,
-            SrJP2: srJP2, 
-            ErJP2_1LCB: erJP2_1LCB,
-            ErJP2_2LCB: erJP2_2LCB,
-            ErJP1ADD: erJP1_add,
-            SrJP1ADD: srJP1_add, 
-            ErJP1ADD_1LCB: erJP1_add_1LCB,
-            ErJP1ADD_2LCB: erJP1_add_2LCB,
-            ErJP2ADD: erJP2_add,
-            SrJP2ADD: srJP2_add, 
-            ErJP2ADD_1LCB: erJP2_add_1LCB,
-            ErJP2ADD_2LCB: erJP2_add_2LCB,
-    }
-    with open(logdir+"datotal.pickle", mode="wb") as f:
-        pickle.dump(datotal, f)
-    with open(logdir+"reward.pickle", mode="wb") as f:
-        pickle.dump(reward, f)
-    
-    return datotal, reward
+from .setup import *
 
 
 def Run(ct, *args):
-    name = "t0.1/t9"
+    name = "t0.1/t20"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
-    gmm1 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
-    gmm1.train()
-    gmm2 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 2.0)
-    gmm2.train()
-    if True:
-        with open(logdir+"datotal.pickle", mode="rb") as f:
-            datotal = pickle.load(f)
-        with open(logdir+"reward.pickle", mode="rb") as f:
-            reward = pickle.load(f)
-    else:
-        setup(dm, gmm1, gmm2, logdir)
-        
+    Gerr1Sig002 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
+    Gerr1Sig002.train()
+    Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    Gerr1Sig005.train()
+    gmm_name_list = [
+        (Gerr1Sig002, "Gerr1_Sig002"),
+        (Gerr1Sig005, "Gerr1_Sig005"),
+    ]
+    datotal = setup_datotal(dm, logdir)
+    gmmpred = setup_gmmpred(dm, gmm_name_list, logdir)
+    reward = setup_reward(dm, logdir)
+
     datotal[JP1DIFF], datotal[JP2DIFF] = np.ones((100,100))*(-100), np.ones((100,100))*(-100) 
     for idx_dtheta2 in range(len(dm.dtheta2)):
         for idx_smsz in range(len(dm.smsz)):
@@ -224,8 +103,8 @@ def Run(ct, *args):
     
     
     #datotal曲線
-    for JP, ErJP, SrJP in [(JP1, ErJP1, SrJP1), (JP2, ErJP2, SrJP2)]:
-        print("datotal曲線 "+JP)
+    for name in ("Gerr1_Sig002", "Gerr1_Sig005"):
+        print("datotal曲線 "+name)
         trace = defaultdict(list)
         for smsz_idx, smsz in enumerate(dm.smsz):
             trace[0].append(go.Scatter(
@@ -279,13 +158,13 @@ def Run(ct, *args):
             trace[4].append(go.Scatter(
                 x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
                 mode='lines', 
-                name=JP,
+                name=name,
                 line=dict(color="red", dash="dashdot"),
                 visible=False,
                 error_y=dict(
                     type="data",
                     symmetric=True,
-                    array=datotal[JP][:,smsz_idx],
+                    array=gmmpred[name][:,smsz_idx],
                     color="red",
                     thickness=1.5,
                     width=3,
@@ -321,13 +200,16 @@ def Run(ct, *args):
         for smsz_idx, smsz in enumerate(dm.smsz):
             fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
         check_or_create_dir(save_img_dir)
-        plotly.offline.plot(fig, filename = save_img_dir + "curve({}).html".format(JP), auto_open=False)
+        plotly.offline.plot(fig, filename = save_img_dir + "curve({}).html".format(name), auto_open=False)
 
     
     #評価関数曲線
-    for JP, ErJP, SrJP in [(JP1, ErJP1, SrJP1), (JP2, ErJP2, SrJP2), (JP1+" add", ErJP1ADD, SrJP1ADD)]:
+    for name in (
+        lambda t: "Gerr1_Sig002~{}_add".format(t), 
+        lambda t: "Gerr1_Sig005~{}_add".format(t),
+    ):
         trace = defaultdict(list)
-        print("評価関数曲線 "+JP)
+        print("評価関数曲線 "+name(Er))
         for smsz_idx, smsz in enumerate(dm.smsz):
             trace[0].append(go.Scatter(
                 x=dm.dtheta2, y=reward[Er][:,smsz_idx],
@@ -362,32 +244,32 @@ def Run(ct, *args):
                 )
             ))
             trace[2].append(go.Scatter(
-                x=dm.dtheta2, y=reward[ErJP][:,smsz_idx],
+                x=dm.dtheta2, y=reward[name(Er)][:,smsz_idx],
                 mode='lines', 
-                name="E[r] - 2SD[r] ({})".format(JP),
+                name="E[r] - 2SD[r] ({})".format(name(Er)),
                 line=dict(color="purple", dash="dash"),
                 visible=False,
                 error_y=dict(
                     type="data",
                     symmetric=False,
                     array=[0]*len(dm.dtheta2),
-                    arrayminus=2*reward[SrJP][:,smsz_idx],
+                    arrayminus=2*reward[name(Sr)][:,smsz_idx],
                     color="purple",
                     thickness=1.5,
                     width=3,
                 )
             ))
             trace[3].append(go.Scatter(
-                x=dm.dtheta2, y=reward[ErJP][:,smsz_idx],
+                x=dm.dtheta2, y=reward[name(Er)][:,smsz_idx],
                 mode='lines', 
-                name="E[r] - 1SD[r] ({})".format(JP),
+                name="E[r] - 1SD[r] ({})".format(name(Er)),
                 line=dict(color="green", dash="dash"),
                 visible=False,
                 error_y=dict(
                     type="data",
                     symmetric=False,
                     array=[0]*len(dm.dtheta2),
-                    arrayminus=1*reward[SrJP][:,smsz_idx],
+                    arrayminus=1*reward[name(Sr)][:,smsz_idx],
                     color="green",
                     thickness=1.5,
                     width=3,
@@ -441,12 +323,12 @@ def Run(ct, *args):
         for smsz_idx, smsz in enumerate(dm.smsz):
             fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
         check_or_create_dir(save_img_dir)
-        plotly.offline.plot(fig, filename = save_img_dir + "return({}).html".format(JP), auto_open=False)
+        plotly.offline.plot(fig, filename = save_img_dir + "return({}).html".format(name(Er)), auto_open=False)
     
     
     #最適化された評価関数曲線
     print("最適化された評価関数曲線")
-    r_types = (Er, Er_1LCB, Er_2LCB, ErJP1, ErJP1_1LCB, ErJP1_2LCB)
+    r_types = (Er, "Er_LCB2", "Gerr1_Sig002~Er_add_LCB2", "Gerr1_Sig005~Er_add_LCB2")
     fig = go.Figure()
     for r_type in r_types:
         opt_dtheta2_list = np.argmax(reward[r_type], axis = 0)
