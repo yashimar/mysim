@@ -3,7 +3,41 @@ from core_tool import *
 from core_tool import *
 from tsim.dpl_cmn import *
 SmartImportReload('tsim.dpl_cmn')
-from .check import *
+from .learn import *
+
+
+K10MEAN = "k10_mean"
+K10ERR = "k10_error"
+NNMEAN = "NN_mean"
+NNERR = "NN_error"
+NNSD = "NN_sd"
+JP1 = "|JumpPoint(G=1) - NNmean|"
+JP2 = "|JumpPoint(G=2) - NNmean|"
+JP1DIFF = "|JumpPoint - (NNmean+/-1NNerr)|"
+JP2DIFF = "|JumpPoint - (NNmean+/-2NNerr)|"
+Er = "Er"
+Sr = "Sr"
+Er_1LCB = "Er_1LCB"
+Er_2LCB = "Er_2LCB"
+ErJP1 = "ErJP1"
+SrJP1 = "SrJP1"
+ErJP1_1LCB = "ErJP1_1LCB"
+ErJP1_2LCB = "ErJP1_2LCB"
+ErJP1ADD = "ErJP1_add"
+SrJP1ADD = "SrJP1_add"
+ErJP1ADD_1LCB = "ErJP1_add_1LCB"
+ErJP1ADD_2LCB = "ErJP1_add_2LCB"
+ErJP2 = "ErJP2"
+SrJP2 = "SrJP2"
+ErJP2_1LCB = "ErJP2_1LCB"
+ErJP2_2LCB = "ErJP2_2LCB"
+ErJP2ADD = "ErJP2_add"
+SrJP2ADD = "SrJP2_add"
+ErJP2ADD_1LCB = "ErJP2_add_1LCB"
+ErJP2ADD_2LCB = "ErJP2_add_2LCB"
+LCB1 = "LCB1"
+LCB2 = "LCB2"
+BASE_DIR = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/"
 
 
 def setup_datotal(dm, logdir):
@@ -144,15 +178,25 @@ def Run(ct, *args):
     name_pref = "t0.1"
     name_list = [
         "t0.1/t1",
-        # "t0.1/t2",
-        # "t0.1/t3",
-        # "t0.1/t4",
-        # "t0.1/t5",
-        # "t0.1/t6",
-        # "t0.1/t7",
-        # "t0.1/t8",
-        # "t0.1/t9",
-        # "t0.1/t10",
+        "t0.1/t2",
+        "t0.1/t3",
+        "t0.1/t4",
+        "t0.1/t5",
+        "t0.1/t6",
+        "t0.1/t7",
+        "t0.1/t8",
+        "t0.1/t9",
+        "t0.1/t10",
+        "t0.1/t11",
+        "t0.1/t12",
+        "t0.1/t13",
+        "t0.1/t14",
+        "t0.1/t15",
+        "t0.1/t16",
+        "t0.1/t17",
+        "t0.1/t18",
+        "t0.1/t19",
+        "t0.1/t20",
     ]
     recreate = False
 
