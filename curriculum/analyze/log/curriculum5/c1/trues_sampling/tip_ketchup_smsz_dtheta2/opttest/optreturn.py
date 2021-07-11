@@ -10,15 +10,25 @@ def Run(ct, *args):
     name_pref = "t0.1"
     name_list = [
         "t0.1/t1",
-        # "t0.1/t2",
-        # "t0.1/t3",
-        # "t0.1/t4",
-        # "t0.1/t5",
-        # "t0.1/t6",
-        # "t0.1/t7",
-        # "t0.1/t8",
-        # "t0.1/t9",
-        # "t0.1/t10",
+        "t0.1/t2",
+        "t0.1/t3",
+        "t0.1/t4",
+        "t0.1/t5",
+        "t0.1/t6",
+        "t0.1/t7",
+        "t0.1/t8",
+        "t0.1/t9",
+        "t0.1/t10",
+        "t0.1/t11",
+        "t0.1/t12",
+        "t0.1/t13",
+        "t0.1/t14",
+        "t0.1/t15",
+        "t0.1/t16",
+        "t0.1/t17",
+        "t0.1/t18",
+        "t0.1/t19",
+        "t0.1/t20",
     ]
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name_pref.replace("/","_"))
     recreate = False
@@ -49,7 +59,7 @@ def Run(ct, *args):
     
     #最適化された評価関数曲線
     print("最適化された評価関数曲線")
-    r_types = (Er, Er_2LCB, "Gerr1_Sig002~Er_add_LCB2", "Gerr1_Sig005~Er_add_LCB2")
+    r_types = (Er, "Er_LCB2", "Gerr1_Sig002~Er_noadd_LCB2", "Gerr1_Sig002~Er_add_LCB2", "Gerr1_Sig005~Er_noadd_LCB2", "Gerr1_Sig005~Er_add_LCB2")
     fig = go.Figure()
     for r_type in r_types:
         opt_dtheta2_list_meta = []
@@ -91,6 +101,5 @@ def Run(ct, *args):
     fig['layout']['yaxis']['range'] = (-8,0.1)
     fig['layout']['xaxis']['title'] = "size_srcmouth"
     fig['layout']['yaxis']['title'] = "return"
-    # check_or_create_dir(save_img_dir)
-    # plotly.offline.plot(fig, filename = save_img_dir + "opt_return.html", auto_open=False)
-    fig.show()
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "opt_return.html", auto_open=False)
