@@ -30,7 +30,14 @@ def Run(ct, *args):
         dm.log["smsz"]
     ]).T
     
-    obsr = ObservationReward(observations)
-    obsr.setup(diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-    x = [0.58, 0.45]
-    print(obsr.calc_reward(x))
+    us = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+    us.setup()
+    # x = [0.3101, 0.52727]
+    # print(us.calc_sd(x))
+    fig = plt.figure()
+    y_list = []
+    for dtheta2 in dm.dtheta2:
+        x = [dtheta2, 0.52727]
+        y_list.append(us.calc_sd(x).item())
+    plt.plot(dm.dtheta2, y_list)
+    fig.show()
