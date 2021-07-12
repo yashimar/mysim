@@ -162,9 +162,11 @@ def setup_reward(dm, logdir):
     reward_gmm_noadd = defaultdict(lambda: np.zeros((100,100)))
     reward_gmm_add = defaultdict(lambda: np.zeros((100,100)))
     reward_unobs = defaultdict(lambda: np.zeros((100,100)))
+    reward_unobs_gmm_add = defaultdict(lambda: np.zeros((100,100)))
     calc_normal = True
     calc_gmm_noadd, calc_gmm_add = defaultdict(lambda: True), defaultdict(lambda: True)
     calc_unobs = defaultdict(lambda: True)
+    calc_unobs_gmm_add = defaultdict(lambda: True)
     
     if os.path.exists(logdir+"reward_normal.pickle"):
         calc_normal = False
@@ -185,6 +187,11 @@ def setup_reward(dm, logdir):
             reward_unobs = pickle.load(f)
         for k in reward_unobs.keys():
             calc_unobs[k.split("~")[0]] = False
+    if os.path.exists(logdir+"reward_unobs_gmm_add.pickle"):
+        with open(logdir+"reward_unobs_gmm_add.pickle", mode="rb") as f:
+            reward_unobs_gmm_add = pickle.load(f)
+        for k in reward_unobs_gmm_add.keys():
+            calc_unobs_gmm_add[k.split("~")[0]] = False
         
     for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
         for idx_smsz, smsz in enumerate(dm.smsz):
@@ -198,13 +205,13 @@ def setup_reward(dm, logdir):
                 reward_normal[Er+"_"+LCB2][idx_dtheta2, idx_smsz] = rmean - 2*rsd
             
             for name, gmmpred in gmmpreds.items():
-                if calc_gmm_noadd[name]:
-                    rjp = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, max(datotal[NNSD][idx_dtheta2, idx_smsz], gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
-                    rjpmean, rjpsd = rjp.Y.item(), np.sqrt(rjp.Var[0,0]).item()
-                    reward_gmm_noadd["{}~{}_{}".format(name, Er, "noadd")][idx_dtheta2, idx_smsz] = rjpmean
-                    reward_gmm_noadd["{}~{}_{}".format(name, Sr, "noadd")][idx_dtheta2, idx_smsz] = rjpsd
-                    reward_gmm_noadd["{}~{}_{}_{}".format(name, Er, "noadd", LCB1)][idx_dtheta2, idx_smsz] = rjpmean - 1*rjpsd
-                    reward_gmm_noadd["{}~{}_{}_{}".format(name, Er, "noadd", LCB2)][idx_dtheta2, idx_smsz] = rjpmean - 2*rjpsd
+                # if calc_gmm_noadd[name]:
+                #     rjp = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, max(datotal[NNSD][idx_dtheta2, idx_smsz], gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                #     rjpmean, rjpsd = rjp.Y.item(), np.sqrt(rjp.Var[0,0]).item()
+                #     reward_gmm_noadd["{}~{}_{}".format(name, Er, "noadd")][idx_dtheta2, idx_smsz] = rjpmean
+                #     reward_gmm_noadd["{}~{}_{}".format(name, Sr, "noadd")][idx_dtheta2, idx_smsz] = rjpsd
+                #     reward_gmm_noadd["{}~{}_{}_{}".format(name, Er, "noadd", LCB1)][idx_dtheta2, idx_smsz] = rjpmean - 1*rjpsd
+                #     reward_gmm_noadd["{}~{}_{}_{}".format(name, Er, "noadd", LCB2)][idx_dtheta2, idx_smsz] = rjpmean - 2*rjpsd
 
                 if calc_gmm_add[name]:
                     rjp = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
@@ -222,11 +229,22 @@ def setup_reward(dm, logdir):
                     reward_unobs["{}~{}".format(name, Sr)][idx_dtheta2, idx_smsz] = rsd
                     reward_unobs["{}~{}_{}".format(name, Er, LCB1)][idx_dtheta2, idx_smsz] = rmean - 1*rsd
                     reward_unobs["{}~{}_{}".format(name, Er, LCB2)][idx_dtheta2, idx_smsz] = rmean - 2*rsd
+                    
+            for n_unobs, unobssd in unobssds.items():
+                for n_gmm, gmmpred in gmmpreds.items():
+                    if calc_unobs_gmm_add["{}-{}".format(n_unobs, n_gmm)]:
+                        r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+unobssd[idx_dtheta2, idx_smsz]+gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                        rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
+                        reward_unobs_gmm_add["{}-{}~{}".format(n_unobs, n_gmm, Er)][idx_dtheta2, idx_smsz] = rmean
+                        reward_unobs_gmm_add["{}-{}~{}".format(n_unobs, n_gmm, Sr)][idx_dtheta2, idx_smsz] = rsd
+                        reward_unobs_gmm_add["{}-{}~{}_{}".format(n_unobs, n_gmm, Er, LCB1)][idx_dtheta2, idx_smsz] = rmean - 1*rsd
+                        reward_unobs_gmm_add["{}-{}~{}_{}".format(n_unobs, n_gmm, Er, LCB2)][idx_dtheta2, idx_smsz] = rmean - 2*rsd
 
     reward.update(reward_normal)
     reward.update(reward_gmm_noadd)
     reward.update(reward_gmm_add)
     reward.update(reward_unobs)
+    reward.update(reward_unobs_gmm_add)
 
     with open(logdir+"reward_normal.pickle", mode="wb") as f:
         pickle.dump(reward_normal, f)
@@ -236,6 +254,8 @@ def setup_reward(dm, logdir):
         pickle.dump(reward_gmm_add, f)
     with open(logdir+"reward_unobs.pickle", mode="wb") as f:
         pickle.dump(reward_unobs, f)
+    with open(logdir+"reward_unobs_gmm_add.pickle", mode="wb") as f:
+        pickle.dump(reward_unobs_gmm_add, f)
     with open(logdir+"reward.pickle", mode="wb") as f:
         pickle.dump(reward, f)
 
@@ -245,26 +265,26 @@ def setup_reward(dm, logdir):
 def Run(ct, *args):
     name_pref = "t0.1"
     name_list = [
-        # "t0.1/t1",
-        # "t0.1/t2",
-        # "t0.1/t3",
-        # "t0.1/t4",
-        # "t0.1/t5",
+        "t0.1/t1",
+        "t0.1/t2",
+        "t0.1/t3",
+        "t0.1/t4",
+        "t0.1/t5",
         "t0.1/t6",
-        # "t0.1/t7",
-        # "t0.1/t8",
-        # "t0.1/t9",
-        # "t0.1/t10",
-        # "t0.1/t11",
-        # "t0.1/t12",
-        # "t0.1/t13",
-        # "t0.1/t14",
-        # "t0.1/t15",
-        # "t0.1/t16",
-        # "t0.1/t17",
-        # "t0.1/t18",
-        # "t0.1/t19",
-        # "t0.1/t20",
+        "t0.1/t7",
+        "t0.1/t8",
+        "t0.1/t9",
+        "t0.1/t10",
+        "t0.1/t11",
+        "t0.1/t12",
+        "t0.1/t13",
+        "t0.1/t14",
+        "t0.1/t15",
+        "t0.1/t16",
+        "t0.1/t17",
+        "t0.1/t18",
+        "t0.1/t19",
+        "t0.1/t20",
     ]
     recreate = False
 
@@ -275,38 +295,44 @@ def Run(ct, *args):
             dm.log["est_opt_dtheta2"],
             dm.log["smsz"]
         ]).T
-        G1ObsrSig001 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        G1ObsrSig001.setup()
-        G1ObsrSig002 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-        G1ObsrSig002.setup()
-        G1ObsrSig005 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20])
-        G1ObsrSig005.setup()
+        # G1ObsrSig001 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+        # G1ObsrSig001.setup()
+        # G1ObsrSig002 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
+        # G1ObsrSig002.setup()
+        # G1ObsrSig005 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20])
+        # G1ObsrSig005.setup()
         obsr_name_list = [
-            (G1ObsrSig001, "G1ObsrSig001"),
-            (G1ObsrSig002, "G1ObsrSig002"),
+            # (G1ObsrSig001, "G1ObsrSig001"),
+            # (G1ObsrSig002, "G1ObsrSig002"),
             # (G1ObsrSig005, "G1ObsrSig005"),
         ]
-        S01unobsSig001 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        S01unobsSig001.setup()
-        S01unobsSig002 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-        S01unobsSig002.setup()
-        S03unobsSig001 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        S03unobsSig001.setup()
-        S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-        S03unobsSig002.setup()
+        S005unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+        S005unobsSig001.setup()
+        # S01unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+        # S01unobsSig001.setup()
+        # S01unobsSig002 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
+        # S01unobsSig002.setup()
+        # S03unobsSig001 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+        # S03unobsSig001.setup()
+        # S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
+        # S03unobsSig002.setup()
         unobs_name_list = [
-            (S01unobsSig001, "S01unobsSig001"),
-            (S01unobsSig002, "S01unobsSig002"),
-            (S03unobsSig001, "S03unobsSig001"),
-            (S03unobsSig002, "S03unobsSig002"),
+            (S005unobsSig001, "S005unobsSig001"),
+            # (S01unobsSig001, "S01unobsSig001"),
+            # (S01unobsSig002, "S01unobsSig002"),
+            # (S03unobsSig001, "S03unobsSig001"),
+            # (S03unobsSig002, "S03unobsSig002"),
         ]
+        Gerr1Sig001 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        Gerr1Sig001.train()
         Gerr1Sig002 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
         Gerr1Sig002.train()
-        Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-        Gerr1Sig005.train()
+        # Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        # Gerr1Sig005.train()
         gmm_name_list = [
-            (Gerr1Sig002, "Gerr1_Sig002"),
-            (Gerr1Sig005, "Gerr1_Sig005"),
+            (Gerr1Sig001, "Gerr1_Sig001"),
+            # (Gerr1Sig002, "Gerr1_Sig002"),
+            # (Gerr1Sig005, "Gerr1_Sig005"),
         ]
         datotal = setup_datotal(dm, logdir)
         obsrcalcs = setup_obsr(dm, obsr_name_list, logdir)
