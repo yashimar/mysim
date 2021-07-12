@@ -7,18 +7,18 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "t0.1/t1"
+    name = "t0.1/t8"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
     c_heatmap = False
-    c_datotal = False
+    c_datotal = True
     c_obsr = False
     c_reward_obsr = False
-    c_reward_unobs = False
-    c_reward_gmm = False
-    c_reward_gmm_obsr = False
+    c_reward_unobs = True
+    c_reward_gmm = True
+    c_reward_gmm_obsr = True
     c_reward_opt = True
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
@@ -27,38 +27,44 @@ def Run(ct, *args):
         dm.log["est_opt_dtheta2"],
         dm.log["smsz"]
     ]).T
-    G1ObsrSig001 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-    G1ObsrSig001.setup()
-    G1ObsrSig002 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-    G1ObsrSig002.setup()
-    G1ObsrSig005 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20])
-    G1ObsrSig005.setup()
+    # G1ObsrSig001 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+    # G1ObsrSig001.setup()
+    # G1ObsrSig002 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
+    # G1ObsrSig002.setup()
+    # G1ObsrSig005 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20])
+    # G1ObsrSig005.setup()
     obsr_name_list = [
-        (G1ObsrSig001, "G1ObsrSig001"),
-        (G1ObsrSig002, "G1ObsrSig002"),
+        # (G1ObsrSig001, "G1ObsrSig001"),
+        # (G1ObsrSig002, "G1ObsrSig002"),
         # (G1ObsrSig005, "G1ObsrSig005"),
     ]
-    S01unobsSig001 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-    S01unobsSig001.setup()
-    S01unobsSig002 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-    S01unobsSig002.setup()
-    S03unobsSig001 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-    S03unobsSig001.setup()
-    S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-    S03unobsSig002.setup()
+    S005unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+    S005unobsSig001.setup()
+    # S01unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+    # S01unobsSig001.setup()
+    # S01unobsSig002 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
+    # S01unobsSig002.setup()
+    # S03unobsSig001 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+    # S03unobsSig001.setup()
+    # S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
+    # S03unobsSig002.setup()
     unobs_name_list = [
-        (S01unobsSig001, "S01unobsSig001"),
-        (S01unobsSig002, "S01unobsSig002"),
-        (S03unobsSig001, "S03unobsSig001"),
-        (S03unobsSig002, "S03unobsSig002"),
+        (S005unobsSig001, "S005unobsSig001"),
+        # (S01unobsSig001, "S01unobsSig001"),
+        # (S01unobsSig002, "S01unobsSig002"),
+        # (S03unobsSig001, "S03unobsSig001"),
+        # (S03unobsSig002, "S03unobsSig002"),
     ]
+    Gerr1Sig001 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    Gerr1Sig001.train()
     Gerr1Sig002 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
     Gerr1Sig002.train()
-    Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    Gerr1Sig005.train()
+    # Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # Gerr1Sig005.train()
     gmm_name_list = [
-        (Gerr1Sig002, "Gerr1_Sig002"),
-        (Gerr1Sig005, "Gerr1_Sig005"),
+        (Gerr1Sig001, "Gerr1_Sig001"),
+        # (Gerr1Sig002, "Gerr1_Sig002"),
+        # (Gerr1Sig005, "Gerr1_Sig005"),
     ]
     datotal = setup_datotal(dm, logdir)
     obsrcalcs = setup_obsr(dm, obsr_name_list, logdir)
@@ -451,104 +457,220 @@ def Run(ct, *args):
     
     #datotal曲線
     if c_datotal:
-        for name in ("Gerr1_Sig002", "Gerr1_Sig005"):
-            print("datotal曲線 "+name)
-            trace = defaultdict(list)
-            for smsz_idx, smsz in enumerate(dm.smsz):
-                trace[0].append(go.Scatter(
-                    x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
-                    mode='lines', 
-                    name="NNmean+/-2NNerr",
-                    line=dict(color="grey", dash="dash"),
-                    visible=False,
-                    error_y=dict(
-                        type="data",
-                        symmetric=True,
-                        array=2*datotal[NNERR][:,smsz_idx],
-                        color="grey",
-                        thickness=1.5,
-                        width=3,
-                    )
-                ))
-                trace[1].append(go.Scatter(
-                    x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
-                    mode='lines', 
-                    name="NNmean+/-1NNerr",
-                    line=dict(color="orange", dash="dash"),
-                    visible=False,
-                    error_y=dict(
-                        type="data",
-                        symmetric=True,
-                        array=datotal[NNERR][:,smsz_idx],
-                        color="orange",
-                        thickness=1.5,
-                        width=3,
-                    )
-                ))
-                trace[2].append(go.Scatter(
-                    x=dm.dtheta2, y=datotal[TRUE][:,smsz_idx],
-                    mode='markers', 
-                    name="True datotal",
-                    marker=dict(color="blue"),
-                    visible=False,
-                ))
-                if smsz in dm.log["smsz"]:
-                    log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == smsz]
-                    trace[3].append(go.Scatter(
-                        x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
+        for n_unobs in unobssds.keys():
+            for n_gmm in gmmpred.keys():
+                print("datotal曲線", n_unobs, n_gmm)
+                trace = defaultdict(list)
+                for smsz_idx, smsz in enumerate(dm.smsz):
+                    trace[0].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name="NNmean+/-2NNerr",
+                        line=dict(color="grey", dash="dash"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=2*datotal[NNERR][:,smsz_idx],
+                            color="grey",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                    trace[1].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name="NNmean+/-1NNerr",
+                        line=dict(color="orange", dash="dash"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=datotal[NNERR][:,smsz_idx],
+                            color="orange",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                    trace[2].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[TRUE][:,smsz_idx],
                         mode='markers', 
-                        name="True datotal [TrainingData]",
-                        marker=dict(color="purple", size=8),
+                        name="True datotal",
+                        marker=dict(color="blue"),
                         visible=False,
                     ))
-                else:
-                    trace[3].append(go.Scatter(x=[], y=[]))
-                trace[4].append(go.Scatter(
-                    x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
-                    mode='lines', 
-                    name=name,
-                    line=dict(color="red", dash="dashdot"),
-                    visible=False,
-                    error_y=dict(
-                        type="data",
-                        symmetric=True,
-                        array=gmmpred[name][:,smsz_idx],
-                        color="red",
-                        thickness=1.5,
-                        width=3,
+                    if smsz in dm.log["smsz"]:
+                        log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == smsz]
+                        trace[3].append(go.Scatter(
+                            x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
+                            mode='markers', 
+                            name="True datotal [TrainingData]",
+                            marker=dict(color="purple", size=8),
+                            visible=False,
+                        ))
+                    else:
+                        trace[3].append(go.Scatter(x=[], y=[]))
+                    trace[4].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name=n_gmm,
+                        line=dict(color="red", dash="dashdot"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=gmmpred[n_gmm][:,smsz_idx],
+                            color="red",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                    trace[5].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name=n_unobs,
+                        line=dict(color="red", dash="dashdot"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=unobssds[n_unobs][:,smsz_idx],
+                            color="purple",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                for i in range(len(trace)):
+                    trace[i][0].visible = True 
+                data = sum([trace[i] for i in range(len(trace))], [])   
+                steps = []
+                for smsz_idx, smsz in enumerate(dm.smsz):
+                    for j in range(len(trace)):
+                        trace["vis{}".format(j)] = [False]*len(dm.smsz)
+                        trace["vis{}".format(j)][smsz_idx] = True
+                    step = dict(
+                        method="update",
+                        args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                            {"title": "size_srcmouth: {:.4f}".format(smsz)}],
                     )
-                ))
-            for i in range(len(trace)):
-                trace[i][0].visible = True 
-            data = sum([trace[i] for i in range(len(trace))], [])   
-            steps = []
-            for smsz_idx, smsz in enumerate(dm.smsz):
-                for j in range(len(trace)):
-                    trace["vis{}".format(j)] = [False]*len(dm.smsz)
-                    trace["vis{}".format(j)][smsz_idx] = True
-                step = dict(
-                    method="update",
-                    args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
-                        {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+                    steps.append(step)
+                sliders = [dict(
+                    active=10,
+                    currentvalue={"prefix": "size_srcmouth: "},
+                    pad={"t": 50},
+                    steps=steps,
+                )]
+                fig = go.Figure(data=data)
+                fig.update_layout(
+                    sliders=sliders
                 )
-                steps.append(step)
-            sliders = [dict(
-                active=10,
-                currentvalue={"prefix": "size_srcmouth: "},
-                pad={"t": 50},
-                steps=steps,
-            )]
-            fig = go.Figure(data=data)
-            fig.update_layout(
-                sliders=sliders
-            )
-            fig['layout']['xaxis']['title'] = "dtheta2"
-            fig['layout']['yaxis']['title'] = "datotal"
-            fig['layout']['yaxis']['range'] = (-0.05,0.6)
-            for smsz_idx, smsz in enumerate(dm.smsz):
-                fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
-            check_or_create_dir(save_img_dir)
-            plotly.offline.plot(fig, filename = save_img_dir + "curve({}).html".format(name), auto_open=False)
+                fig['layout']['xaxis']['title'] = "dtheta2"
+                fig['layout']['yaxis']['title'] = "datotal"
+                fig['layout']['yaxis']['range'] = (-0.05,0.6)
+                for smsz_idx, smsz in enumerate(dm.smsz):
+                    fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
+                check_or_create_dir(save_img_dir)
+                plotly.offline.plot(fig, filename = save_img_dir + "datotal_{}_{}.html".format(n_unobs, n_gmm), auto_open=False)
+                
+        for n_unobs in unobssds.keys():
+            for n_gmm in gmmpred.keys():
+                print("datotal曲線加算", n_unobs, n_gmm)
+                trace = defaultdict(list)
+                for smsz_idx, smsz in enumerate(dm.smsz):
+                    trace[0].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name=n_unobs,
+                        line=dict(color="purple", dash="dashdot"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=datotal[NNERR][:,smsz_idx]+gmmpred[n_gmm][:,smsz_idx]+unobssds[n_unobs][:,smsz_idx],
+                            color="purple",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                    trace[1].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name=n_gmm,
+                        line=dict(color="red", dash="dashdot"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=datotal[NNERR][:,smsz_idx]+gmmpred[n_gmm][:,smsz_idx],
+                            color="red",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                    trace[2].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                        mode='lines', 
+                        name="NNmean+/-1NNerr",
+                        line=dict(color="orange", dash="dash"),
+                        visible=False,
+                        error_y=dict(
+                            type="data",
+                            symmetric=True,
+                            array=datotal[NNERR][:,smsz_idx],
+                            color="orange",
+                            thickness=1.5,
+                            width=3,
+                        )
+                    ))
+                    trace[3].append(go.Scatter(
+                        x=dm.dtheta2, y=datotal[TRUE][:,smsz_idx],
+                        mode='markers', 
+                        name="True datotal",
+                        marker=dict(color="blue"),
+                        visible=False,
+                    ))
+                    if smsz in dm.log["smsz"]:
+                        log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == smsz]
+                        trace[4].append(go.Scatter(
+                            x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
+                            mode='markers', 
+                            name="True datotal [TrainingData]",
+                            marker=dict(color="purple", size=8),
+                            visible=False,
+                        ))
+                    else:
+                        trace[4].append(go.Scatter(x=[], y=[]))
+                for i in range(len(trace)):
+                    trace[i][0].visible = True 
+                data = sum([trace[i] for i in range(len(trace))], [])   
+                steps = []
+                for smsz_idx, smsz in enumerate(dm.smsz):
+                    for j in range(len(trace)):
+                        trace["vis{}".format(j)] = [False]*len(dm.smsz)
+                        trace["vis{}".format(j)][smsz_idx] = True
+                    step = dict(
+                        method="update",
+                        args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                            {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+                    )
+                    steps.append(step)
+                sliders = [dict(
+                    active=10,
+                    currentvalue={"prefix": "size_srcmouth: "},
+                    pad={"t": 50},
+                    steps=steps,
+                )]
+                fig = go.Figure(data=data)
+                fig.update_layout(
+                    sliders=sliders
+                )
+                fig['layout']['xaxis']['title'] = "dtheta2"
+                fig['layout']['yaxis']['title'] = "datotal"
+                fig['layout']['yaxis']['range'] = (-0.05,0.6)
+                for smsz_idx, smsz in enumerate(dm.smsz):
+                    fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
+                check_or_create_dir(save_img_dir)
+                plotly.offline.plot(fig, filename = save_img_dir + "datotal_addsd_{}_{}.html".format(n_unobs, n_gmm), auto_open=False)
 
     
     #評価関数曲線 (GMM)
@@ -675,10 +797,10 @@ def Run(ct, *args):
             plotly.offline.plot(fig, filename = save_img_dir + "return({}).html".format(name(Er)), auto_open=False)
             
             
-    #評価関数曲線 (GMM + Observation Reward)
-    gmm_types = [lambda t: "Gerr1_Sig002~{}_add".format(t), lambda t: "Gerr1_Sig005~{}_add".format(t)]
-    obsr_types = [name for name in obsrcalcs.keys()]
-    names = [lambda t, obsr_type=obsr_type, gmm_type=gmm_type: "{}_{}".format(obsr_type, gmm_type(t)) for obsr_type in obsr_types for gmm_type in gmm_types]
+    #評価関数曲線 (GMM + Unobserved SD)
+    gmm_types = [lambda t, name=name: "{}~{}".format(name, t) for name in gmmpred.keys()]
+    us_types = [name for name in unobssds.keys()]
+    names = [lambda t, us_type=us_type, gmm_type=gmm_type: "{}-{}".format(us_type, gmm_type(t)) for us_type in us_types for gmm_type in gmm_types]
     if c_reward_gmm_obsr:
         for name in names:
             trace = defaultdict(list)
@@ -804,6 +926,7 @@ def Run(ct, *args):
         print("最適化された評価関数曲線")
         r_types_base = [Er, "Er_LCB2"]
         r_types = r_types_base + ["{}~{}".format(name, r_type) for r_type in r_types_base for name in unobssds.keys()]
+        r_types = r_types + ["{}-{}~{}".format(n_unobs, n_gmm, r_type) for r_type in r_types_base for n_unobs in unobssds.keys() for n_gmm in gmmpred.keys()]
         fig = go.Figure()
         for r_type in r_types:
             opt_dtheta2_list = np.argmax(reward[r_type], axis = 0)
