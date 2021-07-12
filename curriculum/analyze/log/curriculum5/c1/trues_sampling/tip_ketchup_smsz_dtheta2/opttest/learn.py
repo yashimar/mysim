@@ -210,12 +210,62 @@ class GMM:
         for gc in self.gaussian_components:
             pred += gc(x)
         return pred
-            
+    
+    
+class ObservationReward:
+    def __init__(self, observations, diag_sigma):
+        self.X = observations
+        self.diag_sigma = diag_sigma
+        self.r_components = []
+        
+    def setup(self):
+        Var = np.diag(self.diag_sigma)**2
+        for obs_x in self.X:
+            r_component= lambda in_x, obs_x=obs_x: multivariate_normal.pdf(in_x, obs_x, Var)*(1./multivariate_normal.pdf(obs_x, obs_x, Var))*1.0
+            self.r_components.append(r_component)
+    
+    def calc_reward(self, x, penalty = -1):
+        if penalty > 0:
+            raise(Exception("penalty should be 0 or less."))
+        if len(np.array(x).shape) == 1:
+            x = list(x)
+        r = penalty*np.ones((len(x)))
+        for rc in self.r_components:
+            r += abs(penalty)*rc(x)
+        r = np.minimum(0., r)
+        return r
+    
+    
+class UnobservedSD:
+    def __init__(self, observations, diag_sigma, penalty = 0.3):
+        self.X = observations
+        self.diag_sigma = diag_sigma
+        self.penalty = penalty
+        self.sd_components = []
+        if self.penalty <= 0:
+            raise(Exception("penalty should be 0 or more. Default value is 0.3."))
+        
+    def setup(self):
+        Var = np.diag(self.diag_sigma)**2
+        for obs_x in self.X:
+            sd_component= lambda in_x, obs_x=obs_x: -multivariate_normal.pdf(in_x, obs_x, Var)*(1./multivariate_normal.pdf(obs_x, obs_x, Var))*1.0
+            self.sd_components.append(sd_component)
+    
+    def calc_sd(self, x):
+        if len(np.array(x).shape) == 1:
+            x = [x]
+        sd = self.penalty*np.ones((len(x)))
+        for sdc in self.sd_components:
+            sd += self.penalty*sdc(x)
+        sd = np.maximum(0., sd)
+        return sd
+
+        
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
     # name = "Er/t0.1_fixed"
-    name = "t0.1/t10"
+    name = "t0.1/t20"
     num_ep = 500
     n_rand_sample = 50000
     max_smsz = 0.8
