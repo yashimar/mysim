@@ -7,19 +7,19 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "t0.1/t8"
+    name = "t0.1/1000/t1"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
-    c_heatmap = False
-    c_datotal = True
+    c_heatmap = True
+    c_datotal = False
     c_obsr = False
     c_reward_obsr = False
-    c_reward_unobs = True
-    c_reward_gmm = True
-    c_reward_gmm_obsr = True
-    c_reward_opt = True
+    c_reward_unobs = False
+    c_reward_gmm = False
+    c_reward_gmm_obsr = False
+    c_reward_opt = False
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
@@ -49,7 +49,7 @@ def Run(ct, *args):
     # S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
     # S03unobsSig002.setup()
     unobs_name_list = [
-        (S005unobsSig001, "S005unobsSig001"),
+        # (S005unobsSig001, "S005unobsSig001"),
         # (S01unobsSig001, "S01unobsSig001"),
         # (S01unobsSig002, "S01unobsSig002"),
         # (S03unobsSig001, "S03unobsSig001"),
@@ -62,7 +62,7 @@ def Run(ct, *args):
     # Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
     # Gerr1Sig005.train()
     gmm_name_list = [
-        (Gerr1Sig001, "Gerr1_Sig001"),
+        # (Gerr1Sig001, "Gerr1_Sig001"),
         # (Gerr1Sig002, "Gerr1_Sig002"),
         # (Gerr1Sig005, "Gerr1_Sig005"),
     ]
@@ -97,13 +97,13 @@ def Run(ct, *args):
     if c_heatmap:
         print("ヒートマップ")
         fig = make_subplots(
-            rows=4, cols=2, 
-            subplot_titles=["datotal 生データ (100×100)", "", "10×10平均", "|生データ - 10×10平均|", "NN平均予測", "NN誤差予測", "|NN平均+/-NN誤差からのずれ|", "|NN平均+/-2NN誤差からのずれ|"],
+            rows=5, cols=2, 
+            subplot_titles=["datotal 生データ (100×100)", "", "10×10平均", "|生データ - 10×10平均|", "NN平均予測", "NN誤差予測", "|NN平均+/-NN誤差からのずれ|", "|NN平均+/-2NN誤差からのずれ|", "|NN平均+/-NN誤差からのずれ| (観測点のみ)", "|NN平均+/-2NN誤差からのずれ| (観測点のみ)"],
             horizontal_spacing = 0.1,
             vertical_spacing = 0.1,
         )
         fig.update_layout(
-            height=2200, width=1750, 
+            height=3000, width=1750, 
             margin=dict(t=100,b=150),
             hoverdistance = 5,
         )
@@ -112,43 +112,75 @@ def Run(ct, *args):
         true_nnerr = [np.abs(v - _nnmean) for _nnmean, v in zip(nnmean, dm.log["true_datotal"])]
         jp1diff = [max(_nnmean-1*_nnerr-v, v-(_nnmean+1*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
         jp2diff = [max(_nnmean-2*_nnerr-v, v-(_nnmean+2*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
-        z_rc_pos_scale_scatterz_scatterscale_set = (
-            (datotal[TRUE], 1, 1, 0.46, 0.91, 0., 0.55, None, None, None),
-            (datotal[K10MEAN], 2, 1, 0.46, 0.63, 0., 0.55, None, None, None), (datotal[K10ERR], 2, 2, 1.0075, 0.63, 0., 0.3, None, None, None),
-            (datotal[NNMEAN], 3, 1, 0.46, 0.36, 0., 0.55, dm.log["true_datotal"], 0., 0.55), (datotal[NNERR], 3, 2, 1.0075, 0.36, 0., 0.36, true_nnerr, 0., 0.3),
-            (datotal[JP1DIFF], 4, 1, 0.46, 0.08, 0., 0.2, jp1diff, 0., 0.2), (datotal[JP2DIFF], 4, 2, 1.0075, 0.08, 0., 0.2, jp2diff, 0., 0.2),
+        diffcs = [
+            [0, "rgb(255, 255, 255)"],
+            [0.001, "rgb(255, 255, 0)"],
+            [1, "rgb(255, 0, 0)"],
+        ]
+        z_rc_pos_scale_cs_scatterz_scatterscale_set = (
+            (datotal[TRUE], 1, 1, 0.46, 0.94, 0., 0.55, None, None, None, None),
+            (datotal[K10MEAN], 2, 1, 0.46, 0.73, 0., 0.55, None, None, None, None), (datotal[K10ERR], 2, 2, 1.0075, 0.73, 0., 0.3, None, None, None, None),
+            (datotal[NNMEAN], 3, 1, 0.46, 0.5, 0., 0.55, None, dm.log["true_datotal"], 0., 0.55), (datotal[NNERR], 3, 2, 1.0075, 0.5, 0., 0.36, None, true_nnerr, 0., 0.3),
+            (datotal[JP1DIFF], 4, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (datotal[JP2DIFF], 4, 2, 1.0075, 0.28, 0., 0.2, diffcs, jp2diff, 0., 0.2),
+            (np.zeros((100,100)), 5, 1, 0.46, 0.06, None, None, diffcs, jp1diff, 0., 0.2), (np.zeros((100,100)), 5, 2, 1.0075, 0.06, None, None, diffcs, jp2diff, 0., 0.2),
         )
-        for z, row, col, posx, posy, zmin, zmax, scz, sczmin, sczmax in z_rc_pos_scale_scatterz_scatterscale_set:
-            fig.add_trace(go.Heatmap(
-                z = z, x = dm.smsz, y = dm.dtheta2,
-                colorscale = "Viridis",
-                zmin = zmin, zmax = zmax,
-                colorbar=dict(
-                    titleside="top", ticks="outside",
-                    x = posx, y = posy,
-                    thickness=23, len = 0.19,
-                ),
-            ), row, col)
-            if scz == None: continue
-            fig.add_trace(go.Scatter(
-                x = dm.log["smsz"], y=dm.log["est_opt_dtheta2"],
-                mode='markers',
-                showlegend = False,
-                hoverinfo='text',
-                text = ["zvalue: {}<br />ep: {}<br />smsz: {}<br />dtheta2: {}<br />".format(_scz, _ep, _smsz, _dtheta2) for _ep, _scz, _smsz, _dtheta2 in zip(dm.log["ep"], scz, dm.log["smsz"], dm.log["est_opt_dtheta2"])],
-                marker = dict(
-                    size = 8,
-                    color = scz,
-                    colorscale="Viridis",
-                    cmin = sczmin,
-                    cmax = sczmax,
-                    line = dict(
-                        color = "black",
-                        width = 1,
-                    )
-                ),
-            ), row, col)
-        for i in range(1,len(z_rc_pos_scale_scatterz_scatterscale_set)+2):
+        for z, row, col, posx, posy, zmin, zmax, cs, scz, sczmin, sczmax in z_rc_pos_scale_cs_scatterz_scatterscale_set:
+            if np.sum(z) != 0:
+                fig.add_trace(go.Heatmap(
+                    z = z, x = dm.smsz, y = dm.dtheta2,
+                    colorscale = cs if cs != None else "Viridis",
+                    zmin = zmin, zmax = zmax,
+                    colorbar=dict(
+                        titleside="top", ticks="outside",
+                        x = posx, y = posy,
+                        thickness=23, len = 0.13,
+                    ),
+                ), row, col)
+                if scz == None: continue
+                fig.add_trace(go.Scatter(
+                    x = dm.log["smsz"], y=dm.log["est_opt_dtheta2"],
+                    mode='markers',
+                    showlegend = False,
+                    hoverinfo='text',
+                    text = ["zvalue: {}<br />ep: {}<br />smsz: {}<br />dtheta2: {}<br />".format(_scz, _ep, _smsz, _dtheta2) for _ep, _scz, _smsz, _dtheta2 in zip(dm.log["ep"], scz, dm.log["smsz"], dm.log["est_opt_dtheta2"])],
+                    marker = dict(
+                        size = 8,
+                        color = scz,
+                        colorscale = cs if cs != None else "Viridis",
+                        cmin = sczmin,
+                        cmax = sczmax,
+                        line = dict(
+                            color = "black",
+                            width = 1,
+                        )
+                    ),
+                ), row, col)
+            else:
+                if scz == None: continue
+                fig.add_trace(go.Scatter(
+                    x = dm.log["smsz"], y=dm.log["est_opt_dtheta2"],
+                    mode='markers',
+                    showlegend = False,
+                    hoverinfo='text',
+                    text = ["zvalue: {}<br />ep: {}<br />smsz: {}<br />dtheta2: {}<br />".format(_scz, _ep, _smsz, _dtheta2) for _ep, _scz, _smsz, _dtheta2 in zip(dm.log["ep"], scz, dm.log["smsz"], dm.log["est_opt_dtheta2"])],
+                    marker = dict(
+                        size = 8,
+                        color = scz,
+                        cmin = sczmin,
+                        cmax = sczmax,
+                        line = dict(
+                            color = "black",
+                            width = 1,
+                        ),
+                        colorscale = cs if cs != None else "Viridis",
+                        colorbar=dict(
+                            titleside="top", ticks="outside",
+                            x = posx, y = posy,
+                            thickness=23, len = 0.13,
+                        ),
+                    ),
+                ), row, col)
+        for i in range(1,len(z_rc_pos_scale_cs_scatterz_scatterscale_set)+2):
             fig['layout']['xaxis'+str(i)]['title'] = "size_srcmouth"
             fig['layout']['yaxis'+str(i)]['title'] = "dtheta2"
         check_or_create_dir(save_img_dir)
@@ -676,8 +708,7 @@ def Run(ct, *args):
     #評価関数曲線 (GMM)
     if c_reward_gmm:
         for name in (
-            lambda t: "Gerr1_Sig002~{}_add".format(t), 
-            lambda t: "Gerr1_Sig005~{}_add".format(t),
+            lambda t: "Gerr1_Sig001~{}_add".format(t), 
         ):
             trace = defaultdict(list)
             print("評価関数曲線 "+name(Er))
@@ -926,6 +957,7 @@ def Run(ct, *args):
         print("最適化された評価関数曲線")
         r_types_base = [Er, "Er_LCB2"]
         r_types = r_types_base + ["{}~{}".format(name, r_type) for r_type in r_types_base for name in unobssds.keys()]
+        r_types = r_types + ["{}~Er_add_LCB2".format(name) for name in gmmpred.keys()]
         r_types = r_types + ["{}-{}~{}".format(n_unobs, n_gmm, r_type) for r_type in r_types_base for n_unobs in unobssds.keys() for n_gmm in gmmpred.keys()]
         fig = go.Figure()
         for r_type in r_types:
