@@ -7,21 +7,7 @@ def Help():
 
 def Run(ct, *args):
     pass
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t1.sample_scatter')            
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t2.sample_scatter')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t3.sample_scatter')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1v3.t1.sample_scatter')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t1.lppour_flowvar')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t2.lppour_flowvar')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t3.lppour_flowvar')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t1.smsz_dtheta2_datotaltip')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t2.smsz_dtheta2_datotaltip')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t3.smsz_dtheta2_datotaltip')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t1.sample_transition')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t2.sample_transition')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t3.sample_transition')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1v2.t1.sample_scatter')
-    # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1v2.t1.sample_transition')
-    ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t2.lpflowx_datotal_dapour')
-    ct.Run('mysim.curriculum.analyze.log.curriculum3.scaling.t3.lpflowx_datotal_dapour')
-    ct.Run('mysim.curriculum.analyze.log.curriculum5.c1v3.t1.lpflowx_datotal_dapour')
+    for i in range(1,21):
+        ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.check', "t0.1/2000/t{}".format(i))
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.learn', "t0.1/2000/t{}".format(i))
+    

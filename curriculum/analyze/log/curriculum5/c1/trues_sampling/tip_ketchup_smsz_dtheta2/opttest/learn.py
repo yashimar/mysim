@@ -24,7 +24,7 @@ def idx_of_the_nearest(data, value):
 
 
 class Domain:
-    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0, n_rand_sample = 5, n_learn_step = 1):
+    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0):
         self.smsz = np.linspace(0.3,0.8,100)
         self.dtheta2 = np.linspace(0.1,1,100)[::-1]
         self.datotal = {TRUE: np.ones((100,100))*(-100), RFUNC: np.ones((100,100))*(-100)}
@@ -46,8 +46,6 @@ class Domain:
         }
         self.logE = []
         self.logdir = logdir
-        self.n_rand_sample = n_rand_sample
-        self.n_learn_step = n_learn_step
 
     def setup(self):
         self.datotal[TRUE] = np.load(SRC_PATH+"datotal.npy")
@@ -62,6 +60,7 @@ class Domain:
             est_datotal = self.nnmodel.model.Predict(x = x_in, with_var=True)
             
             if self.use_gmm:
+                self.gmm.train()
                 x_var = [0, max(est_datotal.Var[0].item(), self.gmm.predict(x_in).item()**2)]
             else:
                 x_var = [0, est_datotal.Var[0].item()]
@@ -77,13 +76,13 @@ class Domain:
         
         return idx_est_opt_dtheta2, est_opt_dtheta2, est_datotal, est_opt_Er, E
                     
-    def execute_main(self, idx_smsz, smsz, fixed_input):
+    def execute_main(self, idx_smsz, smsz, n_rand_sample, n_learn_step, fixed_input):
         ep = len(self.nnmodel.model.DataX)
         print("ep: {}".format(ep))
         true_opt_dtheta2_idx = np.argmax(self.datotal[RFUNC][:, idx_smsz])
         true_opt_dtheta2 = self.dtheta2[true_opt_dtheta2_idx]
         true_opt_r = self.datotal[RFUNC][true_opt_dtheta2_idx, idx_smsz]
-        self.gmm.train()
+        # self.gmm.train()
             
         if fixed_input != None:
             est_opt_dtheta2 = fixed_input[1]
@@ -91,7 +90,7 @@ class Domain:
             est_datotal = 0
             est_opt_Er = 0
             E = np.zeros((len(self.dtheta2),len(self.smsz)))
-        elif ep <= self.n_rand_sample:
+        elif ep <= n_rand_sample:
             idx_est_opt_dtheta2 = RandI(len(self.dtheta2))
             est_opt_dtheta2 = self.dtheta2[idx_est_opt_dtheta2]
             est_datotal = 0
@@ -103,7 +102,7 @@ class Domain:
         true_datotal = self.datotal[TRUE][idx_est_opt_dtheta2, idx_smsz]
         true_r_at_est_opt_dthtea2 = rfunc(true_datotal)
             
-        if ep % self.n_learn_step == 0:
+        if ep % n_learn_step == 0:
             self.nnmodel.update([est_opt_dtheta2, smsz], [true_datotal], not_learn = False)
         else:
             self.nnmodel.update([est_opt_dtheta2, smsz], [true_datotal], not_learn = True)
@@ -121,7 +120,7 @@ class Domain:
         self.logE.append(E)
             
             
-    def execute(self, max_smsz = 0.8, fixed_input = None):
+    def execute(self, n_rand_sample, n_learn_step, max_smsz = 0.8, fixed_input = None):
         idx_smsz = RandI(len(self.smsz))
         smsz = self.smsz[idx_smsz]
         while smsz > max_smsz:
@@ -130,7 +129,7 @@ class Domain:
         if fixed_input != None:
             smsz = fixed_input[0]
             idx_smsz = idx_of_the_nearest(self.smsz, smsz)
-        self.execute_main(idx_smsz, smsz, fixed_input)
+        self.execute_main(idx_smsz, smsz, n_rand_sample, n_learn_step, fixed_input)
             
     @classmethod
     def load(self, path):
@@ -210,7 +209,42 @@ class GMM:
         for gc in self.gaussian_components:
             pred += gc(x)
         return pred
+
+
+class GMM2:
+    def __init__(self, nnmodel, diag_sigma, Gerr):
+        self.nnmodel = nnmodel
+        self.jumppoints = {"X": [], "Y": []}
+        self.gaussian_components = []
+        self.diag_sigma = diag_sigma
+        self.Gerr = Gerr
     
+    def extract_jps(self):
+        self.jumppoints = {"X": [], "Y": []}
+        model = self.nnmodel.model
+        for i, (x, y) in enumerate(zip(model.DataX, model.DataY)):
+            p_mean = model.Forward(x_data = model.DataX[i:i+1], train = False).data.item() #Chainerのバグ回避用
+            p_err = model.ForwardErr(x_data = model.DataX[i:i+1], train = False).data.item()
+            if (y < (p_mean - self.Gerr*p_err) or (y > (p_mean + self.Gerr*p_err))):
+                jp = max((p_mean - self.Gerr*p_err)-y, y-(p_mean + self.Gerr*p_err))
+                self.jumppoints["X"].append(x.tolist())
+                self.jumppoints["Y"].append(jp.tolist())
+                
+    def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        self.extract_jps()
+        Var = np.diag(self.diag_sigma)**2
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
+            self.gaussian_components.append(lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy)
+    
+    def predict(self, x):
+        if len(np.array(x).shape) == 1:
+            x = [x]
+        pred = np.zeros((len(x)))
+        for gc in self.gaussian_components:
+            pred += gc(x)
+        return pred
+
+
     
 class ObservationReward:
     def __init__(self, observations, diag_sigma):
@@ -264,18 +298,19 @@ class UnobservedSD:
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    # name = "Er/t0.1_fixed"
-    name = "t0.1/t20"
-    num_ep = 500
+    name = "t0.1/2000/t2v2" if len(args) == 0 else args[0]
+    num_ep = 2002
     n_rand_sample = 50000
+    n_learn_step = 1
     max_smsz = 0.8
     nn_options = {
         'n_units': [2] + [200, 200] + [1],
         'n_units_err': [2] + [200, 200] + [1],
         # 'loss_stddev_stop_err': 1.0e-4,
         'error_loss_neg_weight': 0.1,
+        'loss_stddev_stop': 1.0e-6,
     }
-    n_save_ep = 500
+    n_save_ep = num_ep
     
     fixed_input = [
         (),
@@ -290,15 +325,18 @@ def Run(ct, *args):
     
     if os.path.exists(logdir+"dm.pickle"):
         dm = Domain.load(logdir+"dm.pickle")
+        dm.nnmodel.nn_options = nn_options
+        dm.nnmodel.setup()
     else:
         nnmodel = NNModel(modeldir, nn_options)
         nnmodel.setup()
-        gmm = GMM(nnmodel, diag_sigma=[(1.0-0.1)/50, (0.8-0.3)/50], Gerr = Gerr)
-        dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio, n_rand_sample = n_rand_sample, n_learn_step = 1)
+        # gmm = GMM(nnmodel, diag_sigma=[(1.0-0.1)/50, (0.8-0.3)/50], Gerr = Gerr)
+        gmm = GMM2(nnmodel, diag_sigma=[(1.0-0.1)/50, (0.8-0.3)/50], Gerr = Gerr)
+        dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio)
         dm.setup()
     
     while len(dm.log["ep"]) <= num_ep:
-        dm.execute(max_smsz = max_smsz)
+        dm.execute(n_rand_sample = n_rand_sample, n_learn_step = n_learn_step, max_smsz = max_smsz)
         if len(dm.log["ep"])%n_save_ep==0:
             dm.save()
         

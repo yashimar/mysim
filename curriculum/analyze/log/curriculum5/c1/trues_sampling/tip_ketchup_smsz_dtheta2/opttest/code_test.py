@@ -21,7 +21,7 @@ def Help():
 
 
 def Run(ct, *args):
-    name = "t0.1/t1"
+    name = "t0.1/2000/t2v2"
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
@@ -30,14 +30,19 @@ def Run(ct, *args):
         dm.log["smsz"]
     ]).T
     
-    us = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-    us.setup()
-    # x = [0.3101, 0.52727]
-    # print(us.calc_sd(x))
-    fig = plt.figure()
-    y_list = []
-    for dtheta2 in dm.dtheta2:
-        x = [dtheta2, 0.52727]
-        y_list.append(us.calc_sd(x).item())
-    plt.plot(dm.dtheta2, y_list)
-    fig.show()
+    gmm = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    gmm.train()
+    
+    x = [
+        [0.3101, 0.52727],
+        [0.2101, 0.6127],
+    ]
+    print(gmm.predict(x))
+    # fig = plt.figure()
+    # y_list = []
+    # for dtheta2 in dm.dtheta2:
+    #     x = [dtheta2, 0.52727]
+    #     y_list.append(us.calc_sd(x).item())
+    # plt.plot(dm.dtheta2, y_list)
+    # fig.show()
+    

@@ -133,11 +133,13 @@ def setup_gmmpred(dm, gmm_name_list, logdir):
                 gmmpred = pickle.load(f)
             gmmpreds[name] = gmmpred
         else:
-            gmmpred = np.zeros((100,100))
-            for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
-                for idx_smsz, smsz in enumerate(dm.smsz):
-                    print(name, logdir, idx_dtheta2, idx_smsz)
-                    gmmpred[idx_dtheta2, idx_smsz] = gmm.predict([dtheta2, smsz]).item()
+            X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ])
+            gmmpred = gmm.predict(X).reshape((100,100))
+            # gmmpred = np.zeros((100,100))
+            # for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
+            #     for idx_smsz, smsz in enumerate(dm.smsz):
+            #         print(name, logdir, idx_dtheta2, idx_smsz)
+            #         gmmpred[idx_dtheta2, idx_smsz] = gmm.predict([dtheta2, smsz]).item()
             gmmpreds[name] = gmmpred
             with open(logpath, mode="wb") as f:
                 pickle.dump(gmmpred, f)
@@ -148,7 +150,7 @@ def setup_gmmpred(dm, gmm_name_list, logdir):
     return gmmpreds
 
 
-def setup_reward(dm, logdir):
+def setup_reward(dm, logdir, gmm_name_list = None):
     print("Setup reward")
     with open(logdir+"datotal.pickle", mode="rb") as f:
         datotal = pickle.load(f)
@@ -156,15 +158,19 @@ def setup_reward(dm, logdir):
         unobssds = pickle.load(f)
     with open(logdir+"gmmpreds.pickle", mode="rb") as f:
         gmmpreds = pickle.load(f)
+    if gmm_name_list == None:
+        gmm_name_list = []
         
     reward = defaultdict(lambda: np.zeros((100,100)))
     reward_normal = defaultdict(lambda: np.zeros((100,100)))
     reward_gmm_noadd = defaultdict(lambda: np.zeros((100,100)))
     reward_gmm_add = defaultdict(lambda: np.zeros((100,100)))
+    reward_gmm, reward_gmm2, reward_gmm3 = defaultdict(lambda: np.zeros((100,100))), defaultdict(lambda: np.zeros((100,100))), defaultdict(lambda: np.zeros((100,100)))
     reward_unobs = defaultdict(lambda: np.zeros((100,100)))
     reward_unobs_gmm_add = defaultdict(lambda: np.zeros((100,100)))
     calc_normal = True
-    calc_gmm_noadd, calc_gmm_add = defaultdict(lambda: True), defaultdict(lambda: True)
+    # calc_gmm_noadd, calc_gmm_add = defaultdict(lambda: True), defaultdict(lambda: True)
+    calc_gmm, calc_gmm2, calc_gmm3 = defaultdict(lambda: True), defaultdict(lambda: True), defaultdict(lambda: True)
     calc_unobs = defaultdict(lambda: True)
     calc_unobs_gmm_add = defaultdict(lambda: True)
     
@@ -175,13 +181,29 @@ def setup_reward(dm, logdir):
     if os.path.exists(logdir+"reward_gmm_noadd.pickle"):
         with open(logdir+"reward_gmm_noadd.pickle", mode="rb") as f:
             reward_gmm_noadd = pickle.load(f)
-        for k in reward_gmm_noadd.keys():
-            calc_gmm_noadd[k.split("~")[0]] = False
+        # for k in reward_gmm_noadd.keys():
+        #     calc_gmm_noadd[k.split("~")[0]] = False
     if os.path.exists(logdir+"reward_gmm_add.pickle"):
         with open(logdir+"reward_gmm_add.pickle", mode="rb") as f:
             reward_gmm_add = pickle.load(f)
         for k in reward_gmm_add.keys():
-            calc_gmm_add[k.split("~")[0]] = False
+        #     calc_gmm_add[k.split("~")[0]] = False
+            calc_gmm[k.split("~")[0]] = False
+    if os.path.exists(logdir+"reward_gmm.pickle"):
+        with open(logdir+"reward_gmm.pickle", mode="rb") as f:
+            reward_gmm = pickle.load(f)
+        for k in reward_gmm.keys():
+            calc_gmm[k.split("~")[0]] = False
+    if os.path.exists(logdir+"reward_gmm2.pickle"):
+        with open(logdir+"reward_gmm2.pickle", mode="rb") as f:
+            reward_gmm2 = pickle.load(f)
+        for k in reward_gmm2.keys():
+            calc_gmm2[k.split("~")[0]] = False
+    if os.path.exists(logdir+"reward_gmm3.pickle"):
+        with open(logdir+"reward_gmm3.pickle", mode="rb") as f:
+            reward_gmm3 = pickle.load(f)
+        for k in reward_gmm3.keys():
+            calc_gmm3[k.split("~")[0]] = False
     if os.path.exists(logdir+"reward_unobs.pickle"):
         with open(logdir+"reward_unobs.pickle", mode="rb") as f:
             reward_unobs = pickle.load(f)
@@ -213,13 +235,37 @@ def setup_reward(dm, logdir):
                 #     reward_gmm_noadd["{}~{}_{}_{}".format(name, Er, "noadd", LCB1)][idx_dtheta2, idx_smsz] = rjpmean - 1*rjpsd
                 #     reward_gmm_noadd["{}~{}_{}_{}".format(name, Er, "noadd", LCB2)][idx_dtheta2, idx_smsz] = rjpmean - 2*rjpsd
 
-                if calc_gmm_add[name]:
-                    rjp = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
-                    rjpmean, rjpsd = rjp.Y.item(), np.sqrt(rjp.Var[0,0]).item()
-                    reward_gmm_add["{}~{}_{}".format(name, Er, "add")][idx_dtheta2, idx_smsz] = rjpmean
-                    reward_gmm_add["{}~{}_{}".format(name, Sr, "add")][idx_dtheta2, idx_smsz] = rjpsd
-                    reward_gmm_add["{}~{}_{}_{}".format(name, Er, "add", LCB1)][idx_dtheta2, idx_smsz] = rjpmean - 1*rjpsd
-                    reward_gmm_add["{}~{}_{}_{}".format(name, Er, "add", LCB2)][idx_dtheta2, idx_smsz] = rjpmean - 2*rjpsd
+                # if calc_gmm_add[name]:
+                #     rjp = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                #     rjpmean, rjpsd = rjp.Y.item(), np.sqrt(rjp.Var[0,0]).item()
+                #     reward_gmm_add["{}~{}_{}".format(name, Er, "add")][idx_dtheta2, idx_smsz] = rjpmean
+                #     reward_gmm_add["{}~{}_{}".format(name, Sr, "add")][idx_dtheta2, idx_smsz] = rjpsd
+                #     reward_gmm_add["{}~{}_{}_{}".format(name, Er, "add", LCB1)][idx_dtheta2, idx_smsz] = rjpmean - 1*rjpsd
+                #     reward_gmm_add["{}~{}_{}_{}".format(name, Er, "add", LCB2)][idx_dtheta2, idx_smsz] = rjpmean - 2*rjpsd
+                
+                if calc_gmm[name] and (name in gmm_name_list):
+                    r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                    rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
+                    reward_gmm["{}~{}".format(name, Er)][idx_dtheta2, idx_smsz] = rmean
+                    reward_gmm["{}~{}".format(name, Sr)][idx_dtheta2, idx_smsz] = rsd
+                    reward_gmm["{}~{}_{}".format(name, Er, LCB1)][idx_dtheta2, idx_smsz] = rmean - 1*rsd
+                    reward_gmm["{}~{}_{}".format(name, Er, LCB2)][idx_dtheta2, idx_smsz] = rmean - 2*rsd
+                    
+                if calc_gmm2[name] and (name in gmm_name_list):
+                    r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+2*gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                    rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
+                    reward_gmm2["{}~{}".format(name, Er)][idx_dtheta2, idx_smsz] = rmean
+                    reward_gmm2["{}~{}".format(name, Sr)][idx_dtheta2, idx_smsz] = rsd
+                    reward_gmm2["{}~{}_{}".format(name, Er, LCB1)][idx_dtheta2, idx_smsz] = rmean - 1*rsd
+                    reward_gmm2["{}~{}_{}".format(name, Er, LCB2)][idx_dtheta2, idx_smsz] = rmean - 2*rsd
+                    
+                # if calc_gmm3[name] and (name in gmm_name_list):
+                #     r = Rmodel("Fdatotal_gentle").Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, (datotal[NNSD][idx_dtheta2, idx_smsz]+3*gmmpred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                #     rmean, rsd = r.Y.item(), np.sqrt(r.Var[0,0]).item()
+                #     reward_gmm3["{}~{}".format(name, Er)][idx_dtheta2, idx_smsz] = rmean
+                #     reward_gmm3["{}~{}".format(name, Sr)][idx_dtheta2, idx_smsz] = rsd
+                #     reward_gmm3["{}~{}_{}".format(name, Er, LCB1)][idx_dtheta2, idx_smsz] = rmean - 1*rsd
+                #     reward_gmm3["{}~{}_{}".format(name, Er, LCB2)][idx_dtheta2, idx_smsz] = rmean - 2*rsd
                     
             for name, unobssd in unobssds.items():
                 if calc_unobs[name]:
@@ -240,18 +286,27 @@ def setup_reward(dm, logdir):
                         reward_unobs_gmm_add["{}-{}~{}_{}".format(n_unobs, n_gmm, Er, LCB1)][idx_dtheta2, idx_smsz] = rmean - 1*rsd
                         reward_unobs_gmm_add["{}-{}~{}_{}".format(n_unobs, n_gmm, Er, LCB2)][idx_dtheta2, idx_smsz] = rmean - 2*rsd
 
-    reward.update(reward_normal)
-    reward.update(reward_gmm_noadd)
-    reward.update(reward_gmm_add)
-    reward.update(reward_unobs)
-    reward.update(reward_unobs_gmm_add)
+    reward["normal"] = reward_normal
+    # reward.update(reward_gmm_noadd)
+    # reward.update(reward_gmm_add)
+    reward["gmm1"] = reward_gmm
+    reward["gmm2"] = reward_gmm2
+    # reward["gmm3"] = reward_gmm3
+    # reward.update(reward_unobs)
+    # reward.update(reward_unobs_gmm_add)
 
     with open(logdir+"reward_normal.pickle", mode="wb") as f:
         pickle.dump(reward_normal, f)
-    with open(logdir+"reward_gmm_noadd.pickle", mode="wb") as f:
-        pickle.dump(reward_gmm_noadd, f)
-    with open(logdir+"reward_gmm_add.pickle", mode="wb") as f:
-        pickle.dump(reward_gmm_add, f)
+    # with open(logdir+"reward_gmm_noadd.pickle", mode="wb") as f:
+    #     pickle.dump(reward_gmm_noadd, f)
+    # with open(logdir+"reward_gmm_add.pickle", mode="wb") as f:
+    #     pickle.dump(reward_gmm_add, f)
+    with open(logdir+"reward_gmm.pickle", mode="wb") as f:
+        pickle.dump(reward_gmm, f)
+    with open(logdir+"reward_gmm2.pickle", mode="wb") as f:
+        pickle.dump(reward_gmm2, f)
+    with open(logdir+"reward_gmm3.pickle", mode="wb") as f:
+        pickle.dump(reward_gmm3, f)
     with open(logdir+"reward_unobs.pickle", mode="wb") as f:
         pickle.dump(reward_unobs, f)
     with open(logdir+"reward_unobs_gmm_add.pickle", mode="wb") as f:
@@ -265,26 +320,26 @@ def setup_reward(dm, logdir):
 def Run(ct, *args):
     name_pref = "t0.1"
     name_list = [
-        "t0.1/t1",
-        "t0.1/t2",
-        "t0.1/t3",
-        "t0.1/t4",
-        "t0.1/t5",
-        "t0.1/t6",
-        "t0.1/t7",
-        "t0.1/t8",
-        "t0.1/t9",
-        "t0.1/t10",
-        "t0.1/t11",
-        "t0.1/t12",
-        "t0.1/t13",
-        "t0.1/t14",
-        "t0.1/t15",
-        "t0.1/t16",
-        "t0.1/t17",
-        "t0.1/t18",
-        "t0.1/t19",
-        "t0.1/t20",
+        "t0.1/500/t1",
+        "t0.1/500/t2",
+        "t0.1/500/t3",
+        "t0.1/500/t4",
+        "t0.1/500/t5",
+        "t0.1/500/t6",
+        "t0.1/500/t7",
+        "t0.1/500/t8",
+        "t0.1/500/t9",
+        "t0.1/500/t10",
+        "t0.1/500/t11",
+        "t0.1/500/t12",
+        "t0.1/500/t13",
+        "t0.1/500/t14",
+        "t0.1/500/t15",
+        "t0.1/500/t16",
+        "t0.1/500/t17",
+        "t0.1/500/t18",
+        "t0.1/500/t19",
+        "t0.1/500/t20",
     ]
     recreate = False
 
@@ -306,8 +361,8 @@ def Run(ct, *args):
             # (G1ObsrSig002, "G1ObsrSig002"),
             # (G1ObsrSig005, "G1ObsrSig005"),
         ]
-        S005unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        S005unobsSig001.setup()
+        # S005unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
+        # S005unobsSig001.setup()
         # S01unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
         # S01unobsSig001.setup()
         # S01unobsSig002 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
@@ -317,22 +372,31 @@ def Run(ct, *args):
         # S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
         # S03unobsSig002.setup()
         unobs_name_list = [
-            (S005unobsSig001, "S005unobsSig001"),
+            # (S005unobsSig001, "S005unobsSig001"),
             # (S01unobsSig001, "S01unobsSig001"),
             # (S01unobsSig002, "S01unobsSig002"),
             # (S03unobsSig001, "S03unobsSig001"),
             # (S03unobsSig002, "S03unobsSig002"),
         ]
-        Gerr1Sig001 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-        Gerr1Sig001.train()
-        Gerr1Sig002 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
-        Gerr1Sig002.train()
+        # Gerr1Sig001 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        # Gerr1Sig001.train()
+        # Gerr1Sig002 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
+        # Gerr1Sig002.train()
         # Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
         # Gerr1Sig005.train()
+        GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        GMM2Sig001.train()
+        GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+        GMM2Sig003.train()
+        GMM2Sig005 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        GMM2Sig005.train()
         gmm_name_list = [
-            (Gerr1Sig001, "Gerr1_Sig001"),
+            # (Gerr1Sig001, "Gerr1_Sig001"),
             # (Gerr1Sig002, "Gerr1_Sig002"),
             # (Gerr1Sig005, "Gerr1_Sig005"),
+            (GMM2Sig001, "GMM2Sig001"),
+            (GMM2Sig003, "GMM2Sig003"),
+            (GMM2Sig005, "GMM2Sig005"),
         ]
         datotal = setup_datotal(dm, logdir)
         obsrcalcs = setup_obsr(dm, obsr_name_list, logdir)
