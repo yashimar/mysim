@@ -222,13 +222,14 @@ class GMM2:
     def extract_jps(self):
         self.jumppoints = {"X": [], "Y": []}
         model = self.nnmodel.model
-        for i, (x, y) in enumerate(zip(model.DataX, model.DataY)):
-            p_mean = model.Forward(x_data = model.DataX[i:i+1], train = False).data.item() #Chainerのバグ回避用
-            p_err = model.ForwardErr(x_data = model.DataX[i:i+1], train = False).data.item()
+        p_means = model.Forward(x_data = model.DataX, train = False).data
+        p_errs = model.ForwardErr(x_data = model.DataX, train = False).data
+        for i, (p_mean, p_err, x, y) in enumerate(zip(p_means, p_errs, model.DataX, model.DataY)):
             if (y < (p_mean - self.Gerr*p_err) or (y > (p_mean + self.Gerr*p_err))):
                 jp = max((p_mean - self.Gerr*p_err)-y, y-(p_mean + self.Gerr*p_err))
                 self.jumppoints["X"].append(x.tolist())
                 self.jumppoints["Y"].append(jp.tolist())
+        
                 
     def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
         self.extract_jps()
@@ -243,6 +244,18 @@ class GMM2:
         for gc in self.gaussian_components:
             pred += gc(x)
         return pred
+    
+    
+class GMM3(GMM2):
+    def predict(self, x):
+        if len(np.array(x).shape) == 1:
+            x = [x]
+        pred = np.zeros((len(x)))
+        for gc in self.gaussian_components:
+            # pred = np.max(pred, gc(x))
+            pred = np.array([max(p,y) for p,y in zip(pred,gc(x))])
+        return pred
+
 
 
     
@@ -298,8 +311,8 @@ class UnobservedSD:
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "t0.1/2000/t2v2" if len(args) == 0 else args[0]
-    num_ep = 2002
+    name = "t0.1/5000/t1v3" if len(args) == 0 else args[0]
+    num_ep = 5000
     n_rand_sample = 50000
     n_learn_step = 1
     max_smsz = 0.8
@@ -308,7 +321,9 @@ def Run(ct, *args):
         'n_units_err': [2] + [200, 200] + [1],
         # 'loss_stddev_stop_err': 1.0e-4,
         'error_loss_neg_weight': 0.1,
-        'loss_stddev_stop': 1.0e-6,
+        # 'loss_stddev_stop': 1.0e-6,
+        'num_check_stop': 50,
+        "batchsize": 100,
     }
     n_save_ep = num_ep
     
@@ -325,6 +340,7 @@ def Run(ct, *args):
     
     if os.path.exists(logdir+"dm.pickle"):
         dm = Domain.load(logdir+"dm.pickle")
+        dm.nnmodel.modeldir = modeldir
         dm.nnmodel.nn_options = nn_options
         dm.nnmodel.setup()
     else:
@@ -335,7 +351,7 @@ def Run(ct, *args):
         dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio)
         dm.setup()
     
-    while len(dm.log["ep"]) <= num_ep:
+    while len(dm.log["ep"]) < num_ep:
         dm.execute(n_rand_sample = n_rand_sample, n_learn_step = n_learn_step, max_smsz = max_smsz)
         if len(dm.log["ep"])%n_save_ep==0:
             dm.save()
