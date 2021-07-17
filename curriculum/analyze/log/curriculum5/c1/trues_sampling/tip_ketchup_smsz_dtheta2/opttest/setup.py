@@ -372,28 +372,27 @@ def setup_reward(dm, logdir, gmm_names = None, gain_pairs = None):
 
 
 def Run(ct, *args):
-    name_pref = "t0.1"
     name_list = [
-        "t0.1/2000/t2v2",
-        # "t0.1/500/t2",
-        # "t0.1/500/t3",
-        # "t0.1/500/t4",
-        # "t0.1/500/t5",
-        # "t0.1/500/t6",
-        # "t0.1/500/t7",
-        # "t0.1/500/t8",
-        # "t0.1/500/t9",
-        # "t0.1/500/t10",
-        # "t0.1/500/t11",
-        # "t0.1/500/t12",
-        # "t0.1/500/t13",
-        # "t0.1/500/t14",
-        # "t0.1/500/t15",
-        # "t0.1/500/t16",
-        # "t0.1/500/t17",
-        # "t0.1/500/t18",
-        # "t0.1/500/t19",
-        # "t0.1/500/t20",
+        "t0.1/8000/t1",
+        "t0.1/8000/t2",
+        "t0.1/8000/t3",
+        "t0.1/8000/t4",
+        "t0.1/8000/t5",
+        "t0.1/8000/t6",
+        "t0.1/8000/t7",
+        "t0.1/8000/t8",
+        "t0.1/8000/t9",
+        "t0.1/8000/t10",
+        "t0.1/8000/t11",
+        "t0.1/8000/t12",
+        "t0.1/8000/t13",
+        "t0.1/8000/t14",
+        "t0.1/8000/t15",
+        "t0.1/8000/t16",
+        "t0.1/8000/t17",
+        "t0.1/8000/t18",
+        "t0.1/8000/t19",
+        "t0.1/8000/t20",
     ]
     recreate = False
 
@@ -404,60 +403,68 @@ def Run(ct, *args):
             dm.log["est_opt_dtheta2"],
             dm.log["smsz"]
         ]).T
-        # G1ObsrSig001 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        # G1ObsrSig001.setup()
-        # G1ObsrSig002 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-        # G1ObsrSig002.setup()
-        # G1ObsrSig005 = ObservationReward(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20])
-        # G1ObsrSig005.setup()
-        obsr_name_list = [
-            # (G1ObsrSig001, "G1ObsrSig001"),
-            # (G1ObsrSig002, "G1ObsrSig002"),
-            # (G1ObsrSig005, "G1ObsrSig005"),
-        ]
-        # S005unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        # S005unobsSig001.setup()
-        # S01unobsSig001 = UnobservedSD(observations, penalty=0.05, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        # S01unobsSig001.setup()
-        # S01unobsSig002 = UnobservedSD(observations, penalty=0.1, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-        # S01unobsSig002.setup()
-        # S03unobsSig001 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100])
-        # S03unobsSig001.setup()
-        # S03unobsSig002 = UnobservedSD(observations, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50])
-        # S03unobsSig002.setup()
-        unobs_name_list = [
-            # (S005unobsSig001, "S005unobsSig001"),
-            # (S01unobsSig001, "S01unobsSig001"),
-            # (S01unobsSig002, "S01unobsSig002"),
-            # (S03unobsSig001, "S03unobsSig001"),
-            # (S03unobsSig002, "S03unobsSig002"),
-        ]
-        # Gerr1Sig001 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-        # Gerr1Sig001.train()
-        # Gerr1Sig002 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
-        # Gerr1Sig002.train()
-        # Gerr1Sig005 = GMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-        # Gerr1Sig005.train()
         GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
         GMM2Sig001.train()
         GMM2Sig002 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
         GMM2Sig002.train()
         GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
         GMM2Sig003.train()
+        GMM2Sig005 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        GMM2Sig005.train()
+        GMM3Sig001 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        GMM3Sig001.train()
+        GMM3Sig002 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
+        GMM3Sig002.train()
+        GMM3Sig003 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+        GMM3Sig003.train()
+        GMM3Sig005 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        GMM3Sig005.train()
+        CGMMSig001Pt09 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        CGMMSig001Pt09.train(p_thr=0.9)
+        CGMMSig003Pt09 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+        CGMMSig003Pt09.train(p_thr=0.9)
+        CGMMSig005Pt09 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        CGMMSig005Pt09.train(p_thr=0.9)
+        CGMMSig001Pt07 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        CGMMSig001Pt07.train(p_thr=0.7)
+        CGMMSig003Pt07 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+        CGMMSig003Pt07.train(p_thr=0.7)
+        CGMMSig005Pt07 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        CGMMSig005Pt07.train(p_thr=0.7)
+        CGMMSig001Pt05 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+        CGMMSig001Pt05.train(p_thr=0.5)
+        CGMMSig003Pt05 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+        CGMMSig003Pt05.train(p_thr=0.5)
+        CGMMSig005Pt05 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+        CGMMSig005Pt05.train(p_thr=0.5)
         gmm_name_list = [
-                # (Gerr1Sig001, "Gerr1_Sig001"),
-                # (Gerr1Sig002, "Gerr1_Sig002"),
-                # (Gerr1Sig005, "Gerr1_Sig005"),
-                (GMM2Sig001, "GMM2Sig001"),
-                (GMM2Sig002, "GMM2Sig002"),
-                (GMM2Sig003, "GMM2Sig003"),
+                # (GMM2Sig001, "GMM2Sig001"),
+                # (GMM2Sig002, "GMM2Sig002"),
+                # (GMM2Sig003, "GMM2Sig003"),
+                # (GMM2Sig005, "GMM2Sig005"),
+                (GMM3Sig001, "GMM3Sig001"),
+                # (GMM3Sig002, "GMM3Sig002"),
+                (GMM3Sig003, "GMM3Sig003"),
+                (GMM3Sig005, "GMM3Sig005"),
+                
+                (CGMMSig001Pt09, "CGMMSig001Pt09"),
+                (CGMMSig003Pt09, "CGMMSig003Pt09"),
+                (CGMMSig005Pt09, "CGMMSig005Pt09"),
+                (CGMMSig001Pt07, "CGMMSig001Pt07"),
+                (CGMMSig003Pt07, "CGMMSig003Pt07"),
+                (CGMMSig005Pt07, "CGMMSig005Pt07"),
+                (CGMMSig001Pt05, "CGMMSig001Pt05"),
+                (CGMMSig003Pt05, "CGMMSig003Pt05"),
+                (CGMMSig005Pt05, "CGMMSig005Pt05"),
         ]
         datotal = setup_datotal(dm, logdir)
-        obsrcalcs = setup_obsr(dm, obsr_name_list, logdir)
-        unobssds = setup_unobssd(dm, unobs_name_list, logdir)
         gmmpred = setup_gmmpred(dm, gmm_name_list, logdir)
-        reward = setup_reward(dm, logdir, 
-            gmm_names = ["GMM2Sig001","GMM2Sig002","GMM2Sig003"],
-            gain_pairs = [(1.0,1.0), (1.0,0.5)]
-        )
-        
+        gmm_names = [gmm_name for _, gmm_name in gmm_name_list]
+        gain_pairs = [
+            # (1.0,0.2), 
+            (1.0,0.5), 
+            (1.0,1.0), 
+        ]
+        datotal = setup_datotal(dm, logdir)
+        gmmpred = setup_gmmpred(dm, gmm_name_list, logdir)
+        reward = setup_reward(dm, logdir, gmm_names, gain_pairs)

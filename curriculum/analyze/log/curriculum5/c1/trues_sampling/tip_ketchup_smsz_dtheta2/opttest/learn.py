@@ -9,6 +9,7 @@ from ........tasks_domain.util import Rmodel
 from ..greedyopt import *
 from copy import deepcopy
 import dill
+import math
 
 
 RFUNC = "r_func"
@@ -24,7 +25,7 @@ def idx_of_the_nearest(data, value):
 
 
 class Domain:
-    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0):
+    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0, gain_pairs = None):
         self.smsz = np.linspace(0.3,0.8,100)
         self.dtheta2 = np.linspace(0.1,1,100)[::-1]
         self.datotal = {TRUE: np.ones((100,100))*(-100), RFUNC: np.ones((100,100))*(-100)}
@@ -44,8 +45,10 @@ class Domain:
             "true_r_at_est_opt_dthtea2": [],
             "est_gmm_JP": [],
         }
-        self.logE = []
+        # self.logE = []
         self.logdir = logdir
+        self.rmodel = Rmodel("Fdatotal_gentle")
+        self.gain_pairs = gain_pairs if gain_pairs != None else (1.0, 1.0)
 
     def setup(self):
         self.datotal[TRUE] = np.load(SRC_PATH+"datotal.npy")
@@ -61,10 +64,11 @@ class Domain:
             
             if self.use_gmm:
                 self.gmm.train()
-                x_var = [0, max(est_datotal.Var[0].item(), self.gmm.predict(x_in).item()**2)]
+                # x_var = [0, max(est_datotal.Var[0].item(), self.gmm.predict(x_in).item()**2)]
+                x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*self.gmm.predict(x_in).item())**2]
             else:
                 x_var = [0, est_datotal.Var[0].item()]
-            est_nn = Rmodel("Fdatotal_gentle").Predict(x=[0.3, est_datotal.Y[0].item()], x_var= x_var, with_var=True)
+            est_nn = self.rmodel.Predict(x=[0.3, est_datotal.Y[0].item()], x_var= x_var, with_var=True)
             est_nn_Er.append(est_nn.Y.item())
             est_nn_Sr.append(np.sqrt(est_nn.Var[0,0]).item())
             
@@ -117,7 +121,7 @@ class Domain:
         self.log["true_opt_r"].append(true_opt_r.item())
         self.log["true_r_at_est_opt_dthtea2"].append(true_r_at_est_opt_dthtea2.item())
         self.log["est_gmm_JP"].append(deepcopy(self.gmm.jumppoints))
-        self.logE.append(E)
+        # self.logE.append(E)
             
             
     def execute(self, n_rand_sample, n_learn_step, max_smsz = 0.8, fixed_input = None):
@@ -135,12 +139,19 @@ class Domain:
     def load(self, path):
         with open(path, mode="rb") as f:
             dm = dill.load(f)
+        # E = pd.read_csv(self.logdir+"E.csv").to_numpy().tolist()
+        # dm.logE = E
+        
         return dm
     
     def save(self):
         with open(self.logdir+"log.yaml", "w") as f:
             yaml.dump(self.log, f)
-        np.save(self.logdir+"E.npy", np.array(self.logE))
+        # np.save(self.logdir+"E.npy", np.array(self.logE))
+        # print(np.array(self.logE).shape)
+        # E = pd.DataFrame(data=np.array(self.logE))
+        # E.to_csv(self.logdir+"E.csv")
+        # self.logE = None
         
         with open(self.logdir+"dm.pickle", mode="wb") as f:
             dill.dump(self, f)
@@ -257,6 +268,30 @@ class GMM3(GMM2):
         return pred
 
 
+class CGMM(GMM3):
+    def custom_normal(self, x, jpx, Var, jpy, p_thr):
+        gn = 1./multivariate_normal.pdf(jpx,jpx,Var)
+        pdf = multivariate_normal.pdf(x,jpx,Var)*gn
+        # print(pdf)
+        # if pdf >= p_thr:
+        #     y = (p_thr+(pdf-p_thr)**(1./4))*(1./(p_thr+(1-p_thr)**(1./4)))*jpy
+        #     y = max(y,pdf)
+        # else:
+        #     y = pdf*np.exp(-np.sqrt(p_thr-pdf))*jpy
+            
+        y = np.where(
+            pdf >= p_thr,
+            np.maximum(pdf, (p_thr+(pdf-p_thr)**(1./4))*(1./(p_thr+(1-p_thr)**(1./4))))*jpy,
+            pdf*np.exp(-np.sqrt(p_thr-pdf))*jpy
+        )
+        
+        return y
+    
+    def train(self, p_thr=0.7): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        self.extract_jps()
+        Var = np.diag(self.diag_sigma)**2
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
+            self.gaussian_components.append(lambda x,jpx=jpx,Var=Var,jpy=jpy,p_thr=p_thr: self.custom_normal(x,jpx,Var,jpy,p_thr))
 
     
 class ObservationReward:
@@ -311,8 +346,8 @@ class UnobservedSD:
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "t0.1/5000/t1v3" if len(args) == 0 else args[0]
-    num_ep = 5000
+    name = "t0.1/8000/t1" if len(args) == 0 else args[0]
+    num_ep = 8000
     n_rand_sample = 50000
     n_learn_step = 1
     max_smsz = 0.8
@@ -331,8 +366,9 @@ def Run(ct, *args):
         (),
     ]
     
-    use_gmm = True
-    Gerr = 1.0
+    use_gmm = False
+    gmm_lam = lambda nnmodel: GMM3(nnmodel, diag_sigma=[(1.0-0.1)/33.3, (0.8-0.3)/33.3], Gerr = 1.0)
+    gain_pairs = (1.0, 0.5)
     LCB_ratio = 0.0
     
     logdir = base_logdir + "logs/{}/".format(name)
@@ -347,8 +383,8 @@ def Run(ct, *args):
         nnmodel = NNModel(modeldir, nn_options)
         nnmodel.setup()
         # gmm = GMM(nnmodel, diag_sigma=[(1.0-0.1)/50, (0.8-0.3)/50], Gerr = Gerr)
-        gmm = GMM2(nnmodel, diag_sigma=[(1.0-0.1)/50, (0.8-0.3)/50], Gerr = Gerr)
-        dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio)
+        gmm = gmm_lam(nnmodel)
+        dm = Domain(nnmodel, gmm, logdir, use_gmm = use_gmm, LCB_ratio = LCB_ratio, gain_pairs = gain_pairs)
         dm.setup()
     
     while len(dm.log["ep"]) < num_ep:

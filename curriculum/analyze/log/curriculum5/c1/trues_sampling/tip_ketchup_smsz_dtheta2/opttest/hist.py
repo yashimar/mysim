@@ -24,10 +24,22 @@ def Help():
 
 def Run(ct, *args):
     name = "onpolicy/Er/t4"
-    
-    logdir = BASE_DIR + "opttest/logs/{}/".format(name)
-    t = time.time()
-    dm = Domain.load(logdir+"dm.pickle")
+    name_list = [
+        "onpolicy/Er/t1",
+        "onpolicy/Er/t2",
+        "onpolicy/Er/t3",
+        "onpolicy/Er/t4",
+        "onpolicy/Er/t5",
+        "onpolicy/Er/t6",
+        "onpolicy/Er/t7",
+        "onpolicy/Er/t8",
+        "onpolicy/Er/t9",
+        "onpolicy/Er/t10",
+    ]
+    for name in name_list:
+        logdir = BASE_DIR + "opttest/logs/{}/".format(name)
+        t = time.time()
+        dm = Domain.load(logdir+"dm.pickle")
     
     traeod = dm.log["true_r_at_est_opt_dthtea2"]
     smsz = dm.log["smsz"]
