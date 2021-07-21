@@ -23,29 +23,65 @@ def Help():
 
 
 def Run(ct, *args):
-    name = "onpolicy/Er/t4"
+    pref = "onpolicy/CGMMSig005Pt05_gnnsd1.0_ggmm1.0"
+    n_ep = 300
+    smsz_thr = 0.65
     name_list = [
-        "onpolicy/Er/t1",
-        "onpolicy/Er/t2",
-        "onpolicy/Er/t3",
-        "onpolicy/Er/t4",
-        "onpolicy/Er/t5",
-        "onpolicy/Er/t6",
-        "onpolicy/Er/t7",
-        "onpolicy/Er/t8",
-        "onpolicy/Er/t9",
-        "onpolicy/Er/t10",
+        "t1",
+        "t2",
+        "t3",
+        "t4",
+        "t5",
+        "t6",
+        "t7",
+        "t8",
+        "t9",
+        "t10",
     ]
+    
+    save_img_dir = PICTURE_DIR + "opttest/{}/".format(pref)
+    name_list = ["{}/{}".format(pref,name) for name in name_list]
+    y_list_meta = [[] for _ in range(n_ep)]
+    yvis_list_meta = [[] for _ in range(n_ep)]
+    smsz_list_meta = [[] for _ in range(n_ep)]
     for name in name_list:
         logdir = BASE_DIR + "opttest/logs/{}/".format(name)
         t = time.time()
         dm = Domain.load(logdir+"dm.pickle")
+
+        traeod = dm.log["true_r_at_est_opt_dthtea2"]
+        smsz = dm.log["smsz"]
+        for i,(t,s) in enumerate(zip(traeod,smsz)):
+            if s <= smsz_thr:
+                yvis_list_meta[i].append(t)    
+            y_list_meta[i].append(t)
+            smsz_list_meta[i].append(s)
     
-    traeod = dm.log["true_r_at_est_opt_dthtea2"]
-    smsz = dm.log["smsz"]
-    y = [t if s<=0.65 else None for t,s in zip(traeod,smsz)]
+    ymean_list = []
+    ysd_list = []
+    for yi_list in yvis_list_meta:
+        ymean_list.append(np.mean(yi_list))
+        ysd_list.append(np.std(yi_list))
     
-    fig = plt.figure()
-    plt.scatter(dm.log["ep"], y)
-    plt.show()
-    
+    text = ["<br />".join(["t{}: {} ({:.3f})".format(j+1,yij,sij) if yij >= -1 else "<b>t{}: {} ({:.3f})</b>".format(j+1,yij,sij) if sij <= smsz_thr else "t{}: {} ({:.3f}) ignore".format(j+1,yij,sij) for j,(yij,sij) in enumerate(zip(y_list_meta[i], smsz_list_meta[i]))]) for i in range(n_ep)]
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+                x=dm.log["ep"], y=ymean_list,
+                mode='markers', 
+                name="{}".format(name),
+                text = text,
+                error_y=dict(
+                    type="data",
+                    symmetric=True,
+                    array=ysd_list,
+                    thickness=1.5,
+                    width=3,
+                )
+            )
+        )
+    fig['layout']['yaxis']['range'] = (-8,0.1)
+    fig['layout']['xaxis']['title'] = "episode"
+    fig['layout']['yaxis']['title'] = "reward"
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "reward.html", auto_open=False)

@@ -23,17 +23,26 @@ def Help():
 
 
 def Run(ct, *args):
-    name = "onpolicy/Er/t4"
+    name = "onpolicy/Er/t2"
+    # name = "t0.1/2000/t2v2"
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     t = time.time()
     dm = Domain.load(logdir+"dm.pickle")
+    print(dm.nnmodel.basedir)
+    dm.nnmodel.modeldir = logdir + "{}/".format("models")
+    dm.nnmodel.setup()
+    dm.nnmodel.hogehoge = "hogehoge"
     
-    traeod = dm.log["true_r_at_est_opt_dthtea2"]
-    smsz = dm.log["smsz"]
-    y = [t if s<=0.65 else None for t,s in zip(traeod,smsz)]
+    print(dm.nnmodel.hogehoge)
+    print(dm.nnmodel.basedir)
+    print(len(dm.log["ep"]))
+    print(len(dm.nnmodel.model.DataX))
+    # traeod = dm.log["true_r_at_est_opt_dthtea2"]
+    # smsz = dm.log["smsz"]
+    # y = [t if s<=0.65 else None for t,s in zip(traeod,smsz)]
     
-    fig = plt.figure()
-    plt.scatter(dm.log["ep"], y)
-    plt.show()
+    # fig = plt.figure()
+    # plt.scatter(dm.log["ep"], y)
+    # plt.show()
     

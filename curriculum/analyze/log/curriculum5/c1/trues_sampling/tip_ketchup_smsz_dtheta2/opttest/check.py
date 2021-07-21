@@ -7,12 +7,14 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "t0.1/5000/t1"
+    # name = "onpolicy/ErLCB2/t2"
+    # name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1"
+    name = "t0.1/1000/t8"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
-    c_heatmap = False
+    c_heatmap = True
     c_datotal = True
     # c_obsr = False
     # c_reward_obsr = False
@@ -27,14 +29,14 @@ def Run(ct, *args):
         dm.log["est_opt_dtheta2"],
         dm.log["smsz"]
     ]).T
-    GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    GMM2Sig001.train()
-    GMM2Sig002 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
-    GMM2Sig002.train()
-    GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    GMM2Sig003.train()
-    GMM2Sig005 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    GMM2Sig005.train()
+    # # GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    # # GMM2Sig001.train()
+    # # GMM2Sig002 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
+    # # GMM2Sig002.train()
+    # # GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # # GMM2Sig003.train()
+    # # GMM2Sig005 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # # GMM2Sig005.train()
     GMM3Sig001 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
     GMM3Sig001.train()
     GMM3Sig002 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
@@ -43,24 +45,31 @@ def Run(ct, *args):
     GMM3Sig003.train()
     GMM3Sig005 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
     GMM3Sig005.train()
-    CGMMSig001Pt09 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    CGMMSig001Pt09.train(p_thr=0.9)
-    CGMMSig003Pt09 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt09.train(p_thr=0.9)
-    CGMMSig005Pt09 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt09.train(p_thr=0.9)
-    CGMMSig001Pt07 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    CGMMSig001Pt07.train(p_thr=0.7)
-    CGMMSig003Pt07 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt07.train(p_thr=0.7)
-    CGMMSig005Pt07 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt07.train(p_thr=0.7)
-    CGMMSig001Pt05 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    CGMMSig001Pt05.train(p_thr=0.5)
-    CGMMSig003Pt05 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt05.train(p_thr=0.5)
-    CGMMSig005Pt05 = CGMM(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt05.train(p_thr=0.5)
+    CGMMSig001Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    CGMMSig001Pt09.train()
+    CGMMSig003Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    CGMMSig003Pt09.train()
+    CGMMSig005Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    CGMMSig005Pt09.train()
+    CGMMSig001Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    CGMMSig001Pt07.train()
+    CGMMSig003Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    CGMMSig003Pt07.train()
+    CGMMSig005Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    CGMMSig005Pt07.train()
+    CGMMSig001Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    CGMMSig001Pt05.train()
+    CGMMSig003Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    CGMMSig003Pt05.train()
+    CGMMSig005Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    CGMMSig005Pt05.train()
+    CGMMSig005Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    CGMMSig005Pt03.train()
+    CGMMSig010Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/10, (max(dm.smsz)-min(dm.smsz))/10], Gerr = 1.0)
+    CGMMSig010Pt03.train()
+    CGMMSig003Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    CGMMSig003Pt03.train()
+    
     gmm_name_list = [
             # (GMM2Sig001, "GMM2Sig001"),
             # (GMM2Sig002, "GMM2Sig002"),
@@ -80,14 +89,19 @@ def Run(ct, *args):
             (CGMMSig001Pt05, "CGMMSig001Pt05"),
             (CGMMSig003Pt05, "CGMMSig003Pt05"),
             (CGMMSig005Pt05, "CGMMSig005Pt05"),
+            (CGMMSig005Pt03, "CGMMSig005Pt03"),
+            (CGMMSig010Pt03, "CGMMSig010Pt03"),
+            (CGMMSig003Pt03, "CGMMSig003Pt03"),
     ]
     datotal = setup_datotal(dm, logdir)
     gmmpred = setup_gmmpred(dm, gmm_name_list, logdir)
     gmm_names = [gmm_name for _, gmm_name in gmm_name_list]
     gain_pairs = [
         # (1.0,0.2), 
-        (1.0,0.5), 
+        # (1.0,0.5), 
         (1.0,1.0), 
+        # (1.0,2.0),
+        # (1.0,3.0),
     ]
     reward = setup_reward(dm, logdir, gmm_names, gain_pairs)
 
@@ -114,8 +128,8 @@ def Run(ct, *args):
         true_nnerr = [np.abs(v - _nnmean) for _nnmean, v in zip(nnmean, dm.log["true_datotal"])]
         jp1diff = [max(_nnmean-1*_nnerr-v, v-(_nnmean+1*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
         jp2diff = [max(_nnmean-2*_nnerr-v, v-(_nnmean+2*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
-        n_row = 12
-        clength = 0.05
+        n_row = 25
+        clength = 0.02
         fig = make_subplots(
             rows=n_row, cols=2, 
             subplot_titles=["datotal 生データ (100×100)", "報酬 生データ (100×100)", 
@@ -134,6 +148,20 @@ def Run(ct, *args):
                             "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%",
                             "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%",
                             "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%",
+                            
+                            "", "評価関数 (GMMなし, LCB2)",
+                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
                             ],
             horizontal_spacing = 0.1,
             vertical_spacing = 0.01,
@@ -165,9 +193,24 @@ def Run(ct, *args):
             (gmmpred["CGMMSig001Pt07"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig001Pt05"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
             (gmmpred["CGMMSig003Pt07"], 11, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig003Pt05"], 11, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
             (gmmpred["CGMMSig005Pt07"], 12, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig005Pt05"], 12, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            
+            (reward["Er_LCB2"], 13, 2, 0.46, 0.28, -3, 0., None, None, None, None),
+            (gmmpred["GMM3Sig001"], 14, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig001_gnnsd1.0_ggmm1.0~Er_LCB2"], 14, 2, 0.46, 0.28, -3, 0., None, None, None, None),
+            (gmmpred["GMM3Sig003"], 15, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig003_gnnsd1.0_ggmm1.0~Er_LCB2"], 15, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["GMM3Sig005"], 16, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig005_gnnsd1.0_ggmm1.0~Er_LCB2"], 16, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig001Pt09"], 17, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 17, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig003Pt09"], 18, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 18, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig005Pt09"], 19, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 19, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig001Pt07"], 20, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 20, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig003Pt07"], 21, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 21, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig005Pt07"], 22, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 22, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig001Pt05"], 23, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 23, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig003Pt05"], 24, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 24, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            (gmmpred["CGMMSig005Pt05"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 25, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig005Pt03"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig010Pt03"], 25, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
         )
         posx_set = [0.46, 1.0075]
-        posy_set = (lambda x: [0.05 + 0.90/(x-1)*i for i in range(x)][::-1])(n_row)
+        posy_set = (lambda x: [0.015 + 0.95/(x-1)*i for i in range(x)][::-1])(n_row)
         for z, row, col, posx, posy, zmin, zmax, cs, scz, sczmin, sczmax in z_rc_pos_scale_cs_scatterz_scatterscale_set:
             if np.sum(z) != 0:
                 fig.add_trace(go.Heatmap(
@@ -750,13 +793,17 @@ def Run(ct, *args):
                 
         for n_gmm in [
             # "GMM3Sig003",
-            # "CGMMSig003Pt09",
-            "CGMMSig003Pt07",
+            # "CGMMSig005Pt05",
+            # "CGMMSig005Pt07",
+            # "CGMMSig010Pt03",
+            "CGMMSig003Pt03",
             # "CGMMSig003Pt05",
         ]:
             for gnnsd, ggmm in [
+                # (1.0, 1.5),
                 (1.0, 1.0),
-                (1.0, 0.5),
+                # (1.0, 2.0),
+                # (1.0,3.0),
             ]:
                 print("datotal曲線 gmm加算", n_gmm)
                 trace = defaultdict(list)
@@ -865,14 +912,18 @@ def Run(ct, *args):
     if c_reward_gmm:
         for gain_type in [
                 "gnnsd1.0_ggmm1.0", 
-                "gnnsd1.0_ggmm0.5", 
+                # "gnnsd1.0_ggmm2.0", 
+                # "gnnsd1.0_ggmm3.0", 
+                # "gnnsd1.0_ggmm0.5", 
             ]:
             for name in (
                 # lambda t, gain_type=gain_type: "GMM2Sig001_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "GMM3Sig003_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig003Pt09_{}~{}".format(gain_type, t), 
-                lambda t, gain_type=gain_type: "CGMMSig003Pt07_{}~{}".format(gain_type, t), 
-                # lambda t, gain_type=gain_type: "CGMMSig003Pt05_{}~{}".format(gain_type, t), 
+                # lambda t, gain_type=gain_type: "CGMMSig005Pt05_{}~{}".format(gain_type, t), 
+                # lambda t, gain_type=gain_type: "CGMMSig005Pt07_{}~{}".format(gain_type, t), 
+                # lambda t, gain_type=gain_type: "CGMMSig010Pt03_{}~{}".format(gain_type, t), 
+                lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}~{}".format(gain_type, t), 
             ):
                 trace = defaultdict(list)
                 print("評価関数曲線 "+name(Er))

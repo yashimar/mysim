@@ -7,8 +7,8 @@ def Help():
 
 def Run(ct,*args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1" if len(args) == 0 else args[0]
-    num_ep = 300
+    name = "onpolicy/Er/t1" if len(args) == 0 else args[0]
+    num_ep = 500
     n_rand_sample = 10
     n_learn_step = 1
     max_smsz = 0.8
@@ -27,16 +27,17 @@ def Run(ct,*args):
         (),
     ]
     
-    use_gmm = True
-    gmm_lam = lambda nnmodel: GMM3(nnmodel, diag_sigma=[(1.0-0.1)/33.3, (0.8-0.3)/33.3], Gerr = 1.0)
-    gain_pairs = (1.0, 0.5)
-    LCB_ratio = 2.0
+    use_gmm = False
+    gmm_lam = lambda nnmodel: CGMM(nnmodel, p_thr=0.5, diag_sigma=[(1.0-0.1)/20, (0.8-0.3)/20], Gerr = 1.0)
+    gain_pairs = (1.0, 1.0)
+    LCB_ratio = 0.0
     
     logdir = base_logdir + "logs/{}/".format(name)
     modeldir = logdir + "{}/".format("models")
     
     if os.path.exists(logdir+"dm.pickle"):
         dm = Domain.load(logdir+"dm.pickle")
+        dm.logdir = logdir
         dm.nnmodel.modeldir = modeldir
         dm.nnmodel.nn_options = nn_options
         dm.nnmodel.setup()

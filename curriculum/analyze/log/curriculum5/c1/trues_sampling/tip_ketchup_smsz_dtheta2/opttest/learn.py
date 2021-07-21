@@ -58,14 +58,16 @@ class Domain:
     
     def optimize(self, smsz):
         est_nn_Er, est_nn_Sr = [], []
-        for dtheta2 in self.dtheta2:
+        if self.use_gmm:
+            self.gmm.train()
+            X = np.array([[dtheta2, smsz] for dtheta2 in self.dtheta2])
+            SDgmm = self.gmm.predict(X)
+        for idx_dtheta2, dtheta2 in enumerate(self.dtheta2):
             x_in = [dtheta2, smsz]
             est_datotal = self.nnmodel.model.Predict(x = x_in, with_var=True)
-            
             if self.use_gmm:
-                self.gmm.train()
-                # x_var = [0, max(est_datotal.Var[0].item(), self.gmm.predict(x_in).item()**2)]
-                x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*self.gmm.predict(x_in).item())**2]
+                # x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*self.gmm.predict(x_in).item())**2]
+                x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*SDgmm[idx_dtheta2].item())**2]
             else:
                 x_var = [0, est_datotal.Var[0].item()]
             est_nn = self.rmodel.Predict(x=[0.3, est_datotal.Y[0].item()], x_var= x_var, with_var=True)
@@ -121,7 +123,6 @@ class Domain:
         self.log["true_opt_r"].append(true_opt_r.item())
         self.log["true_r_at_est_opt_dthtea2"].append(true_r_at_est_opt_dthtea2.item())
         self.log["est_gmm_JP"].append(deepcopy(self.gmm.jumppoints))
-        # self.logE.append(E)
             
             
     def execute(self, n_rand_sample, n_learn_step, max_smsz = 0.8, fixed_input = None):
@@ -158,7 +159,7 @@ class Domain:
         
 class NNModel:
     def __init__(self, modeldir, nn_options):
-        self.basedir = modeldir
+        self.modeldir = modeldir
         self.nn_options = nn_options
         self.model = None
     
@@ -166,7 +167,7 @@ class NNModel:
         dim_in = 2
         dim_out = 1
         options={
-            'base_dir': self.basedir,
+            'base_dir': self.modeldir,
             'n_units': [dim_in] + [200, 200, 200] + [dim_out],
             'name': 'Fdatotal',
             'loss_stddev_stop': 1.0e-3,
@@ -179,16 +180,16 @@ class NNModel:
         options.update(self.nn_options)
         self.model = TNNRegression()
         self.model.Load(data={'options':options})
-        if os.path.exists(self.basedir+'setup.yaml'):
-            self.model.Load(LoadYAML(self.basedir+'setup.yaml'), base_dir=self.basedir)
-            self.model.Load(data={'options':options}, base_dir=self.basedir)
+        if os.path.exists(self.modeldir+'setup.yaml'):
+            self.model.Load(LoadYAML(self.modeldir+'setup.yaml'), base_dir=self.modeldir)
+            self.model.Load(data={'options':options}, base_dir=self.modeldir)
         self.model.Init()
         Print("len(DataX): ", len(self.model.DataX))
-        check_or_create_dir(self.basedir)
+        check_or_create_dir(self.modeldir)
         
     def update(self, x, y, not_learn = False):
         self.model.Update(x, y, not_learn)
-        SaveYAML(self.model.Save(self.basedir), self.basedir+'setup.yaml')
+        SaveYAML(self.model.Save(self.modeldir), self.modeldir+'setup.yaml')
 
 
 class GMM:
@@ -268,8 +269,13 @@ class GMM3(GMM2):
         return pred
 
 
-class CGMM(GMM3):
-    def custom_normal(self, x, jpx, Var, jpy, p_thr):
+class CGMM(GMM3, object):
+    def __init__(self, nnmodel, diag_sigma, Gerr, p_thr):
+        super(CGMM, self).__init__(nnmodel, diag_sigma, Gerr)
+        self.p_thr = p_thr
+        
+    def custom_normal(self, x, jpx, Var, jpy):
+        p_thr = self.p_thr
         gn = 1./multivariate_normal.pdf(jpx,jpx,Var)
         pdf = multivariate_normal.pdf(x,jpx,Var)*gn
         # print(pdf)
@@ -291,7 +297,7 @@ class CGMM(GMM3):
         self.extract_jps()
         Var = np.diag(self.diag_sigma)**2
         for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
-            self.gaussian_components.append(lambda x,jpx=jpx,Var=Var,jpy=jpy,p_thr=p_thr: self.custom_normal(x,jpx,Var,jpy,p_thr))
+            self.gaussian_components.append(lambda x,jpx=jpx,Var=Var,jpy=jpy: self.custom_normal(x,jpx,Var,jpy))
 
     
 class ObservationReward:
@@ -346,8 +352,8 @@ class UnobservedSD:
 
 def Run(ct, *args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "t0.1/8000/t1" if len(args) == 0 else args[0]
-    num_ep = 8000
+    name = "t0.1/500/t41" if len(args) == 0 else args[0]
+    num_ep = 500
     n_rand_sample = 50000
     n_learn_step = 1
     max_smsz = 0.8
