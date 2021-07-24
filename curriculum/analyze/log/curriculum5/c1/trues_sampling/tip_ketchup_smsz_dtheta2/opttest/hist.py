@@ -23,11 +23,11 @@ def Help():
 
 
 def Run(ct, *args):
-    pref = "onpolicy/CGMMSig005Pt05_gnnsd1.0_ggmm1.0"
-    n_ep = 300
-    smsz_thr = 0.65
+    pref = "onpolicy/Er_LCB2"
+    n_ep = 500
+    smsz_thr = 0.63
     name_list = [
-        "t1",
+        # "t1",
         "t2",
         "t3",
         "t4",
@@ -37,6 +37,20 @@ def Run(ct, *args):
         "t8",
         "t9",
         "t10",
+        "t11",
+        "t12",
+        "t13",
+        "t14",
+        "t15",
+        "t16",
+        "t17",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23",
+        "t24",
     ]
     
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(pref)
@@ -85,3 +99,10 @@ def Run(ct, *args):
     fig['layout']['yaxis']['title'] = "reward"
     check_or_create_dir(save_img_dir)
     plotly.offline.plot(fig, filename = save_img_dir + "reward.html", auto_open=False)
+
+
+    # num = 100
+    # ymean_mva = np.convolve(ymean_list, np.ones(num)/num, mode='same')
+    # fig = plt.figure()
+    # plt.plot(ymean_mva)
+    # plt.show()

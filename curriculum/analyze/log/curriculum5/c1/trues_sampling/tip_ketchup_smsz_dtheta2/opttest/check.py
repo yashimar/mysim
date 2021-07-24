@@ -7,19 +7,19 @@ from .setup import *
 
 
 def Run(ct, *args):
-    # name = "onpolicy/ErLCB2/t2"
+    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t1"
     # name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1"
-    name = "t0.1/1000/t8"
+    # name = "t0.1/500/t1"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
     c_heatmap = True
-    c_datotal = True
+    c_datotal = False
     # c_obsr = False
     # c_reward_obsr = False
     # c_reward_unobs = False
-    c_reward_gmm = True
+    c_reward_gmm = False
     # c_reward_gmm_obsr = False
     c_reward_opt = False
     
@@ -29,81 +29,115 @@ def Run(ct, *args):
         dm.log["est_opt_dtheta2"],
         dm.log["smsz"]
     ]).T
-    # # GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    # # GMM2Sig001.train()
+    # GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    # GMM2Sig001.train()
     # # GMM2Sig002 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
     # # GMM2Sig002.train()
-    # # GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    # # GMM2Sig003.train()
+    # GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # GMM2Sig003.train()
     # # GMM2Sig005 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
     # # GMM2Sig005.train()
-    GMM3Sig001 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    GMM3Sig001.train()
-    GMM3Sig002 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
-    GMM3Sig002.train()
-    GMM3Sig003 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    GMM3Sig003.train()
-    GMM3Sig005 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    GMM3Sig005.train()
-    CGMMSig001Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    CGMMSig001Pt09.train()
-    CGMMSig003Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt09.train()
-    CGMMSig005Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt09.train()
-    CGMMSig001Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    CGMMSig001Pt07.train()
-    CGMMSig003Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt07.train()
-    CGMMSig005Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt07.train()
-    CGMMSig001Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
-    CGMMSig001Pt05.train()
-    CGMMSig003Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt05.train()
-    CGMMSig005Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt05.train()
-    CGMMSig005Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
-    CGMMSig005Pt03.train()
-    CGMMSig010Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/10, (max(dm.smsz)-min(dm.smsz))/10], Gerr = 1.0)
-    CGMMSig010Pt03.train()
-    CGMMSig003Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
-    CGMMSig003Pt03.train()
+    # GMM3Sig001 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    # GMM3Sig001.train()
+    # GMM3Sig002 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/50, (max(dm.smsz)-min(dm.smsz))/50], Gerr = 1.0)
+    # GMM3Sig002.train()
+    # GMM3Sig003 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # GMM3Sig003.train()
+    # GMM3Sig005 = GMM3(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # GMM3Sig005.train()
+    # CGMMSig001Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    # CGMMSig001Pt09.train()
+    # CGMMSig003Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # CGMMSig003Pt09.train()
+    # CGMMSig005Pt09 = CGMM(dm.nnmodel, p_thr=0.9, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # CGMMSig005Pt09.train()
+    # CGMMSig001Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    # CGMMSig001Pt07.train()
+    # CGMMSig003Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # CGMMSig003Pt07.train()
+    # CGMMSig005Pt07 = CGMM(dm.nnmodel, p_thr=0.7, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # CGMMSig005Pt07.train()
+    # CGMMSig001Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    # CGMMSig001Pt05.train()
+    # CGMMSig003Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # CGMMSig003Pt05.train()
+    # CGMMSig005Pt05 = CGMM(dm.nnmodel, p_thr=0.5, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # CGMMSig005Pt05.train()
+    # CGMMSig005Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    # CGMMSig005Pt03.train()
+    # CGMMSig010Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/10, (max(dm.smsz)-min(dm.smsz))/10], Gerr = 1.0)
+    # CGMMSig010Pt03.train()
+    # CGMMSig003Pt03 = CGMM(dm.nnmodel, p_thr=0.3, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    # CGMMSig003Pt03.train()
+    
+    GMM2Sig001 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    GMM2Sig001.train()
+    GMM2Sig003 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    GMM2Sig003.train()
+    GMM2Sig005 = GMM2(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    GMM2Sig005.train()
+    GMM4Sig001 = GMM4(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100, (max(dm.smsz)-min(dm.smsz))/100], Gerr = 1.0)
+    GMM4Sig001.train()
+    GMM4Sig003 = GMM4(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3], Gerr = 1.0)
+    GMM4Sig003.train()
+    GMM4Sig005 = GMM4(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
+    GMM4Sig005.train()
     
     gmm_name_list = [
-            # (GMM2Sig001, "GMM2Sig001"),
-            # (GMM2Sig002, "GMM2Sig002"),
+            # # (GMM2Sig001, "GMM2Sig001"),
+            # # (GMM2Sig002, "GMM2Sig002"),
             # (GMM2Sig003, "GMM2Sig003"),
-            # (GMM2Sig005, "GMM2Sig005"),
-            (GMM3Sig001, "GMM3Sig001"),
-            # (GMM3Sig002, "GMM3Sig002"),
-            (GMM3Sig003, "GMM3Sig003"),
-            (GMM3Sig005, "GMM3Sig005"),
+            # # (GMM2Sig005, "GMM2Sig005"),
+            # (GMM3Sig001, "GMM3Sig001"),
+            # # (GMM3Sig002, "GMM3Sig002"),
+            # (GMM3Sig003, "GMM3Sig003"),
+            # (GMM3Sig005, "GMM3Sig005"),
             
-            (CGMMSig001Pt09, "CGMMSig001Pt09"),
-            (CGMMSig003Pt09, "CGMMSig003Pt09"),
-            (CGMMSig005Pt09, "CGMMSig005Pt09"),
-            (CGMMSig001Pt07, "CGMMSig001Pt07"),
-            (CGMMSig003Pt07, "CGMMSig003Pt07"),
-            (CGMMSig005Pt07, "CGMMSig005Pt07"),
-            (CGMMSig001Pt05, "CGMMSig001Pt05"),
-            (CGMMSig003Pt05, "CGMMSig003Pt05"),
-            (CGMMSig005Pt05, "CGMMSig005Pt05"),
-            (CGMMSig005Pt03, "CGMMSig005Pt03"),
-            (CGMMSig010Pt03, "CGMMSig010Pt03"),
-            (CGMMSig003Pt03, "CGMMSig003Pt03"),
+            # (CGMMSig001Pt09, "CGMMSig001Pt09"),
+            # (CGMMSig003Pt09, "CGMMSig003Pt09"),
+            # (CGMMSig005Pt09, "CGMMSig005Pt09"),
+            # (CGMMSig001Pt07, "CGMMSig001Pt07"),
+            # (CGMMSig003Pt07, "CGMMSig003Pt07"),
+            # (CGMMSig005Pt07, "CGMMSig005Pt07"),
+            # (CGMMSig001Pt05, "CGMMSig001Pt05"),
+            # (CGMMSig003Pt05, "CGMMSig003Pt05"),
+            # (CGMMSig005Pt05, "CGMMSig005Pt05"),
+            # (CGMMSig005Pt03, "CGMMSig005Pt03"),
+            # (CGMMSig010Pt03, "CGMMSig010Pt03"),
+            # (CGMMSig003Pt03, "CGMMSig003Pt03"),
+            
+            (GMM2Sig001, "GMM2Sig001"),
+            (GMM2Sig003, "GMM2Sig003"),
+            (GMM2Sig005, "GMM2Sig005"),
+            (GMM4Sig001, "GMM4Sig001"),
+            (GMM4Sig003, "GMM4Sig003"),
+            (GMM4Sig005, "GMM4Sig005"),
     ]
+    
+    UBSSig003P002 = UnobservedSD(penalty = 0.02, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3])
+    UBSSig003P002.setup(observations)
+    UBSSig001P002 = UnobservedSD(penalty = 0.02, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/100., (max(dm.smsz)-min(dm.smsz))/100.])
+    UBSSig001P002.setup(observations)
+        
+    unobs_name_list =[
+        # (UBSSig003P002, "UBSSig003P002"),
+        # (UBSSig001P002, "UBSSig001P002"),
+    ]
+        
     datotal = setup_datotal(dm, logdir)
     gmmpred = setup_gmmpred(dm, gmm_name_list, logdir)
+    unobspred = setup_unobssd(dm, unobs_name_list, logdir)
     gmm_names = [gmm_name for _, gmm_name in gmm_name_list]
+    unobs_names = [unobs_name for _, unobs_name in unobs_name_list]
     gain_pairs = [
         # (1.0,0.2), 
         # (1.0,0.5), 
         (1.0,1.0), 
+        # (1.0,1.2),
+        # (1.0,1.5),  
         # (1.0,2.0),
-        # (1.0,3.0),
     ]
-    reward = setup_reward(dm, logdir, gmm_names, gain_pairs)
+    reward = setup_reward(dm, logdir, gmm_names, gain_pairs, unobs_names)
 
     datotal[JP1DIFF], datotal[JP2DIFF] = np.ones((100,100))*(-100), np.ones((100,100))*(-100) 
     for idx_dtheta2 in range(len(dm.dtheta2)):
@@ -128,8 +162,8 @@ def Run(ct, *args):
         true_nnerr = [np.abs(v - _nnmean) for _nnmean, v in zip(nnmean, dm.log["true_datotal"])]
         jp1diff = [max(_nnmean-1*_nnerr-v, v-(_nnmean+1*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
         jp2diff = [max(_nnmean-2*_nnerr-v, v-(_nnmean+2*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
-        n_row = 25
-        clength = 0.02
+        n_row = 12
+        clength = 0.05
         fig = make_subplots(
             rows=n_row, cols=2, 
             subplot_titles=["datotal 生データ (100×100)", "報酬 生データ (100×100)", 
@@ -138,30 +172,32 @@ def Run(ct, *args):
                             "NN平均予測", "NN誤差予測", 
                             "|NN平均+/-NN誤差からのずれ| ({}/{})".format(len([x for x in jp1diff if x != 0]),len(dm.log["true_datotal"])), "|NN平均+/-2NN誤差からのずれ| ({}/{})".format(len([x for x in jp2diff if x != 0]),len(dm.log["true_datotal"])), 
                             "|NN平均+/-NN誤差からのずれ| (観測点のみ) ({}/{})".format(len([x for x in jp1diff if x != 0]),len(dm.log["true_datotal"])), "|NN平均+/-2NN誤差からのずれ| (観測点のみ) ({}/{})".format(len([x for x in jp2diff if x != 0]),len(dm.log["true_datotal"])),
-                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM2 |NN平均+/-標準偏差 - 飛び値| 2%標準偏差", 
-                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差","",
-                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
-                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差",
-                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値90%",
-                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値90%",
-                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値90%",
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%",
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%",
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%",
+                            # "GMM3 max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値90%",
+                            # "GMM3 max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値90%",
+                            # "GMM3 max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値90%",
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%",
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%",
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値70%", "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%",
                             
-                            "", "評価関数 (GMMなし, LCB2)",
-                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "GMM3 max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
-                            "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "", "評価関数 (GMMなし, LCB2)",
+                            # "GMM3 max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "GMM3 max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "GMM3 max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値90%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値70%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
+                            # "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)",
+                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", 
+                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
+                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", 
+                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", 
+                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
+                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", 
                             ],
             horizontal_spacing = 0.1,
             vertical_spacing = 0.01,
@@ -187,27 +223,34 @@ def Run(ct, *args):
             # (gmmpred["GMM2Sig003"], 8, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
             # (gmmpred["GMM2Sig001"], 9, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM2Sig002"], 9, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
             # (gmmpred["GMM2Sig003"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM2Sig005"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
-            (gmmpred["GMM3Sig001"], 7, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig001Pt09"], 7, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
-            (gmmpred["GMM3Sig003"], 8, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig003Pt09"], 8, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
-            (gmmpred["GMM3Sig005"], 9, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig005Pt09"], 9, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
-            (gmmpred["CGMMSig001Pt07"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig001Pt05"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
-            (gmmpred["CGMMSig003Pt07"], 11, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig003Pt05"], 11, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
-            (gmmpred["CGMMSig005Pt07"], 12, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig005Pt05"], 12, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            # (gmmpred["GMM3Sig001"], 7, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig001Pt09"], 7, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            # (gmmpred["GMM3Sig003"], 8, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig003Pt09"], 8, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            # (gmmpred["GMM3Sig005"], 9, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig005Pt09"], 9, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            # (gmmpred["CGMMSig001Pt07"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig001Pt05"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            # (gmmpred["CGMMSig003Pt07"], 11, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig003Pt05"], 11, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+            # (gmmpred["CGMMSig005Pt07"], 12, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig005Pt05"], 12, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
             
-            (reward["Er_LCB2"], 13, 2, 0.46, 0.28, -3, 0., None, None, None, None),
-            (gmmpred["GMM3Sig001"], 14, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig001_gnnsd1.0_ggmm1.0~Er_LCB2"], 14, 2, 0.46, 0.28, -3, 0., None, None, None, None),
-            (gmmpred["GMM3Sig003"], 15, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig003_gnnsd1.0_ggmm1.0~Er_LCB2"], 15, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["GMM3Sig005"], 16, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig005_gnnsd1.0_ggmm1.0~Er_LCB2"], 16, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig001Pt09"], 17, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 17, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig003Pt09"], 18, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 18, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig005Pt09"], 19, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 19, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig001Pt07"], 20, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 20, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig003Pt07"], 21, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 21, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig005Pt07"], 22, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 22, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig001Pt05"], 23, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 23, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig003Pt05"], 24, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 24, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
-            (gmmpred["CGMMSig005Pt05"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 25, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (reward["Er_LCB2"], 13, 2, 0.46, 0.28, -3, 0., None, None, None, None),
+            # (gmmpred["GMM3Sig001"], 14, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig001_gnnsd1.0_ggmm1.0~Er_LCB2"], 14, 2, 0.46, 0.28, -3, 0., None, None, None, None),
+            # (gmmpred["GMM3Sig003"], 15, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig003_gnnsd1.0_ggmm1.0~Er_LCB2"], 15, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["GMM3Sig005"], 16, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["GMM3Sig005_gnnsd1.0_ggmm1.0~Er_LCB2"], 16, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig001Pt09"], 17, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 17, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig003Pt09"], 18, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 18, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig005Pt09"], 19, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt09_gnnsd1.0_ggmm1.0~Er_LCB2"], 19, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig001Pt07"], 20, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 20, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig003Pt07"], 21, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 21, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig005Pt07"], 22, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt07_gnnsd1.0_ggmm1.0~Er_LCB2"], 22, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig001Pt05"], 23, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig001Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 23, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig003Pt05"], 24, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig003Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 24, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
+            # (gmmpred["CGMMSig005Pt05"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 25, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
             # (gmmpred["CGMMSig005Pt03"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig010Pt03"], 25, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
+        
+            (gmmpred["GMM2Sig001"], 7, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig001"], 7, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
+            (gmmpred["GMM2Sig003"], 8, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig003"], 8, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
+            (gmmpred["GMM2Sig005"], 9, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig005"], 9, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
+            (gmmpred["GMM2Sig001"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig001"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
+            (gmmpred["GMM2Sig003"], 11, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig003"], 11, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
+            (gmmpred["GMM2Sig005"], 12, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig005"], 12, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
         )
         posx_set = [0.46, 1.0075]
         posy_set = (lambda x: [0.015 + 0.95/(x-1)*i for i in range(x)][::-1])(n_row)
@@ -271,7 +314,7 @@ def Run(ct, *args):
             fig['layout']['xaxis'+str(i)]['title'] = "size_srcmouth"
             fig['layout']['yaxis'+str(i)]['title'] = "dtheta2"
         check_or_create_dir(save_img_dir)
-        plotly.offline.plot(fig, filename = save_img_dir + "heatmap.html", auto_open=False)
+        plotly.offline.plot(fig, filename = save_img_dir + "heatmap2.html", auto_open=False)
     
     
     # #観測重み報酬曲線
@@ -792,6 +835,7 @@ def Run(ct, *args):
         #         plotly.offline.plot(fig, filename = save_img_dir + "datotal_addsd_{}_{}.html".format(n_unobs, n_gmm), auto_open=False)
                 
         for n_gmm in [
+            # "GMM2Sig003",
             # "GMM3Sig003",
             # "CGMMSig005Pt05",
             # "CGMMSig005Pt07",
@@ -805,107 +849,127 @@ def Run(ct, *args):
                 # (1.0, 2.0),
                 # (1.0,3.0),
             ]:
-                print("datotal曲線 gmm加算", n_gmm)
-                trace = defaultdict(list)
-                for smsz_idx, smsz in enumerate(dm.smsz):
-                    trace[0].append(go.Scatter(
-                            x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
-                            mode='lines', 
-                            name=n_gmm,
-                            line=dict(color="red", dash="dashdot"),
-                            visible=False,
-                            error_y=dict(
-                                type="data",
-                                symmetric=True,
-                                array=gnnsd*datotal[NNERR][:,smsz_idx]+ggmm*gmmpred[n_gmm][:,smsz_idx],
-                                color="red",
-                                thickness=1.5,
-                                width=3,
-                        )
-                    ))
-                    trace[1].append(go.Scatter(
-                            x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
-                            mode='lines', 
-                            name="NNmean+/-1NNerr",
-                            line=dict(color="orange", dash="dash"),
-                            visible=False,
-                            error_y=dict(
-                                type="data",
-                                symmetric=True,
-                                array=gnnsd*datotal[NNERR][:,smsz_idx],
-                                color="orange",
-                                thickness=1.5,
-                                width=3,
+                for n_unobs in [
+                    "",
+                    # "UBSSig001P002",
+                ]:
+                    n_gmm
+                    print("datotal曲線 gmm加算", n_gmm)
+                    trace = defaultdict(list)
+                    for smsz_idx, smsz in enumerate(dm.smsz):
+                        trace[0].append(go.Scatter(
+                                x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                                mode='lines', 
+                                name=n_unobs,
+                                line=dict(color="gray", dash="dashdot"),
+                                visible=False,
+                                error_y=dict(
+                                    type="data",
+                                    symmetric=True,
+                                    array=gnnsd*datotal[NNERR][:,smsz_idx]+ggmm*gmmpred[n_gmm][:,smsz_idx]+(unobspred[n_unobs][:,smsz_idx] if n_unobs != "" else 0),
+                                    color="gray",
+                                    thickness=1.5,
+                                    width=3,
                             )
-                    ))
-                    trace[2].append(go.Scatter(
-                            x=dm.dtheta2, y=datotal[TRUE][:,smsz_idx],
-                            mode='markers', 
-                            name="Unobs",
-                            marker=dict(color="blue"),
-                            visible=False,
-                    ))
-                    # if smsz in dm.log["smsz"]:
-                    #     log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == smsz]
-                    #     trace[3].append(go.Scatter(
-                    #             x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
-                    #             mode='markers', 
-                    #             name="True datotal [TrainingData]",
-                    #             marker=dict(color="purple", size=8),
-                    #             visible=False,
-                    #     ))
-                    # else:
-                    #     trace[3].append(go.Scatter(x=[], y=[]))
-                    for i,addv in enumerate(range(-5,6)):
-                        if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
-                            tmp_smsz = dm.smsz[smsz_idx+addv]
-                            if tmp_smsz in dm.log["smsz"]:
-                                log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == tmp_smsz]
-                                trace[3+i].append(go.Scatter(
-                                        x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
-                                        mode='markers', 
-                                        name="Obs {:.3f}".format(tmp_smsz),
-                                        marker=dict(
-                                            color= "purple" if addv == 0 else "gray", 
-                                            size=8,
-                                        ),
-                                        visible=False,
-                                ))
+                        ))
+                        trace[1].append(go.Scatter(
+                                x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                                mode='lines', 
+                                name=n_gmm,
+                                line=dict(color="red", dash="dash"),
+                                visible=False,
+                                error_y=dict(
+                                    type="data",
+                                    symmetric=True,
+                                    array=gnnsd*datotal[NNERR][:,smsz_idx]+ggmm*gmmpred[n_gmm][:,smsz_idx],
+                                    color="red",
+                                    thickness=1.5,
+                                    width=3,
+                                )
+                        ))
+                        trace[2].append(go.Scatter(
+                                x=dm.dtheta2, y=datotal[NNMEAN][:,smsz_idx],
+                                mode='lines', 
+                                name="NNmean+/-1NNerr",
+                                line=dict(color="orange", dash="dash"),
+                                visible=False,
+                                error_y=dict(
+                                    type="data",
+                                    symmetric=True,
+                                    array=gnnsd*datotal[NNERR][:,smsz_idx],
+                                    color="orange",
+                                    thickness=1.5,
+                                    width=3,
+                                )
+                        ))
+                        trace[3].append(go.Scatter(
+                                x=dm.dtheta2, y=datotal[TRUE][:,smsz_idx],
+                                mode='markers', 
+                                name="Unobs",
+                                marker=dict(color="blue"),
+                                visible=False,
+                        ))
+                        # if smsz in dm.log["smsz"]:
+                        #     log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == smsz]
+                        #     trace[3].append(go.Scatter(
+                        #             x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
+                        #             mode='markers', 
+                        #             name="True datotal [TrainingData]",
+                        #             marker=dict(color="purple", size=8),
+                        #             visible=False,
+                        #     ))
+                        # else:
+                        #     trace[3].append(go.Scatter(x=[], y=[]))
+                        for i,addv in enumerate(range(-5,6)):
+                            if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
+                                tmp_smsz = dm.smsz[smsz_idx+addv]
+                                if tmp_smsz in dm.log["smsz"]:
+                                    log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, log_smsz in enumerate(dm.log["smsz"]) if log_smsz == tmp_smsz]
+                                    trace[4+i].append(go.Scatter(
+                                            x=np.array(dm.log["est_opt_dtheta2"])[log_smsz_idx_list], y=np.array(dm.log["true_datotal"])[log_smsz_idx_list],
+                                            mode='markers', 
+                                            name="Obs {:.3f}".format(tmp_smsz),
+                                            marker=dict(
+                                                color= "purple" if addv == 0 else "gray", 
+                                                size=8,
+                                            ),
+                                            visible=False,
+                                    ))
+                                else:
+                                    trace[4+i].append(go.Scatter(x=[], y=[]))
                             else:
-                                trace[3+i].append(go.Scatter(x=[], y=[]))
-                        else:
-                            trace[3+i].append(go.Scatter(x=[], y=[]))
-                for i in range(len(trace)):
-                    trace[i][0].visible = True 
-                data = sum([trace[i] for i in range(len(trace))], [])   
-                steps = []
-                for smsz_idx, smsz in enumerate(dm.smsz):
-                    for j in range(len(trace)):
-                        trace["vis{}".format(j)] = [False]*len(dm.smsz)
-                        trace["vis{}".format(j)][smsz_idx] = True
-                    step = dict(
-                            method="update",
-                            args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
-                                {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+                                trace[4+i].append(go.Scatter(x=[], y=[]))
+                    for i in range(len(trace)):
+                        trace[i][0].visible = True 
+                    data = sum([trace[i] for i in range(len(trace))], [])   
+                    steps = []
+                    for smsz_idx, smsz in enumerate(dm.smsz):
+                        for j in range(len(trace)):
+                            trace["vis{}".format(j)] = [False]*len(dm.smsz)
+                            trace["vis{}".format(j)][smsz_idx] = True
+                        step = dict(
+                                method="update",
+                                args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                                    {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+                        )
+                        steps.append(step)
+                    sliders = [dict(
+                            active=10,
+                            currentvalue={"prefix": "size_srcmouth: "},
+                            pad={"t": 50},
+                            steps=steps,
+                    )]
+                    fig = go.Figure(data=data)
+                    fig.update_layout(
+                            sliders=sliders
                     )
-                    steps.append(step)
-                sliders = [dict(
-                        active=10,
-                        currentvalue={"prefix": "size_srcmouth: "},
-                        pad={"t": 50},
-                        steps=steps,
-                )]
-                fig = go.Figure(data=data)
-                fig.update_layout(
-                        sliders=sliders
-                )
-                fig['layout']['xaxis']['title'] = "dtheta2"
-                fig['layout']['yaxis']['title'] = "datotal"
-                fig['layout']['yaxis']['range'] = (-0.05,0.6)
-                for smsz_idx, smsz in enumerate(dm.smsz):
-                    fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
-                check_or_create_dir(save_img_dir)
-                plotly.offline.plot(fig, filename = save_img_dir + "datotal_addsd_{}_gnnsd{}_ggmm{}.html".format(n_gmm, gnnsd, ggmm), auto_open=False)
+                    fig['layout']['xaxis']['title'] = "dtheta2"
+                    fig['layout']['yaxis']['title'] = "datotal"
+                    fig['layout']['yaxis']['range'] = (-0.05,0.6)
+                    for smsz_idx, smsz in enumerate(dm.smsz):
+                        fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
+                    check_or_create_dir(save_img_dir)
+                    plotly.offline.plot(fig, filename = save_img_dir + "datotal_addsd_{}_gnnsd{}_ggmm{}_{}.html".format(n_gmm, gnnsd, ggmm, n_unobs), auto_open=False)
 
     
     #評価関数曲線 (GMM)
@@ -923,7 +987,8 @@ def Run(ct, *args):
                 # lambda t, gain_type=gain_type: "CGMMSig005Pt05_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig005Pt07_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig010Pt03_{}~{}".format(gain_type, t), 
-                lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}~{}".format(gain_type, t), 
+                # lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}~{}".format(gain_type, t), 
+                lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}_UBSSig001P002~{}".format(gain_type, t), 
             ):
                 trace = defaultdict(list)
                 print("評価関数曲線 "+name(Er))

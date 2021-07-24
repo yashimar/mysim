@@ -150,7 +150,7 @@ def setup_gmmpred(dm, gmm_name_list, logdir):
     return gmmpreds
 
 
-def setup_reward(dm, logdir, gmm_names = None, gain_pairs = None):
+def setup_reward(dm, logdir, gmm_names = None, gain_pairs = None, unobs_list = None, only_unobs_name_list = None):
     print("Setup reward")
     with open(logdir+"datotal.pickle", mode="rb") as f:
         datotal = pickle.load(f)
@@ -158,74 +158,17 @@ def setup_reward(dm, logdir, gmm_names = None, gain_pairs = None):
     #     unobssds = pickle.load(f)
     with open(logdir+"gmmpreds.pickle", mode="rb") as f:
         gmmpreds = pickle.load(f)
+    with open(logdir+"unobssds.pickle", mode="rb") as f:
+        unobspreds = pickle.load(f)
     
     if gmm_names == None:
         gmm_names = []
     if gain_pairs == None:
         gain_pairs = [(1.0, 1.0)]
-        
-    # reward = defaultdict(lambda: np.zeros((100,100)))
-    # reward_normal = defaultdict(lambda: np.zeros((100,100)))
-    # # reward_gmm_noadd = defaultdict(lambda: np.zeros((100,100)))
-    # # reward_gmm_add = defaultdict(lambda: np.zeros((100,100)))
-    # # reward_gmm, reward_gmm2, reward_gmm3 = defaultdict(lambda: np.zeros((100,100))), defaultdict(lambda: np.zeros((100,100))), defaultdict(lambda: np.zeros((100,100)))
-    # reward_gmm = defaultdict(lambda: np.zeros((100,100)))
-    # # reward_unobs = defaultdict(lambda: np.zeros((100,100)))
-    # # reward_unobs_gmm_add = defaultdict(lambda: np.zeros((100,100)))
-    # calc_normal = True
-    # # calc_gmm_noadd, calc_gmm_add = defaultdict(lambda: True), defaultdict(lambda: True)
-    # # calc_gmm, calc_gmm2, calc_gmm3 = defaultdict(lambda: True), defaultdict(lambda: True), defaultdict(lambda: True)
-    # calc_gmm = defaultdict(lambda: True)
-    # # calc_unobs = defaultdict(lambda: True)
-    # # calc_unobs_gmm_add = defaultdict(lambda: True)
-    
-    # print("Load reward_normal")
-    # t = time.time()
-    # if os.path.exists(logdir+"reward_normal.pickle"):
-    #     calc_normal = False
-    #     with open(logdir+"reward_normal.pickle", mode="rb") as f:
-    #         reward_normal = pickle.load(f)
-    # Print("Done", time.time()-t)
-    # # if os.path.exists(logdir+"reward_gmm_noadd.pickle"):
-    # #     with open(logdir+"reward_gmm_noadd.pickle", mode="rb") as f:
-    # #         reward_gmm_noadd = pickle.load(f)
-    #     # for k in reward_gmm_noadd.keys():
-    #     #     calc_gmm_noadd[k.split("~")[0]] = False
-    # # if os.path.exists(logdir+"reward_gmm_add.pickle"):
-    # #     with open(logdir+"reward_gmm_add.pickle", mode="rb") as f:
-    # #         reward_gmm_add = pickle.load(f)
-    # #     for k in reward_gmm_add.keys():
-    # #     #     calc_gmm_add[k.split("~")[0]] = False
-    # #         calc_gmm[k.split("~")[0]] = False
-    # print("Load reward_gmm")
-    # t = time.time()
-    # if os.path.exists(logdir+"reward_gmm.pickle"):
-    #     print(logdir+"reward_gmm.pickle")
-    #     with open(logdir+"reward_gmm.pickle", mode="rb") as f:
-    #         reward_gmm = pickle.load(f)
-    #     for k in reward_gmm.keys():
-    #         calc_gmm[k.split("~")[0]] = False
-    # Print("Done", time.time()-t)
-    # # if os.path.exists(logdir+"reward_gmm2.pickle"):
-    # #     with open(logdir+"reward_gmm2.pickle", mode="rb") as f:
-    # #         reward_gmm2 = pickle.load(f)
-    # #     for k in reward_gmm2.keys():
-    # #         calc_gmm2[k.split("~")[0]] = False
-    # # if os.path.exists(logdir+"reward_gmm3.pickle"):
-    # #     with open(logdir+"reward_gmm3.pickle", mode="rb") as f:
-    # #         reward_gmm3 = pickle.load(f)
-    # #     for k in reward_gmm3.keys():
-    # #         calc_gmm3[k.split("~")[0]] = False
-    # # if os.path.exists(logdir+"reward_unobs.pickle"):
-    # #     with open(logdir+"reward_unobs.pickle", mode="rb") as f:
-    # #         reward_unobs = pickle.load(f)
-    # #     for k in reward_unobs.keys():
-    # #         calc_unobs[k.split("~")[0]] = False
-    # # if os.path.exists(logdir+"reward_unobs_gmm_add.pickle"):
-    # #     with open(logdir+"reward_unobs_gmm_add.pickle", mode="rb") as f:
-    # #         reward_unobs_gmm_add = pickle.load(f)
-    # #     for k in reward_unobs_gmm_add.keys():
-    # #         calc_unobs_gmm_add[k.split("~")[0]] = False
+    if unobs_list == None:
+        unobs_list = []
+    if only_unobs_name_list == None:
+        only_unobs_name_list = []
     
     reward = dict()
     check_or_create_dir(logdir+"npydata")
@@ -255,6 +198,30 @@ def setup_reward(dm, logdir, gmm_names = None, gain_pairs = None):
                 reward["{}~Sr".format(gmm_name)] = np.sqrt([[rsm[idx_dtheta2, idx_smsz].Var[0,0].item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
                 reward["{}~Er_{}".format(gmm_name, LCB1)] = reward["{}~Er".format(gmm_name)] - 1*reward["{}~Sr".format(gmm_name)]
                 reward["{}~Er_{}".format(gmm_name, LCB2)] = reward["{}~Er".format(gmm_name)] - 2*reward["{}~Sr".format(gmm_name)]
+            for name2 in unobs_list:
+                unobs_name = "{}_gnnsd{}_ggmm{}_{}".format(name, g_nnsd, g_gmm, name2)
+                unobspred = unobspreds[name2]
+                if unobs_name not in [k.split("~")[0] for k in reward.keys()]:
+                    print("{}:".format(unobs_name), logdir)
+                    rsm = np.array([[
+                        rmodel.Predict(x=[0.3, datotal_nnmean[idx_dtheta2, idx_smsz]], x_var=[0, (g_nnsd*datotal_nnsd[idx_dtheta2, idx_smsz] + g_gmm*gmmpred[idx_dtheta2, idx_smsz] + unobspred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                    for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+                    reward["{}~Er".format(unobs_name)] = np.array([[rsm[idx_dtheta2, idx_smsz].Y.item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+                    reward["{}~Sr".format(unobs_name)] = np.sqrt([[rsm[idx_dtheta2, idx_smsz].Var[0,0].item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+                    reward["{}~Er_{}".format(unobs_name, LCB1)] = reward["{}~Er".format(unobs_name)] - 1*reward["{}~Sr".format(unobs_name)]
+                    reward["{}~Er_{}".format(unobs_name, LCB2)] = reward["{}~Er".format(unobs_name)] - 2*reward["{}~Sr".format(unobs_name)]
+    for name in only_unobs_name_list:
+        unobs_name = "only_{}".format(name)
+        unobspred = unobspreds[name]
+        if unobs_name not in [k.split("~")[0] for k in reward.keys()]:
+                print("{}:".format(unobs_name), logdir)
+                rsm = np.array([[
+                    rmodel.Predict(x=[0.3, datotal_nnmean[idx_dtheta2, idx_smsz]], x_var=[0, (g_nnsd*datotal_nnsd[idx_dtheta2, idx_smsz] + unobspred[idx_dtheta2, idx_smsz])**2], with_var=True)
+                for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+                reward["{}~Er".format(unobs_name)] = np.array([[rsm[idx_dtheta2, idx_smsz].Y.item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+                reward["{}~Sr".format(unobs_name)] = np.sqrt([[rsm[idx_dtheta2, idx_smsz].Var[0,0].item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+                reward["{}~Er_{}".format(unobs_name, LCB1)] = reward["{}~Er".format(unobs_name)] - 1*reward["{}~Sr".format(unobs_name)]
+                reward["{}~Er_{}".format(unobs_name, LCB2)] = reward["{}~Er".format(unobs_name)] - 2*reward["{}~Sr".format(unobs_name)]
     
     for k, v, in reward.items():
         np.save(logdir+"npydata/{}.npy".format(k), v)

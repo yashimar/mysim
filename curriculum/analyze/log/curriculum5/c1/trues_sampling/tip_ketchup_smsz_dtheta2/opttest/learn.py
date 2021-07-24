@@ -25,13 +25,14 @@ def idx_of_the_nearest(data, value):
 
 
 class Domain:
-    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, LCB_ratio = 0.0, gain_pairs = None):
+    def __init__(self, nnmodel, gmm, logdir, use_gmm = False, unobs = None, LCB_ratio = 0.0, gain_pairs = None):
         self.smsz = np.linspace(0.3,0.8,100)
         self.dtheta2 = np.linspace(0.1,1,100)[::-1]
         self.datotal = {TRUE: np.ones((100,100))*(-100), RFUNC: np.ones((100,100))*(-100)}
         self.nnmodel = nnmodel
         self.gmm = gmm
         self.use_gmm = use_gmm
+        self.unobs = unobs
         self.LCB_ratio = LCB_ratio
         self.log = {
             "ep": [],
@@ -62,11 +63,19 @@ class Domain:
             self.gmm.train()
             X = np.array([[dtheta2, smsz] for dtheta2 in self.dtheta2])
             SDgmm = self.gmm.predict(X)
+        if self.unobs != None:
+            observations = np.array([
+                self.log["est_opt_dtheta2"],
+                self.log["smsz"]
+            ]).T
+            self.unobs.setup(observations)
+            SDunobs = self.unobs.calc_sd(X)
         for idx_dtheta2, dtheta2 in enumerate(self.dtheta2):
             x_in = [dtheta2, smsz]
             est_datotal = self.nnmodel.model.Predict(x = x_in, with_var=True)
-            if self.use_gmm:
-                # x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*self.gmm.predict(x_in).item())**2]
+            if (self.unobs != None) and (self.use_gmm):
+                x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*SDgmm[idx_dtheta2].item() + SDunobs[idx_dtheta2].item())**2]
+            elif self.use_gmm:
                 x_var = [0, (self.gain_pairs[0]*math.sqrt(est_datotal.Var[0,0].item()) + self.gain_pairs[1]*SDgmm[idx_dtheta2].item())**2]
             else:
                 x_var = [0, est_datotal.Var[0].item()]
@@ -299,44 +308,261 @@ class CGMM(GMM3, object):
         for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
             self.gaussian_components.append(lambda x,jpx=jpx,Var=Var,jpy=jpy: self.custom_normal(x,jpx,Var,jpy))
 
-    
-class ObservationReward:
-    def __init__(self, observations, diag_sigma):
-        self.X = observations
+
+class GMM4:
+    def __init__(self, nnmodel, diag_sigma, Gerr):
+        self.nnmodel = nnmodel
+        self.jumppoints = {"X": [], "Y": []}
+        self.gc_concat = []
         self.diag_sigma = diag_sigma
-        self.r_components = []
-        
-    def setup(self):
-        Var = np.diag(self.diag_sigma)**2
-        for obs_x in self.X:
-            r_component= lambda in_x, obs_x=obs_x: multivariate_normal.pdf(in_x, obs_x, Var)*(1./multivariate_normal.pdf(obs_x, obs_x, Var))*1.0
-            self.r_components.append(r_component)
+        self.Gerr = Gerr
     
-    def calc_reward(self, x, penalty = -1):
-        if penalty > 0:
-            raise(Exception("penalty should be 0 or less."))
+    def extract_jps(self):
+        self.jumppoints = {"X": [], "Y": []}
+        model = self.nnmodel.model
+        p_means = model.Forward(x_data = model.DataX, train = False).data
+        p_errs = model.ForwardErr(x_data = model.DataX, train = False).data
+        for i, (p_mean, p_err, x, y) in enumerate(zip(p_means, p_errs, model.DataX, model.DataY)):
+            if (y < (p_mean - self.Gerr*p_err) or (y > (p_mean + self.Gerr*p_err))):
+                jp = max((p_mean - self.Gerr*p_err)-y, y-(p_mean + self.Gerr*p_err))
+                self.jumppoints["X"].append(x.tolist())
+                self.jumppoints["Y"].append(jp.tolist())
+        
+                
+    def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        self.extract_jps()
+        self.gc_concat = []
+        Var = np.diag(self.diag_sigma)**2
+        # s = lambda x: np.sum([
+        #     multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy
+        # for jpx,jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"]))])
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
+            self.gc_concat.append(
+                lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy
+            )
+            # self.pi_concat.append(
+            #     lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy/s(x)
+            # )
+    
+    def predict(self, x):
         if len(np.array(x).shape) == 1:
-            x = list(x)
-        r = penalty*np.ones((len(x)))
-        for rc in self.r_components:
-            r += abs(penalty)*rc(x)
-        r = np.minimum(0., r)
-        return r
+            x = [x]
+        pred1 = np.zeros((len(x)))
+        pred2 = np.zeros((len(x)))
+        for gc in self.gc_concat:
+            tmp = gc(x)
+            pred1 += tmp
+            pred2 += tmp**2
+        pred = pred2/pred1
+        return pred
+
+
+# class GMR:
+#     def __init__(self, nnmodel, x_diag_sigma, y_diag_sigma, Gerr):
+#         self.nnmodel = nnmodel
+#         self.jumppoints = {"X": [], "Y": []}
+#         self.pred_gaussians = []
+#         self.pred_weights = []
+#         self.x_diag_sigma = x_diag_sigma
+#         self.y_diag_sigma = y_diag_sigma
+#         self.Gerr = Gerr
+        
+#     def extract_jps(self):
+#         self.jumppoints = {"X": [], "Y": []}
+#         model = self.nnmodel.model
+#         p_means = model.Forward(x_data = model.DataX, train = False).data
+#         p_errs = model.ForwardErr(x_data = model.DataX, train = False).data
+#         for i, (p_mean, p_err, x, y) in enumerate(zip(p_means, p_errs, model.DataX, model.DataY)):
+#             if (y < (p_mean - self.Gerr*p_err) or (y > (p_mean + self.Gerr*p_err))):
+#                 jp = max((p_mean - self.Gerr*p_err)-y, y-(p_mean + self.Gerr*p_err))
+#                 self.jumppoints["X"].append(x.tolist())
+#                 self.jumppoints["Y"].append(jp.tolist())
+                
+#     def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+#         self.extract_jps()
+#         self.pred_gaussians = []
+#         self.pred_weights = []
+#         #各ガウシアンの平均
+#         meanX_concat = np.array(self.jumppoints["X"])
+#         meanY_concat = np.array(self.jumppoints["Y"])
+#         #共分散行列はどのガウシアンでも共通
+#         VarXY = np.diag(np.concatenate([self.x_diag_sigma, self.y_diag_sigma]))**2
+#         VarXX = np.diag(self.x_diag_sigma)**2
+#         VarYY = np.diag(self.y_diag_sigma)**2
+#         VarXY = np.zeros((len(x_diag_sigma), len(y_diag_sigma))) #簡単のため
+#         Var = np.vstack([
+#             np.hstack([VarXX, VarXY]),
+#             np.hstack([VarXY.T, VarYY])
+#         ])
+#         #VarXYをゼロ行列にしているので, 実質 mean_y|x = mean_y, Var_y|x = Var_y
+#         for k in len(meanX_concat):
+#             meanYgvX = meanY_concat[k]
+#             VarYgvX_concat = VarYY
+#             # piYgvX = 
+
+# dm = Domain.load(logdir+"dm.pickle")
+#     dm.gmm.train()
+#     s = 3
+#     x_diag_sigma = [(1.0-0.1)/(100./s),(0.8-0.3)/(100./s)]
+#     y_diag_sigma = [0.05]
+#     xy_cov = np.array([
+#         [0.],
+#         [0.]
+#     ])**2
+    
+#     pred_means_concat = []
+#     pred_weights_concat = []
+#     pred_gc_concat = []
+    
+#     # meanX_concat = np.array(dm.gmm.jumppoints["X"])
+#     # meanY_concat = np.array(dm.gmm.jumppoints["Y"])
+#     meanX_concat = np.array([[0.3,0.4],[0.5,0.6]])
+#     meanY_concat = np.array([[0.1],[0.2]])
+    
+#     # zeroX = np.array([0.,0.])
+#     # zeroY = np.array([0.])
+#     # zeroVarXX = np.diag([10.,10.])
+#     # zeroVarYY = np.diag([0.05])
+#     # zeroVarXY = np.array([[0.],[0.]])
+#     # zeroVarYX = zeroVarXY.T
+#     # zeroVar = np.vstack([
+#     #     np.hstack([zeroVarXX, zeroVarXY]),
+#     #     np.hstack([zeroVarYX, zeroVarYY])
+#     # ])
+    
+#     xdim = 2
+#     ydim = 1
+#     # num_components = len(meanX_concat) + 1  
+#     num_components = len(meanX_concat)  
+    
+#     VarXX = np.diag(x_diag_sigma)**2
+#     VarYY = np.diag(y_diag_sigma)**2
+#     VarXY = xy_cov
+#     VarYX = VarXY.T
+#     Var = np.vstack([
+#         np.hstack([VarXX, VarXY]),
+#         np.hstack([VarXY.T, VarYY])
+#     ])
+#     # VarXX_concat = [VarXX for _ in range(num_components-1)]
+#     # VarYX_concat = [VarYX for _ in range(num_components-1)]
+#     # Var_concat = [Var for _ in range(num_components-1)]
+#     VarXX_concat = [VarXX for _ in range(num_components)]
+#     VarYX_concat = [VarYX for _ in range(num_components)]
+#     Var_concat = [Var for _ in range(num_components)]
+    
+#     # meanX_concat = np.vstack([meanX_concat, zeroX])
+#     # meanY_concat = np.vstack([meanY_concat, zeroY])
+#     # VarXX_concat.append(zeroVarXX)
+#     # VarYX_concat.append(zeroVarYX)
+#     # Var_concat.append(zeroVar)
+
+#     for k in range(num_components):
+#         pred_weights_concat.append(
+#             lambda x,k=k: multivariate_normal.pdf(x, meanX_concat[k], VarXX_concat[k]) / sum([multivariate_normal.pdf(x, meanX_concat[l], VarXX_concat[k]) for l in range(num_components)])
+#         )
+#         pred_means_concat.append(
+#             lambda x,k=k: meanY_concat[k] + VarYX_concat[k].dot(np.linalg.inv(VarXX_concat[k])).dot(x.T - np.tile(meanX_concat[k].reshape(xdim, 1), (1, x.shape[0])))
+#         )
+#         pred_gc_concat.append(
+#             lambda xy,k=k: 1./num_components*multivariate_normal.pdf(xy, np.hstack([meanX_concat[k], meanY_concat[k]]), Var_concat[k])
+#         )
+
+        
+#     def predict(x):
+#         if len(np.array(x).shape) == 1:
+#             x = np.array([x])
+#         pred = sum([w(x)*m(x) for w, m in zip(pred_weights_concat, pred_means_concat)])
+#         return pred
+        
+#     X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ])
+#     # p = predict(X).reshape(100,100)
+#     # print(p)
+#     # p = pred_weights_concat[0](X).reshape(100,100)
+    
+#     # for i in range(5):
+#     #     p = pred_weights_concat[i](X).reshape(100,100)
+#     #     fig = go.Figure()
+#     #     fig.add_trace(go.Heatmap(x=dm.smsz,y=dm.dtheta2,z=p,
+#     #         colorscale = "Viridis",
+#     #         # zmin = 0, zmax = 1,
+#     #     ))
+#     #     fig.show()
+    
+#     p = predict(X)
+#     # p = pred_means_concat[0](X)
+#     # p = (multivariate_normal.pdf(X, meanX_concat[0], VarXX) / sum([multivariate_normal.pdf(X, meanX_concat[l], VarXX) for l in range(num_components)]))
+#     # p = multivariate_normal.pdf(X, [3,3], np.diag([100,100]))
+#     p = p.reshape(100,100)
+#     fig = go.Figure()
+#     fig.add_trace(go.Heatmap(x=dm.smsz,y=dm.dtheta2,z=p,
+#         colorscale = "Viridis",
+#         zmin = 0, zmax = 0.2,
+#     ))
+#     fig['layout']['xaxis']['title'] = "size_srcmouth"
+#     fig['layout']['yaxis']['title'] = "dtheta2"
+#     fig.show()
+    
+#     # # X = np.array([[dtheta2, smsz, 0.1] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ])
+#     # ylist = np.linspace(0,0.4,100)
+#     # X = np.array([[0.3, smsz, y] for y in ylist for smsz in dm.smsz ])
+#     # # p = sum([gc(X) for gc in pred_gc_concat])
+#     # p = pred_gc_concat[-1](X)
+#     # print(len(pred_gc_concat))
+#     # p = p.reshape(100,100)
+#     # fig = go.Figure()
+#     # fig.add_trace(go.Heatmap(
+#     #     x=dm.smsz,
+#     #     # y=dm.dtheta2,
+#     #     y=ylist,
+#     #     z=p,
+#     #     colorscale = "Viridis",
+#     #     # zmin = 0, zmax = 1,
+#     # ))
+#     # fig['layout']['xaxis']['title'] = "size_srcmouth"
+#     # fig['layout']['yaxis']['title'] = "dtheta2"
+#     # # fig['layout']['yaxis']['title'] = "y"
+#     # # fig['layout']['title'] = "density"
+#     # fig.show()
+    
+    
+# class ObservationReward:
+#     def __init__(self, observations, diag_sigma):
+#         self.X = observations
+#         self.diag_sigma = diag_sigma
+#         self.r_components = []
+        
+#     def setup(self):
+#         self.r_components = []
+#         Var = np.diag(self.diag_sigma)**2
+#         for obs_x in self.X:
+#             r_component= lambda in_x, obs_x=obs_x: multivariate_normal.pdf(in_x, obs_x, Var)*(1./multivariate_normal.pdf(obs_x, obs_x, Var))*1.0
+#             self.r_components.append(r_component)
+    
+#     def calc_reward(self, x, penalty = -1):
+#         if penalty > 0:
+#             raise(Exception("penalty should be 0 or less."))
+#         if len(np.array(x).shape) == 1:
+#             x = list(x)
+#         r = penalty*np.ones((len(x)))
+#         for rc in self.r_components:
+#             r += abs(penalty)*rc(x)
+#         r = np.minimum(0., r)
+#         return r
     
     
 class UnobservedSD:
-    def __init__(self, observations, diag_sigma, penalty = 0.3):
-        self.X = observations
+    def __init__(self, diag_sigma, penalty = 0.3):
         self.diag_sigma = diag_sigma
         self.penalty = penalty
         self.sd_components = []
         if self.penalty <= 0:
             raise(Exception("penalty should be 0 or more. Default value is 0.3."))
         
-    def setup(self):
+    def setup(self, observations):
+        self.sd_components = []
         Var = np.diag(self.diag_sigma)**2
-        for obs_x in self.X:
-            sd_component= lambda in_x, obs_x=obs_x: -multivariate_normal.pdf(in_x, obs_x, Var)*(1./multivariate_normal.pdf(obs_x, obs_x, Var))*1.0
+        for obs_x in observations:
+            sd_component= lambda in_x, obs_x=obs_x: multivariate_normal.pdf(in_x, obs_x, Var)*(1./multivariate_normal.pdf(obs_x, obs_x, Var))*1.0
             self.sd_components.append(sd_component)
     
     def calc_sd(self, x):
@@ -344,10 +570,8 @@ class UnobservedSD:
             x = [x]
         sd = self.penalty*np.ones((len(x)))
         for sdc in self.sd_components:
-            sd += self.penalty*sdc(x)
-        sd = np.maximum(0., sd)
+            sd = np.minimum(sd, self.penalty - self.penalty*sdc(x))
         return sd
-
         
 
 def Run(ct, *args):

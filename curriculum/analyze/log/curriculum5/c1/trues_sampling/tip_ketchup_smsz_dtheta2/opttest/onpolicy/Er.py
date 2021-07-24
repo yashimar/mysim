@@ -1,5 +1,5 @@
 #coding: UTF-8
-from .learn import *
+from ..learn import *
 
 def Help():
     pass
@@ -7,7 +7,7 @@ def Help():
 
 def Run(ct,*args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "onpolicy/GMM4Sig003_gnnsd1.0_ggmm1.0/t1" if len(args) == 0 else args[0]
+    name = "onpolicy/Er/t{}".format(args[0])
     num_ep = 500
     n_rand_sample = 10
     n_learn_step = 1
@@ -27,7 +27,7 @@ def Run(ct,*args):
         (),
     ]
     
-    use_gmm = True
+    use_gmm = False
     gmm_lam = lambda nnmodel: GMM4(nnmodel, diag_sigma=[(1.0-0.1)/33.3, (0.8-0.3)/33.3], Gerr = 1.0)
     gain_pairs = (1.0, 1.0)
     # unobs = UnobservedSD(penalty = 0.02, diag_sigma=[(1.0-0.1)/100., (0.8-0.3)/100.])
