@@ -7,7 +7,7 @@ def Help():
 
 def Run(ct,*args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t{}".format(args[0])
+    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1_LCB2/t{}".format(args[0])
     num_ep = 500
     n_rand_sample = 10
     n_learn_step = 1
@@ -32,7 +32,7 @@ def Run(ct,*args):
     gain_pairs = (1.0, 1.0)
     # unobs = UnobservedSD(penalty = 0.02, diag_sigma=[(1.0-0.1)/100., (0.8-0.3)/100.])
     unobs = None
-    LCB_ratio = 0.0
+    LCB_ratio = 2.0
     
     logdir = base_logdir + "logs/{}/".format(name)
     modeldir = logdir + "{}/".format("models")
