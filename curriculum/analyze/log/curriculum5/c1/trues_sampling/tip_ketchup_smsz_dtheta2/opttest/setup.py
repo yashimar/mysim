@@ -55,15 +55,22 @@ def setup_datotal(dm, logdir):
             NNERR: None,
             NNSD: None,
         }
-        nnmean, nnerr, nnsd = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
-        for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
-            for idx_smsz, smsz in enumerate(dm.smsz):
-                print("datotal", logdir, idx_dtheta2, idx_smsz)
-                x_in = [dtheta2, smsz]
-                xdatota_for_Forward = dm.nnmodel.model.DataX[0:1]; xdatota_for_Forward[0, 0] = x_in[0]; xdatota_for_Forward[0, 1] = x_in[1] #Chainerのバグに対処するため
-                nnmean[idx_dtheta2, idx_smsz] = dm.nnmodel.model.Forward(x_data = xdatota_for_Forward, train = False).data.item() #model.Predict(..., x_var=zero).Yと同じ
-                nnerr[idx_dtheta2, idx_smsz] = dm.nnmodel.model.ForwardErr(x_data = xdatota_for_Forward, train = False).data.item()
-                nnsd[idx_dtheta2, idx_smsz] = np.sqrt(dm.nnmodel.model.Predict(x = x_in, with_var = True).Var[0,0].item())
+        X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ]).astype(np.float32)
+        nnmean = dm.nnmodel.model.Forward(x_data = X, train = False).data.reshape(100,100)
+        nnerr = dm.nnmodel.model.ForwardErr(x_data = X, train = False).data.reshape(100,100)
+        m = dm.nnmodel.model
+        nnsd = np.array([np.sqrt(m.Predict(x = [dtheta2, smsz], with_var = True).Var[0,0].item()) for dtheta2 in dm.dtheta2 for smsz in dm.smsz]).reshape(100,100)
+        
+        
+        # nnmean, nnerr, nnsd = np.zeros((100,100)), np.zeros((100,100)), np.zeros((100,100))
+        # for idx_dtheta2, dtheta2 in enumerate(dm.dtheta2):
+        #     for idx_smsz, smsz in enumerate(dm.smsz):
+        #         print("datotal", logdir, idx_dtheta2, idx_smsz)
+        #         x_in = [dtheta2, smsz]
+        #         xdatota_for_Forward = dm.nnmodel.model.DataX[0:1]; xdatota_for_Forward[0, 0] = x_in[0]; xdatota_for_Forward[0, 1] = x_in[1] #Chainerのバグに対処するため
+        #         nnmean[idx_dtheta2, idx_smsz] = dm.nnmodel.model.Forward(x_data = xdatota_for_Forward, train = False).data.item() #model.Predict(..., x_var=zero).Yと同じ
+        #         nnerr[idx_dtheta2, idx_smsz] = dm.nnmodel.model.ForwardErr(x_data = xdatota_for_Forward, train = False).data.item()
+        #         nnsd[idx_dtheta2, idx_smsz] = np.sqrt(dm.nnmodel.model.Predict(x = x_in, with_var = True).Var[0,0].item())
         datotal[NNMEAN] = nnmean
         datotal[NNERR] = nnerr
         datotal[NNSD] = nnsd

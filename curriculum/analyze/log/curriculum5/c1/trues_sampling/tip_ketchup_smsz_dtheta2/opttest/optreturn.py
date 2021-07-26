@@ -183,7 +183,7 @@ def Run(ct, *args):
                 # (CGMMSig003Pt03, "CGMMSig003Pt03"),
                 
                 (GMM4Sig003, "GMM4Sig003"),
-                (GMM4Sig005, "GMM4Sig005"),
+                # (GMM4Sig005, "GMM4Sig005"),
         ]
         
         # UBSSig003P002 = UnobservedSD(penalty = 0.02, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3])
@@ -207,10 +207,11 @@ def Run(ct, *args):
         gain_pairs = [
             # (1.0,0.2), 
             # (1.0,0.5), 
-            (1.0,1.0), 
+            # (1.0,1.0), 
             # (1.0,1.2),
-            (1.0,1.5),  
-            # (1.0,2.0),
+            # (1.0,1.5),  
+            (1.0,2.0),
+            (1.0,3.0),
         ]
         reward = setup_reward(dm, logdir, gmm_names, gain_pairs, unobs_names, only_unobs_name_list = only_unobs_name_list)
         

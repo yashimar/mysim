@@ -25,36 +25,33 @@ def Help():
 def Run(ct, *args):
     pref_list = [
         "Er",
-        "ErLCB2",
+        "Er_LCB2",
         "GMM4Sig003_gnnsd1_ggmm1",
         "GMM4Sig003_gnnsd1_ggmm1_LCB2",
-        "CGMMSig005Pt05_gnnsd1.0_ggmm1.0",
-        "GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2",
+        "GMM4Sig003_gnnsd1_ggmm2",
+        "GMM4Sig003_gnnsd1_ggmm2_LCB2",
+        "GMM4Sig003_gnnsd1_ggmm3",
+        "GMM4Sig005_gnnsd1_ggmm1",
+        "GMM4Sig005_gnnsd1_ggmm1_LCB2",
+        "GMM4Sig005_gnnsd1_ggmm2",
     ]
     n_ep = 500
-    smsz_thr = 0.6
-    trial_list = [
-        # "t1",
-        "t2",
-        "t3",
-        "t4",
-        "t5",
-        "t6",
-        "t7",
-        "t8",
-        "t9",
-        "t10",
-    ]
-    
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy/"
+    smsz_thr = 0.63
+    num = 50
+    trial_list = ["t{}".format(i) for i in range(2,30)]
+
     ymean_list_meta = []
+    barset = []
     for pref in pref_list:
+        save_img_dir = PICTURE_DIR + "opttest/onpolicy/{}/".format(pref)
         name_list = ["onpolicy/{}/{}".format(pref,trial) for trial in trial_list]
         y_list_meta = [[] for _ in range(n_ep)]
         yvis_list_meta = [[] for _ in range(n_ep)]
         smsz_list_meta = [[] for _ in range(n_ep)]
         for name in name_list:
             logdir = BASE_DIR + "opttest/logs/{}/".format(name)
+            if not os.path.exists(logdir+"dm.pickle"):
+                continue
             t = time.time()
             dm = Domain.load(logdir+"dm.pickle")
 
@@ -66,39 +63,48 @@ def Run(ct, *args):
                 y_list_meta[i].append(t)
                 smsz_list_meta[i].append(s)
         
+        yvis_list_meta = [np.where(np.array(yi_list)<-1, -1, yi_list) for yi_list in yvis_list_meta]
         ymean_list = []
         ysd_list = []
         for yi_list in yvis_list_meta:
             ymean_list.append(np.mean(yi_list))
             ysd_list.append(np.std(yi_list))
         ymean_list_meta.append(ymean_list)
+        smsz = lambda ep,smsz_list_meta=smsz_list_meta: np.hstack([smsz_list for smsz_list in np.array(smsz_list_meta)[ep].T])
+        y = lambda ep,y_list_meta=y_list_meta: np.hstack([y_list for y_list in np.array(y_list_meta)[ep].T])
+        barset.append((smsz,y))
         
-        # text = ["<br />".join(["t{}: {} ({:.3f})".format(j+1,yij,sij) if yij >= -1 else "<b>t{}: {} ({:.3f})</b>".format(j+1,yij,sij) if sij <= smsz_thr else "t{}: {} ({:.3f}) ignore".format(j+1,yij,sij) for j,(yij,sij) in enumerate(zip(y_list_meta[i], smsz_list_meta[i]))]) for i in range(n_ep)]
-        # fig = go.Figure()
-        # fig.add_trace(
-        #     go.Scatter(
-        #             x=dm.log["ep"], y=ymean_list,
-        #             mode='markers', 
-        #             name="{}".format(name),
-        #             text = text,
-        #             error_y=dict(
-        #                 type="data",
-        #                 symmetric=True,
-        #                 array=ysd_list,
-        #                 thickness=1.5,
-        #                 width=3,
-        #             )
-        #         )
-        #     )
-        # fig['layout']['yaxis']['range'] = (-8,0.1)
-        # fig['layout']['xaxis']['title'] = "episode"
-        # fig['layout']['yaxis']['title'] = "reward"
-        # check_or_create_dir(save_img_dir)
-        # plotly.offline.plot(fig, filename = save_img_dir + "reward.html", auto_open=False)
 
+        # ep = range(0,500)
+        # plt.bar(left=smsz(ep), height=y(ep), width=0.03)
+        # plt.show()
+        # hoge
 
-    num = 100
-    # ymean_mva_list = [np.convolve(ymean_list, np.ones(num)/num, mode='valid') for ymean_list in ymean_list_meta]
+        
+        text = ["<br />".join(["t{}: {} ({:.3f})".format(j+1,yij,sij) if yij >= -1 else "<b>t{}: {} ({:.3f})</b>".format(j+1,yij,sij) if sij <= smsz_thr else "t{}: {} ({:.3f}) ignore".format(j+1,yij,sij) for j,(yij,sij) in enumerate(zip(y_list_meta[i], smsz_list_meta[i]))]) for i in range(n_ep)]
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                    x=dm.log["ep"], y=ymean_list,
+                    mode='markers', 
+                    name="{}".format(name),
+                    text = text,
+                    error_y=dict(
+                        type="data",
+                        symmetric=True,
+                        array=ysd_list,
+                        thickness=1.5,
+                        width=3,
+                    )
+                )
+            )
+        fig['layout']['yaxis']['range'] = (-8,0.1)
+        fig['layout']['xaxis']['title'] = "episode"
+        fig['layout']['yaxis']['title'] = "reward"
+        check_or_create_dir(save_img_dir)
+        plotly.offline.plot(fig, filename = save_img_dir + "reward.html", auto_open=False)
+
+    
     ymean_mva_list = [pd.Series(ymean_list).rolling(num).mean() for ymean_list in ymean_list_meta]
     ymean_std_list = [pd.Series(ymean_list).rolling(num).std() for ymean_list in ymean_list_meta]
 
@@ -116,7 +122,23 @@ def Run(ct, *args):
                     width=3,
                 )
         ))
-    fig['layout']['yaxis']['range'] = (-8,0.1)
+    fig['layout']['yaxis']['range'] = (-3,0.1)
     fig['layout']['xaxis']['title'] = "episode"
     fig['layout']['yaxis']['title'] = "reward"
-    plotly.offline.plot(fig, filename = save_img_dir + "reward_comp.html", auto_open=False)
+    fig['layout']['title'] = "window size: {}".format(num)
+    plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/" + "reward_comp.html", auto_open=False)    
+    
+
+    ep = range(0,500)
+    fig = go.Figure()
+    for (smsz,y), pref in zip(barset[:1], pref_list[:1]):
+        idx = np.argsort(smsz(ep))
+        xt = smsz(ep)[idx]
+        yt = y(ep)[idx]
+        fig.add_trace(go.Scatter(
+            name = pref,
+            x = xt, y = yt,
+        ))
+    fig.update_layout(barmode="group")
+    fig.show()
+

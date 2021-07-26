@@ -7,7 +7,7 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t1"
+    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t2"
     # name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1"
     # name = "t0.1/500/t1"
     if len(args) == 1: name = args[0]
@@ -106,12 +106,12 @@ def Run(ct, *args):
             # (CGMMSig010Pt03, "CGMMSig010Pt03"),
             # (CGMMSig003Pt03, "CGMMSig003Pt03"),
             
-            (GMM2Sig001, "GMM2Sig001"),
-            (GMM2Sig003, "GMM2Sig003"),
-            (GMM2Sig005, "GMM2Sig005"),
-            (GMM4Sig001, "GMM4Sig001"),
-            (GMM4Sig003, "GMM4Sig003"),
-            (GMM4Sig005, "GMM4Sig005"),
+            # (GMM2Sig001, "GMM2Sig001"),
+            # (GMM2Sig003, "GMM2Sig003"),
+            # (GMM2Sig005, "GMM2Sig005"),
+            # (GMM4Sig001, "GMM4Sig001"),
+            # (GMM4Sig003, "GMM4Sig003"),
+            # (GMM4Sig005, "GMM4Sig005"),
     ]
     
     UBSSig003P002 = UnobservedSD(penalty = 0.02, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3])
@@ -245,12 +245,12 @@ def Run(ct, *args):
             # (gmmpred["CGMMSig005Pt05"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (reward["CGMMSig005Pt05_gnnsd1.0_ggmm1.0~Er_LCB2"], 25, 2, 0.46, 0.28, -3, 0., None, None, None, None), 
             # (gmmpred["CGMMSig005Pt03"], 25, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["CGMMSig010Pt03"], 25, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None),
         
-            (gmmpred["GMM2Sig001"], 7, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig001"], 7, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
-            (gmmpred["GMM2Sig003"], 8, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig003"], 8, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
-            (gmmpred["GMM2Sig005"], 9, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig005"], 9, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
-            (gmmpred["GMM2Sig001"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig001"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
-            (gmmpred["GMM2Sig003"], 11, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig003"], 11, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
-            (gmmpred["GMM2Sig005"], 12, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig005"], 12, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
+            # (gmmpred["GMM2Sig001"], 7, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig001"], 7, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
+            # (gmmpred["GMM2Sig003"], 8, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig003"], 8, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
+            # (gmmpred["GMM2Sig005"], 9, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (gmmpred["GMM4Sig005"], 9, 2, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), 
+            # (gmmpred["GMM2Sig001"], 10, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig001"], 10, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
+            # (gmmpred["GMM2Sig003"], 11, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig003"], 11, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
+            # (gmmpred["GMM2Sig005"], 12, 1, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), (gmmpred["GMM4Sig005"], 12, 2, 0.46, 0.28, 0., 0.2, diffcs, jp1diff, 0., 0.2), 
         )
         posx_set = [0.46, 1.0075]
         posy_set = (lambda x: [0.015 + 0.95/(x-1)*i for i in range(x)][::-1])(n_row)
