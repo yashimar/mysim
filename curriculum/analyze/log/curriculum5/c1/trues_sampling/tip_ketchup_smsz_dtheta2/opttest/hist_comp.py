@@ -36,7 +36,7 @@ def Run(ct, *args):
         "GMM4Sig005_gnnsd1_ggmm2",
     ]
     n_ep = 500
-    smsz_thr = 0.63
+    smsz_thr = 0.58
     num = 50
     trial_list = ["t{}".format(i) for i in range(2,30)]
 
@@ -63,7 +63,7 @@ def Run(ct, *args):
                 y_list_meta[i].append(t)
                 smsz_list_meta[i].append(s)
         
-        yvis_list_meta = [np.where(np.array(yi_list)<-1, -1, yi_list) for yi_list in yvis_list_meta]
+        # yvis_list_meta = [np.where(np.array(yi_list)<-1, -1, yi_list) for yi_list in yvis_list_meta]
         ymean_list = []
         ysd_list = []
         for yi_list in yvis_list_meta:
@@ -71,6 +71,7 @@ def Run(ct, *args):
             ysd_list.append(np.std(yi_list))
         ymean_list_meta.append(ymean_list)
         smsz = lambda ep,smsz_list_meta=smsz_list_meta: np.hstack([smsz_list for smsz_list in np.array(smsz_list_meta)[ep].T])
+        # y_list_meta = [np.where(np.array(yi_list)<-1, -1, yi_list) for yi_list in y_list_meta]
         y = lambda ep,y_list_meta=y_list_meta: np.hstack([y_list for y_list in np.array(y_list_meta)[ep].T])
         barset.append((smsz,y))
         
@@ -116,8 +117,9 @@ def Run(ct, *args):
             name=pref,
             error_y=dict(
                     type="data",
-                    symmetric=True,
-                    array=ymean_std,
+                    symmetric=False,
+                    array=np.zeros(len(ymean_std)),
+                    arrayminus=ymean_std,
                     thickness=1.5,
                     width=3,
                 )
@@ -125,20 +127,54 @@ def Run(ct, *args):
     fig['layout']['yaxis']['range'] = (-3,0.1)
     fig['layout']['xaxis']['title'] = "episode"
     fig['layout']['yaxis']['title'] = "reward"
-    fig['layout']['title'] = "window size: {}".format(num)
+    fig['layout']['title'] = "window size: {}, smsz<{}".format(num, smsz_thr)
     plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/" + "reward_comp.html", auto_open=False)    
     
+    
+    for ep in [range(0,500), range(100), range(0,200), range(0,300), range(0,500), range(100,200), range(200,300), range(300,400), range(400,500)]:
+        fig = go.Figure()
+        for (smsz,y), pref in zip(barset, pref_list):
+            idx = np.argsort(smsz(ep))
+            xt = smsz(ep)[idx]
+            yt = y(ep)[idx]
+                    
+            ms = []
+            sds = []
+            for s in dm.smsz:
+                idx = [i for i, xtt in enumerate(xt) if xtt == s]
+                ms.append(np.mean(yt[idx]))
+                sds.append(np.std(yt[idx]))
+                
+            fig.add_trace(go.Scatter(x = dm.smsz, y = ms,
+                name=pref,
+                mode="markers",
+                marker=dict(
+                    size = 8,
+                    line=dict(
+                        width=1,
+                        color="gray",
+                    )
+                ),
+                error_y=dict(
+                    type="data",
+                    symmetric=False,
+                    array=np.zeros(len(sds)),
+                    arrayminus=sds,
+                    thickness=3,
+                    width=6,
+                ),
+            ))
+            # fig.add_trace(go.Scatter(x = dm.smsz, y = ms,
+            #     name=pref,
+            #     mode="lines",
+            #     line=dict(
+            #         dash='dot',
+            #         width=1,
+            #     ),
+            # )) 
 
-    ep = range(0,500)
-    fig = go.Figure()
-    for (smsz,y), pref in zip(barset[:1], pref_list[:1]):
-        idx = np.argsort(smsz(ep))
-        xt = smsz(ep)[idx]
-        yt = y(ep)[idx]
-        fig.add_trace(go.Scatter(
-            name = pref,
-            x = xt, y = yt,
-        ))
-    fig.update_layout(barmode="group")
-    fig.show()
-
+        fig['layout']['yaxis']['range'] = (-8,0.1)
+        fig['layout']['xaxis']['title'] = "size_srcmouth"
+        fig['layout']['yaxis']['title'] = "reward"
+        fig['layout']['title'] = "ep{} ~ {}".format(ep[0], ep[-1])
+        plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/epreward/" + "ep{}ep{}.html".format(ep[0], ep[-1]), auto_open=False)

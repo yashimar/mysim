@@ -77,8 +77,9 @@ def Run(ct, *args):
                 name="{}".format(pref),
                 error_y=dict(
                         type="data",
-                        symmetric=True,
-                        array=np.std(opter_list, axis=0),
+                        symmetric=False,
+                        array=np.zeros(len(np.mean(opter_list, axis=0))),
+                        arrayminus=np.std(opter_list, axis=0),
                         thickness=1.5,
                         width=3,
                     )
