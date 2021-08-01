@@ -8,8 +8,8 @@ from .setup import *
 
 def Run(ct, *args):
     pref_rname_list = [
-        ("Er", "Er"),
-        ("Er_LCB2", "Er_LCB2"),
+        # ("Er", "Er"),
+        # ("Er_LCB2", "Er_LCB2"),
         # ("GMM4Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
         # ("GMM4Sig003_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
         # ("GMM4Sig003_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
@@ -18,8 +18,9 @@ def Run(ct, *args):
         # ("GMM4Sig005_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
         # ("GMM4Sig003_gnnsd1_ggmm3", "gmm_gnnsd1.0_ggmm3.0~Er"),
         # ("GMM4Sig005_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
+        ("GMM5Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
     ]
-    trial_list = ["t{}".format(i) for i in range(2,30)]
+    trial_list = ["t{}".format(i) for i in range(1,50)]
     
     
     for pref, rname in pref_rname_list:

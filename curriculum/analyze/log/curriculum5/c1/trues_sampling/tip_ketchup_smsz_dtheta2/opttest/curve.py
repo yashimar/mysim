@@ -10,7 +10,7 @@ def Run(ct, *args):
     pref_rname_list = [
         # ("Er", "Er"),
         # ("Er_LCB2", "Er_LCB2"),
-        ("GMM4Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
+        # ("GMM4Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
         # ("GMM4Sig003_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
         # ("GMM4Sig003_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
         # # ("GMM4Sig003_gnnsd1_ggmm2_LCB2", "gmm_gnnsd1.0_ggmm2.0~Er_LCB2"),
@@ -18,6 +18,7 @@ def Run(ct, *args):
         # ("GMM4Sig005_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
         # ("GMM4Sig003_gnnsd1_ggmm3", "gmm_gnnsd1.0_ggmm3.0~Er"),
         # ("GMM4Sig005_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
+        ("GMM5Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
     ]
     # trial_list = ["t{}".format(i) for i in range(1,2)]
     trial_list = ["t1"]
@@ -60,30 +61,64 @@ def Run(ct, *args):
         ]
         jpx_idx = [[idx_of_the_nearest(dm.dtheta2, x[0]), idx_of_the_nearest(dm.smsz, x[1])] for x in np.array(dm.gmm.jumppoints["X"])]
         jpx_tr = [dm.datotal[RFUNC][idx[0],idx[1]] for idx in jpx_idx]
+        jpx_er = [er[idx[0],idx[1]] for idx in jpx_idx]
+        jpx_gmm = [gmm[idx[0],idx[1]] for idx in jpx_idx]
         jpy = [y[0] for y in dm.gmm.jumppoints["Y"]]
+        linex = [[x,x] for x in np.array(dm.gmm.jumppoints["X"])[:,1]]
+        liney = [[y,y] for y in np.array(dm.gmm.jumppoints["X"])[:,0]]
+        linetr = [[a,b] for a, b in zip(jpx_tr, jpx_er)]
+        linegmm =[[a,b] for a, b in zip(jpy, jpx_gmm)]
         
-        for z, z_name, cs, sz in [
-            (er, "er", (-3, 0, "Viridis"), jpx_tr), 
-            (gmm, "gmm", (0, 0.2, diffcs), jpy)
-        ]:
-            fig = go.Figure()
-            fig.add_trace(go.Surface(
-                z = z, x = dm.smsz, y = dm.dtheta2,
-                cmin = cs[0], cmax = cs[1], colorscale = cs[2],
-            ))
-            fig.add_trace(go.Scatter3d(
-                z = sz, x = np.array(dm.gmm.jumppoints["X"])[:,1], y = np.array(dm.gmm.jumppoints["X"])[:,0],
-                mode = "markers",
-            ))
-            fig.update_layout(
-                scene = dict(
-                    xaxis = go.XAxis(title = "size_srcmouth"),
-                    yaxis = go.YAxis(title = "dtheta2"),
-                    zaxis = go.ZAxis(title = "evaluation")
-                )
-            )
-            check_or_create_dir(save_img_dir)
-            plotly.offline.plot(fig, filename = save_img_dir + "curve_{}.html".format(z_name), auto_open=False)
-    
+        fig = make_subplots(
+            rows=2, cols=2, 
+            subplot_titles=["評価関数", "飛び値予測", "評価関数 (z軸反転)", "飛び値予測"],
+            horizontal_spacing = 0.05,
+            specs = [[{"type": "surface"}, {"type": "surface"}],
+                     [{"type": "surface"}, {"type": "surface"}]],
+        )
+        fig.update_layout(
+            height=2200, width=2000, 
+            # margin=dict(t=100,b=150),
+            hoverdistance = 2,
+        )
+        for i, (z, z_name, cs, sz, lz) in enumerate([
+            (er, "er", (-3, 0, "Viridis"), jpx_tr, linetr), 
+            (gmm, "gmm", (0, 0.2, diffcs), jpy, linegmm)
+        ]):
+            for j in range(0,2):
+                fig.add_trace(go.Surface(
+                    z = z, x = dm.smsz, y = dm.dtheta2,
+                    cmin = cs[0], cmax = cs[1], colorscale = cs[2],
+                    colorbar = dict(
+                        len = 0.2,
+                        # x = 0.5*(i+1), y = 0.5*(j+1),
+                    ),
+                    showlegend = False,
+                ), row=j+1, col=i+1)
+                fig.add_trace(go.Scatter3d(
+                    z = sz, x = np.array(dm.gmm.jumppoints["X"])[:,1], y = np.array(dm.gmm.jumppoints["X"])[:,0],
+                    mode = "markers",
+                    showlegend = False,
+                    marker = dict(
+                        color = "red",
+                        size = 4,
+                    )
+                ), j+1, i+1)
+                for tz,tx,ty in zip(lz, linex, liney):
+                    fig.add_trace(go.Scatter3d(
+                        z = tz, x = tx, y = ty,
+                        mode = "lines",
+                        line = dict(
+                            color = "red",
+                        ),
+                        showlegend = False,
+                    ), j+1, i+1)
+                fig['layout']['scene{}'.format(i+2*j+1)]['xaxis']['title'] = "size_srcmouth" 
+                fig['layout']['scene{}'.format(i+2*j+1)]['yaxis']['title'] = "dtheta2" 
+                fig['layout']['scene{}'.format(i+2*j+1)]['zaxis']['title'] = "evaluation" 
+                if j == 1 and i == 0:
+                    fig['layout']['scene{}'.format(i+2*j+1)]['zaxis_autorange'] = 'reversed'
+        check_or_create_dir(save_img_dir)
+        plotly.offline.plot(fig, filename = save_img_dir + "curve.html", auto_open=False)
 
     

@@ -7,15 +7,15 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t1"
+    name = "onpolicy/GMM5Sig003_gnnsd1_ggmm1/t1"
     # name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1"
     # name = "t0.1/500/t1"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
-    c_heatmap = False
-    c_datotal = True
+    c_heatmap = True
+    c_datotal = False
     # c_obsr = False
     # c_reward_obsr = False
     # c_reward_unobs = False
@@ -82,6 +82,9 @@ def Run(ct, *args):
     GMM4Sig003.train()
     GMM4Sig005 = GMM4(dm.nnmodel, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/20, (max(dm.smsz)-min(dm.smsz))/20], Gerr = 1.0)
     GMM4Sig005.train()
+    p = 3; lam = 1e-5;
+    GMM5Sig003 = GMM5(dm.nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)], lam = lam)
+    GMM5Sig003.train()
     
     gmm_name_list = [
             # # (GMM2Sig001, "GMM2Sig001"),
@@ -110,8 +113,9 @@ def Run(ct, *args):
             # (GMM2Sig003, "GMM2Sig003"),
             # (GMM2Sig005, "GMM2Sig005"),
             # (GMM4Sig001, "GMM4Sig001"),
-            (GMM4Sig003, "GMM4Sig003"),
+            # (GMM4Sig003, "GMM4Sig003"),
             # (GMM4Sig005, "GMM4Sig005"),
+            (GMM5Sig003, "GMM5Sig003"),
     ]
     
     UBSSig003P002 = UnobservedSD(penalty = 0.02, diag_sigma=[(max(dm.dtheta2)-min(dm.dtheta2))/33.3, (max(dm.smsz)-min(dm.smsz))/33.3])
@@ -162,7 +166,7 @@ def Run(ct, *args):
         true_nnerr = [np.abs(v - _nnmean) for _nnmean, v in zip(nnmean, dm.log["true_datotal"])]
         jp1diff = [max(_nnmean-1*_nnerr-v, v-(_nnmean+1*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
         jp2diff = [max(_nnmean-2*_nnerr-v, v-(_nnmean+2*_nnerr), 0) for _nnmean, _nnerr, v in zip(nnmean, nnerr, dm.log["true_datotal"])]
-        n_row = 12
+        n_row = 6
         clength = 0.05
         fig = make_subplots(
             rows=n_row, cols=2, 
@@ -192,12 +196,12 @@ def Run(ct, *args):
                             # "CGMM max|NN平均+/-標準偏差 - 飛び値| 1%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
                             # "CGMM max|NN平均+/-標準偏差 - 飛び値| 3%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)", 
                             # "CGMM max|NN平均+/-標準偏差 - 飛び値| 5%標準偏差 閾値50%", "評価関数 (1.0*NNsd + 1.0*GMMjp, LCB2)",
-                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", 
-                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
-                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", 
-                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", 
-                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
-                            "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", 
+                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", 
+                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
+                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", 
+                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 1%標準偏差", 
+                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 3%標準偏差", 
+                            # "GMM2 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", "GMM4 sum|NN平均+/-標準偏差 - 飛び値| 5%標準偏差", 
                             ],
             horizontal_spacing = 0.1,
             vertical_spacing = 0.01,
@@ -842,7 +846,8 @@ def Run(ct, *args):
             # "CGMMSig010Pt03",
             # "CGMMSig003Pt03",
             # "CGMMSig003Pt05",
-            "GMM4Sig003",
+            # "GMM4Sig003",
+            "GMM5Sig003",
         ]:
             for gnnsd, ggmm in [
                 # (1.0, 1.5),
@@ -989,7 +994,8 @@ def Run(ct, *args):
                 # lambda t, gain_type=gain_type: "CGMMSig010Pt03_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}_UBSSig001P002~{}".format(gain_type, t), 
-                lambda t, gain_type=gain_type: "GMM4Sig003_{}~{}".format(gain_type, t), 
+                # lambda t, gain_type=gain_type: "GMM4Sig003_{}~{}".format(gain_type, t), 
+                lambda t, gain_type=gain_type: "GMM5Sig003_{}~{}".format(gain_type, t), 
             ):
                 trace = defaultdict(list)
                 print("評価関数曲線 "+name(Er))
