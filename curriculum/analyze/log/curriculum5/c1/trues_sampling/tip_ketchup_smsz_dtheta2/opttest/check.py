@@ -7,15 +7,15 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t2"
+    name = "onpolicy/GMM4Sig003_gnnsd1_ggmm1/t1"
     # name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1"
     # name = "t0.1/500/t1"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
     
-    c_heatmap = True
-    c_datotal = False
+    c_heatmap = False
+    c_datotal = True
     # c_obsr = False
     # c_reward_obsr = False
     # c_reward_unobs = False
@@ -110,7 +110,7 @@ def Run(ct, *args):
             # (GMM2Sig003, "GMM2Sig003"),
             # (GMM2Sig005, "GMM2Sig005"),
             # (GMM4Sig001, "GMM4Sig001"),
-            # (GMM4Sig003, "GMM4Sig003"),
+            (GMM4Sig003, "GMM4Sig003"),
             # (GMM4Sig005, "GMM4Sig005"),
     ]
     
@@ -840,8 +840,9 @@ def Run(ct, *args):
             # "CGMMSig005Pt05",
             # "CGMMSig005Pt07",
             # "CGMMSig010Pt03",
-            "CGMMSig003Pt03",
+            # "CGMMSig003Pt03",
             # "CGMMSig003Pt05",
+            "GMM4Sig003",
         ]:
             for gnnsd, ggmm in [
                 # (1.0, 1.5),
@@ -853,7 +854,6 @@ def Run(ct, *args):
                     "",
                     # "UBSSig001P002",
                 ]:
-                    n_gmm
                     print("datotal曲線 gmm加算", n_gmm)
                     trace = defaultdict(list)
                     for smsz_idx, smsz in enumerate(dm.smsz):
@@ -988,7 +988,8 @@ def Run(ct, *args):
                 # lambda t, gain_type=gain_type: "CGMMSig005Pt07_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig010Pt03_{}~{}".format(gain_type, t), 
                 # lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}~{}".format(gain_type, t), 
-                lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}_UBSSig001P002~{}".format(gain_type, t), 
+                # lambda t, gain_type=gain_type: "CGMMSig003Pt03_{}_UBSSig001P002~{}".format(gain_type, t), 
+                lambda t, gain_type=gain_type: "GMM4Sig003_{}~{}".format(gain_type, t), 
             ):
                 trace = defaultdict(list)
                 print("評価関数曲線 "+name(Er))

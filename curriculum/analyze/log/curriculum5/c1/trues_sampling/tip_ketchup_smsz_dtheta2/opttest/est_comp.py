@@ -34,8 +34,9 @@ def Run(ct, *args):
         ("GMM4Sig005_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
         ("GMM4Sig003_gnnsd1_ggmm3", "gmm_gnnsd1.0_ggmm3.0~Er"),
         ("GMM4Sig005_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
+        ("GMM5Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er",),
     ]
-    trial_list = ["t{}".format(i) for i in range(2,18)]
+    trial_list = ["t{}".format(i) for i in range(1,50)]
     
     opter_list_meta = []
     opttrue_list_meta = []
@@ -46,7 +47,8 @@ def Run(ct, *args):
         opttrue_list = []
         for name in name_list:
             logdir = BASE_DIR + "opttest/logs/{}/".format(name)
-            t = time.time()
+            if not os.path.exists(logdir+"dm.pickle"):
+                continue
             dm = Domain.load(logdir+"dm.pickle")
 
             setup_datotal(dm, logdir)
@@ -56,7 +58,7 @@ def Run(ct, *args):
             gmm_names = [gmm_name for _, gmm_name in gmm_name_list]
             try:
                 gp = dm.gain_pairs
-            except: 
+            except:
                 gp = (1.0 ,1.0)
             gain_pairs = [gp]
             reward = setup_reward(dm, logdir, gmm_names, gain_pairs)
@@ -68,24 +70,28 @@ def Run(ct, *args):
         opttrue_list_meta.append(opttrue_list)
     
     
-    fig = go.Figure()
-    for opter_list, (pref, _) in zip(opter_list_meta, pref_rname_list):
-        fig.add_trace(
-            go.Scatter(
-                x=dm.smsz, y=np.mean(opter_list, axis=0),
-                mode='markers', 
-                name="{}".format(pref),
-                error_y=dict(
-                        type="data",
-                        symmetric=False,
-                        array=np.zeros(len(np.mean(opter_list, axis=0))),
-                        arrayminus=np.std(opter_list, axis=0),
-                        thickness=1.5,
-                        width=3,
-                    )
+    for list_meta, meta_name, ylabel in [
+        (opter_list_meta, "opter", "opt evaluation"), 
+        (opttrue_list_meta, "opttrue", "reward")
+        ]:
+        fig = go.Figure()
+        for opt_list, (pref, _) in zip(list_meta, pref_rname_list):
+            fig.add_trace(
+                go.Scatter(
+                    x=dm.smsz, y=np.mean(opt_list, axis=0),
+                    mode='markers', 
+                    name="{}".format(pref),
+                    error_y=dict(
+                            type="data",
+                            symmetric=False,
+                            array=np.zeros(len(np.mean(opt_list, axis=0))),
+                            arrayminus=np.std(opt_list, axis=0),
+                            thickness=1.5,
+                            width=3,
+                        )
+                )
             )
-        )
-    fig['layout']['yaxis']['range'] = (-6,0.1)
-    fig['layout']['xaxis']['title'] = "size_srcmouth"
-    fig['layout']['yaxis']['title'] = "est reward"
-    plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/" + "estr_comp.html", auto_open=False)
+        fig['layout']['yaxis']['range'] = (-6,0.1)
+        fig['layout']['xaxis']['title'] = "size_srcmouth"
+        fig['layout']['yaxis']['title'] = ylabel
+        plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/" + "{}_comp.html".format(meta_name), auto_open=False)

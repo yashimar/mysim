@@ -310,7 +310,7 @@ class CGMM(GMM3, object):
 
 
 class GMM4:
-    def __init__(self, nnmodel, diag_sigma, Gerr):
+    def __init__(self, nnmodel, diag_sigma, Gerr = 1.0):
         self.nnmodel = nnmodel
         self.jumppoints = {"X": [], "Y": []}
         self.gc_concat = []
@@ -329,8 +329,9 @@ class GMM4:
                 self.jumppoints["Y"].append(jp.tolist())
         
                 
-    def train(self): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
-        self.extract_jps()
+    def train(self, recreate_jp = True): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        if recreate_jp:
+            self.extract_jps()
         self.gc_concat = []
         Var = np.diag(self.diag_sigma)**2
         # s = lambda x: np.sum([
@@ -354,6 +355,39 @@ class GMM4:
             pred1 += tmp
             pred2 += tmp**2
         pred = pred2/pred1
+        return pred
+    
+    
+class GMM5(GMM4, object):
+    def __init__(self, nnmodel, diag_sigma, lam = 0.0, Gerr = 1.0):
+        super(GMM5, self).__init__(nnmodel, diag_sigma, Gerr)
+        self.w_concat = []
+        self.lam = lam
+        
+                
+    def train(self, recreate_jp = True): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        if recreate_jp:
+            self.extract_jps()
+        self.gc_concat = []
+        self.w_concat = []
+        Var = np.diag(self.diag_sigma)**2
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
+            self.gc_concat.append(
+                lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy
+            )
+        Y = np.array(self.jumppoints["Y"])
+        X = np.array([[gc(x).item() for gc in self.gc_concat] for x in self.jumppoints["X"]])
+        self.w_concat = np.linalg.inv(X.T.dot(X) + self.lam*np.eye(X.shape[0])).dot(X.T).dot(Y)
+        if len(X) == 0:
+            self.w_concat = []
+        
+    
+    def predict(self, x):
+        if len(np.array(x).shape) == 1:
+            x = [x]
+        pred = np.zeros((len(x)))
+        for gc, w in zip(self.gc_concat, self.w_concat):
+            pred += w*gc(x)
         return pred
 
 

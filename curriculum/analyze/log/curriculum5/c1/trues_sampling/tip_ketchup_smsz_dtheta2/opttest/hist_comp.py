@@ -34,11 +34,12 @@ def Run(ct, *args):
         "GMM4Sig005_gnnsd1_ggmm1",
         "GMM4Sig005_gnnsd1_ggmm1_LCB2",
         "GMM4Sig005_gnnsd1_ggmm2",
+        "GMM5Sig003_gnnsd1_ggmm1",
     ]
     n_ep = 500
     smsz_thr = 0.58
     num = 50
-    trial_list = ["t{}".format(i) for i in range(2,30)]
+    trial_list = ["t{}".format(i) for i in range(2,50)]
 
     ymean_list_meta = []
     barset = []
@@ -178,3 +179,6 @@ def Run(ct, *args):
         fig['layout']['yaxis']['title'] = "reward"
         fig['layout']['title'] = "ep{} ~ {}".format(ep[0], ep[-1])
         plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/epreward/" + "ep{}ep{}.html".format(ep[0], ep[-1]), auto_open=False)
+        
+        
+    

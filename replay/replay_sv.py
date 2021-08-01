@@ -22,7 +22,9 @@ def LoadActions(database, i_episode=0, i_node=0):
   xs= LoadYAML(database)['Entry'][i_episode]['Seq'][i_node]['XS']
   act_keys= (
     'gh_ratio','p_pour_trg0','p_pour_trg',
-    'dtheta1','dtheta2','shake_spd','shake_range','shake_angle','skill',)
+    'dtheta1',
+    # 'dtheta2',
+    'shake_spd','shake_range','shake_angle','skill',)
   # act_keys= (
   #   'gh_ratio','p_pour_trg0','p_pour_trg',
   #   'dtheta1','dtheta2')
@@ -34,8 +36,8 @@ def LoadActions(database, i_episode=0, i_node=0):
 
 def Run(ct,*args):
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "curriculum3/scaling/full_scratch/t1/second200"+"/"
-  i_episode_list = [158]
+              + "curriculum5/c1/trues_sampling/shake_ketchup_smszg0"+"/"
+  i_episode_list = [87]
   i_node = 0
   n_roop = 1
 
