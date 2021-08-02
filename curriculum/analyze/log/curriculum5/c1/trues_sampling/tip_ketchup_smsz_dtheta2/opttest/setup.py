@@ -345,6 +345,29 @@ def setup_reward(dm, logdir, gmm_names = None, gain_pairs = None, unobs_list = N
     return reward
 
 
+def setup_reward2(dm, logdir):
+    print("Setup reward")
+    with open(logdir+"datotal.pickle", mode="rb") as f:
+        datotal = pickle.load(f)
+    
+    reward = dict()
+    check_or_create_dir(logdir+"npydata")
+    for fpath in glob.glob(logdir+"npydata/*"):
+        name = (fpath.split("/")[-1]).split(".npy")[0]
+        reward[name] = np.load(fpath)
+        
+    rmodel = Rmodel("Fdatotal_gentle")
+    if Er not in reward.keys():
+        reaward_sm = np.array([[rmodel.Predict(x=[0.3, datotal[NNMEAN][idx_dtheta2, idx_smsz]], x_var=[0, datotal[NNSD][idx_dtheta2, idx_smsz]**2], with_var=True) for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+        reward[Er] = np.array([[reaward_sm[idx_dtheta2, idx_smsz].Y.item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+        reward[Sr] = np.sqrt([[reaward_sm[idx_dtheta2, idx_smsz].Var[0,0].item() for idx_smsz in range(100)] for idx_dtheta2 in range(100)])
+
+    for k, v, in reward.items():
+        np.save(logdir+"npydata/{}.npy".format(k), v)
+    
+    return reward
+
+
 def Run(ct, *args):
     name_list = [
         "t0.1/8000/t1",

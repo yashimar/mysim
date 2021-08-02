@@ -25,21 +25,23 @@ def Help():
 def Run(ct, *args):
     pref_list = [
         "Er",
-        "Er_LCB2",
-        "GMM4Sig003_gnnsd1_ggmm1",
-        "GMM4Sig003_gnnsd1_ggmm1_LCB2",
-        "GMM4Sig003_gnnsd1_ggmm2",
-        "GMM4Sig003_gnnsd1_ggmm2_LCB2",
-        "GMM4Sig003_gnnsd1_ggmm3",
-        "GMM4Sig005_gnnsd1_ggmm1",
-        "GMM4Sig005_gnnsd1_ggmm1_LCB2",
-        "GMM4Sig005_gnnsd1_ggmm2",
-        "GMM5Sig003_gnnsd1_ggmm1",
+        # "Er_LCB2",
+        # "GMM4Sig003_gnnsd1_ggmm1",
+        # "GMM4Sig003_gnnsd1_ggmm1_LCB2",
+        # "GMM4Sig003_gnnsd1_ggmm2",
+        # "GMM4Sig003_gnnsd1_ggmm2_LCB2",
+        # "GMM4Sig003_gnnsd1_ggmm3",
+        # "GMM4Sig005_gnnsd1_ggmm1",
+        # "GMM4Sig005_gnnsd1_ggmm1_LCB2",
+        # "GMM4Sig005_gnnsd1_ggmm2",
+        # "GMM5Sig003_gnnsd1_ggmm1",
+        "GMM6Sig003_LCB1",
+        "GMM6Sig001_LCB1",
     ]
     n_ep = 500
-    smsz_thr = 0.58
+    smsz_thr = 0.65
     num = 50
-    trial_list = ["t{}".format(i) for i in range(2,50)]
+    trial_list = ["t{}".format(i) for i in range(1,31)]
 
     ymean_list_meta = []
     barset = []
@@ -63,7 +65,7 @@ def Run(ct, *args):
                     yvis_list_meta[i].append(t)    
                 y_list_meta[i].append(t)
                 smsz_list_meta[i].append(s)
-        
+  
         # yvis_list_meta = [np.where(np.array(yi_list)<-1, -1, yi_list) for yi_list in yvis_list_meta]
         ymean_list = []
         ysd_list = []

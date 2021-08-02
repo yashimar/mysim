@@ -10,7 +10,7 @@ from ..greedyopt import *
 from copy import deepcopy
 import dill
 from .setup import *
-from .learn import *
+from .learn2 import *
 import time
 from glob import glob
 
@@ -24,23 +24,25 @@ def Help():
 
 def Run(ct, *args):
     pref_rname_list = [
-        ("Er", "Er"),
-        ("Er_LCB2", "Er_LCB2"),
-        ("GMM4Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
-        ("GMM4Sig003_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
-        ("GMM4Sig003_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
-        ("GMM4Sig003_gnnsd1_ggmm2_LCB2", "gmm_gnnsd1.0_ggmm2.0~Er_LCB2"),
-        ("GMM4Sig005_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er"),
-        ("GMM4Sig005_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2"),
-        ("GMM4Sig003_gnnsd1_ggmm3", "gmm_gnnsd1.0_ggmm3.0~Er"),
-        ("GMM4Sig005_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er"),
-        ("GMM5Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er",),
+        ("Er", "Er", "dm1"),
+        # ("Er_LCB2", "Er_LCB2", "dm1"),
+        # ("GMM4Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er", "dm1"),
+        # ("GMM4Sig003_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2", "dm1"),
+        # ("GMM4Sig003_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er", "dm1"),
+        # ("GMM4Sig003_gnnsd1_ggmm2_LCB2", "gmm_gnnsd1.0_ggmm2.0~Er_LCB2", "dm1"),
+        # ("GMM4Sig005_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er", "dm1"),
+        # ("GMM4Sig005_gnnsd1_ggmm1_LCB2", "gmm_gnnsd1.0_ggmm1.0~Er_LCB2", "dm1"),
+        # ("GMM4Sig003_gnnsd1_ggmm3", "gmm_gnnsd1.0_ggmm3.0~Er", "dm1"),
+        # ("GMM4Sig005_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er", "dm1"),
+        # ("GMM5Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er", "dm1"),
+        ("GMM6Sig001_LCB1", "GMM6Sig001_LCB1", "dm2"),
+        ("GMM6Sig003_LCB1", "GMM6Sig003_LCB1", "dm2"),
     ]
-    trial_list = ["t{}".format(i) for i in range(1,50)]
+    trial_list = ["t{}".format(i) for i in range(1,31)]
     
     opter_list_meta = []
     opttrue_list_meta = []
-    for pref, rname in pref_rname_list:
+    for pref, rname, dmtype in pref_rname_list:
         save_img_dir = PICTURE_DIR + "opttest/onpolicy/{}/".format(pref)
         name_list = ["onpolicy/{}/{}".format(pref,trial) for trial in trial_list]
         opter_list = []
@@ -48,34 +50,46 @@ def Run(ct, *args):
         for name in name_list:
             logdir = BASE_DIR + "opttest/logs/{}/".format(name)
             if not os.path.exists(logdir+"dm.pickle"):
+                print(logdir)
+                hoge
                 continue
-            dm = Domain.load(logdir+"dm.pickle")
 
-            setup_datotal(dm, logdir)
-            gmm_name_list = [None if dm.gmm == None else (dm.gmm, "gmm")]
-            setup_gmmpred(dm, gmm_name_list, logdir)
-            setup_unobssd(dm, [], logdir)
-            gmm_names = [gmm_name for _, gmm_name in gmm_name_list]
-            try:
-                gp = dm.gain_pairs
-            except:
-                gp = (1.0 ,1.0)
-            gain_pairs = [gp]
-            reward = setup_reward(dm, logdir, gmm_names, gain_pairs)
-
+            if dmtype == "dm1":
+                dm = Domain.load(logdir+"dm.pickle")
+                setup_datotal(dm, logdir)
+                gmm_name_list = [None if dm.gmm == None else (dm.gmm, "gmm")]
+                setup_gmmpred(dm, gmm_name_list, logdir)
+                setup_unobssd(dm, [], logdir)
+                gmm_names = [gmm_name for _, gmm_name in gmm_name_list]
+                try:
+                    gp = dm.gain_pairs
+                except:
+                    gp = (1.0 ,1.0)
+                gain_pairs = [gp]
+                reward = setup_reward(dm, logdir, gmm_names, gain_pairs)
+            elif dmtype == "dm2":
+                dm = Domain2.load(logdir+"dm.pickle")
+                setup_datotal(dm, logdir)
+                reward = setup_reward2(dm, logdir)
+                X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ])
+                gr = dm.gmm.predict(X).reshape(100,100)
+                er = reward[Er]
+                sr = reward[Sr]
+                ev = er - 1*(sr + gr)
+                reward[rname] = ev
             opt_dtheta2_list = np.argmax(reward[rname], axis = 0)
             opter_list.append([smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(reward[rname].T, opt_dtheta2_list))])
             opttrue_list.append([smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[RFUNC].T, opt_dtheta2_list))])
         opter_list_meta.append(opter_list)
         opttrue_list_meta.append(opttrue_list)
     
-    
+        
     for list_meta, meta_name, ylabel in [
         (opter_list_meta, "opter", "opt evaluation"), 
         (opttrue_list_meta, "opttrue", "reward")
         ]:
         fig = go.Figure()
-        for opt_list, (pref, _) in zip(list_meta, pref_rname_list):
+        for opt_list, (pref, _, _) in zip(list_meta, pref_rname_list):
             fig.add_trace(
                 go.Scatter(
                     x=dm.smsz, y=np.mean(opt_list, axis=0),

@@ -19,7 +19,7 @@ class Domain2(Domain):
             self.gmm.train(self.log["true_r_at_est_opt_dthtea2"])
             X = np.array([[dtheta2, smsz] for dtheta2 in self.dtheta2])
             eval_sd_gmm = self.gmm.predict(X)
-            E = np.array(est_nn_Er) - self.LCB_ratio*np.array(est_nn_Sr + eval_sd_gmm)
+            E = np.array(est_nn_Er) - self.LCB_ratio*(np.array(est_nn_Sr) + eval_sd_gmm)
         else:
             E = np.array(est_nn_Er) - self.LCB_ratio*np.array(est_nn_Sr)
         idx_est_opt_dtheta2 = np.argmax(E)
@@ -51,10 +51,11 @@ class GMM6(GMM5, object):
                 self.jumppoints["X"].append(x.tolist())
                 self.jumppoints["Y"].append(jp)
                 self.logr.append(r)
-        _, unique_index = np.unique(self.jumppoints["X"], return_index = True, axis = 0)
-        self.jumppoints["X"] = [self.jumppoints["X"][idx] for idx in unique_index]
-        self.jumppoints["Y"] = [self.jumppoints["Y"][idx] for idx in unique_index]
-        self.logr = [self.logr[idx] for idx in unique_index]
+        if len(self.jumppoints["X"]) >= 2:
+            _, unique_index = np.unique(self.jumppoints["X"], return_index = True, axis = 0)
+            self.jumppoints["X"] = [self.jumppoints["X"][idx] for idx in unique_index]
+            self.jumppoints["Y"] = [self.jumppoints["Y"][idx] for idx in unique_index]
+            self.logr = [self.logr[idx] for idx in unique_index]
                 
     def train(self, log_r): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
         self.extract_jps(log_r)
@@ -67,14 +68,15 @@ class GMM6(GMM5, object):
             )
         y = np.array(self.jumppoints["Y"])
         X = np.array([[gc(x).item() for gc in self.gc_concat] for x in self.jumppoints["X"]])
-        self.w_concat, rnorm = nnls(X, y)
-        # self.w_concat = np.linalg.inv(X.T.dot(X) + self.lam*np.eye(X.shape[0])).dot(X.T).dot(Y)
         if len(X) == 0:
             self.w_concat = []
+        else:
+            # self.w_concat = np.linalg.inv(X.T.dot(X) + self.lam*np.eye(X.shape[0])).dot(X.T).dot(Y)
+            self.w_concat, rnorm = nnls(X, y)
             
 
 def test():
-    name = "onpolicy/GMM5Sig003_gnnsd1_ggmm1/t1"
+    name = "onpolicy/Er/t1"
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
     dm = Domain.load(logdir+"dm.pickle")
     log = dm.log["true_r_at_est_opt_dthtea2"]
@@ -89,14 +91,15 @@ def test():
     reward = setup_reward(dm, logdir, ["gmm",], [(1.0,1.0),])
     X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ])
     gmmpred = gmm.predict(X).reshape(100,100)
-    er = reward["gmm_gnnsd1_ggmm1~Er"]
-    sr = reward["gmm_gnnsd1_ggmm1~Sr"]
+    er = reward["Er"]
+    sr = reward["Sr"]
     jpx_idx = [[idx_of_the_nearest(dm.dtheta2, x[0]), idx_of_the_nearest(dm.smsz, x[1])] for x in np.array(gmm.jumppoints["X"])]
     jpx_er = np.array([er[idx[0],idx[1]] for idx in jpx_idx])
     jpx_sr = np.array([sr[idx[0],idx[1]] for idx in jpx_idx])
     jpx_gmm = np.array([gmmpred[idx[0],idx[1]] for idx in jpx_idx])
     linex = [[x,x] for x in np.array(gmm.jumppoints["X"])[:,1]]
     liney = [[y,y] for y in np.array(gmm.jumppoints["X"])[:,0]]
+    linetr0 = [[a,b] for a, b in zip(gmm.logr, jpx_er - jpx_sr)]
     linetr = [[a,b] for a, b in zip(gmm.logr, jpx_er - jpx_sr - jpx_gmm)]
     linegmm =[[a,b] for a, b in zip(gmm.jumppoints["Y"], jpx_gmm)]
 
@@ -106,22 +109,36 @@ def test():
             [1, "rgb(255, 0, 0)"],
         ]
     fig = go.Figure()
-    # fig.add_trace(go.Surface(
-    #     z = er, x = dm.smsz, y = dm.dtheta2,
-    #         cmin = -3, cmax = 0, colorscale = "Viridis",
-    #         colorbar = dict(
-    #         len = 0.2,
-    #     ),
-    #     showlegend = False,
-    # ))
+    fig.update_layout(
+            hoverdistance = 2,
+        )
     fig.add_trace(go.Surface(
-        z = er - sr - gmmpred, x = dm.smsz, y = dm.dtheta2,
+        z = er, x = dm.smsz, y = dm.dtheta2,
             cmin = -8, cmax = 0, colorscale = "Viridis",
             colorbar = dict(
             len = 0.2,
         ),
         showlegend = False,
     ))
+    for tz,tx,ty in zip(linetr0, linex, liney):
+        fig.add_trace(go.Scatter3d(
+            z = tz, x = tx, y = ty,
+            mode = "lines",
+            line = dict(
+                color = "red",
+            ),
+            showlegend = False,
+        ))
+    fig['layout']['scene']['zaxis_autorange'] = 'reversed'
+    
+    # fig.add_trace(go.Surface(
+    #     z = er - sr - gmmpred, x = dm.smsz, y = dm.dtheta2,
+    #         cmin = -8, cmax = 0, colorscale = "Viridis",
+    #         colorbar = dict(
+    #         len = 0.2,
+    #     ),
+    #     showlegend = False,
+    # ))
     fig.add_trace(go.Scatter3d(
         z = gmm.logr, x = np.array(gmm.jumppoints["X"])[:,1], y = np.array(gmm.jumppoints["X"])[:,0],
         mode = "markers",
@@ -131,16 +148,16 @@ def test():
             size = 4,
         )
     ))
-    fig['layout']['scene']['zaxis_autorange'] = 'reversed'
-    for tz,tx,ty in zip(linetr, linex, liney):
-        fig.add_trace(go.Scatter3d(
-            z = tz, x = tx, y = ty,
-            mode = "lines",
-            line = dict(
-                color = "red",
-            ),
-            showlegend = False,
-        ))
+    # fig['layout']['scene']['zaxis_autorange'] = 'reversed'
+    # for tz,tx,ty in zip(linetr, linex, liney):
+    #     fig.add_trace(go.Scatter3d(
+    #         z = tz, x = tx, y = ty,
+    #         mode = "lines",
+    #         line = dict(
+    #             color = "red",
+    #         ),
+    #         showlegend = False,
+    #     ))
     
     # fig.add_trace(go.Surface(
     #     z = gmmpred, x = dm.smsz, y = dm.dtheta2,
@@ -158,6 +175,15 @@ def test():
     #         size = 4,
     #     )
     # ))
+    # for tz,tx,ty in zip(linegmm, linex, liney):
+    #     fig.add_trace(go.Scatter3d(
+    #         z = tz, x = tx, y = ty,
+    #         mode = "lines",
+    #         line = dict(
+    #             color = "red",
+    #         ),
+    #         showlegend = False,
+    #     ))
     fig.show()
     
 
