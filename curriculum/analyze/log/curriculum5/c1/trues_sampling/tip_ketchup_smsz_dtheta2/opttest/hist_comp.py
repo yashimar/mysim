@@ -35,11 +35,12 @@ def Run(ct, *args):
         # "GMM4Sig005_gnnsd1_ggmm1_LCB2",
         # "GMM4Sig005_gnnsd1_ggmm2",
         # "GMM5Sig003_gnnsd1_ggmm1",
-        "GMM6Sig003_LCB1",
+        "GMM6Sig0002_LCB1",
         "GMM6Sig001_LCB1",
+        "GMM6Sig003_LCB1",
     ]
     n_ep = 500
-    smsz_thr = 0.65
+    smsz_thr = 0.60
     num = 50
     trial_list = ["t{}".format(i) for i in range(1,31)]
 
@@ -65,6 +66,73 @@ def Run(ct, *args):
                     yvis_list_meta[i].append(t)    
                 y_list_meta[i].append(t)
                 smsz_list_meta[i].append(s)
+                
+                
+            # trace = defaultdict(list)   
+            # for dsmsz in dm.smsz:
+            #     x_concat = []
+            #     t_concat = []
+            #     d_concat = []
+            #     for t, s, ep, d in zip(traeod, smsz, dm.log["ep"], dm.log["est_opt_dtheta2"]):
+            #         if s == dsmsz:
+            #             x_concat.append(ep)
+            #             t_concat.append(t)
+            #             d_concat.append(d)
+            #     trace[0].append(go.Scatter(
+            #         x=x_concat, y=t_concat,
+            #         mode='markers', 
+            #         name="獲得報酬値",
+            #         text = ["獲得報酬値: {}<br />最適化されたdtheta2: {}<br />".format(t,d) for t,d in zip(t_concat, d_concat)],
+            #         marker = dict(
+            #             color = "red",
+            #             size = 16
+            #         ),
+            #         visible=False,
+            #     ))
+            #     trace[1].append(go.Scatter(
+            #         x=x_concat, y=t_concat,
+            #         mode='lines', 
+            #         name="獲得報酬値",
+            #         text = ["獲得報酬値: {}<br />最適化されたdtheta2: {}<br />".format(t,d) for t,d in zip(t_concat, d_concat)],
+            #         line = dict(
+            #             color = "orange",
+            #              dash = "dash",
+            #         ),
+            #         visible=False,
+            #     ))
+            #     for i in range(len(trace)):
+            #         trace[i][0].visible = True 
+            # data = sum([trace[i] for i in range(len(trace))], [])   
+            # steps = []
+            # for smsz_idx, smsz in enumerate(dm.smsz):
+            #     for j in range(len(trace)):
+            #         trace["vis{}".format(j)] = [False]*len(dm.smsz)
+            #         trace["vis{}".format(j)][smsz_idx] = True
+            #     step = dict(
+            #         method="update",
+            #         args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+            #             {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+            #     )
+            #     steps.append(step)
+            # sliders = [dict(
+            #     active=10,
+            #     currentvalue={"prefix": "size_srcmouth: "},
+            #     pad={"t": 50},
+            #     steps=steps,
+            # )]
+            # fig = go.Figure(data=data)
+            # fig.update_layout(
+            #     sliders=sliders
+            # )
+            # fig['layout']['xaxis']['title'] = "episode"
+            # fig['layout']['yaxis']['title'] = "reward"
+            # fig['layout']['xaxis']['range'] = (0,500)
+            # fig['layout']['yaxis']['range'] = (-3,0.2)
+            # for smsz_idx, smsz in enumerate(dm.smsz):
+            #     fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
+            # check_or_create_dir(PICTURE_DIR + "opttest/{}/".format(name))
+            # plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/{}/".format(name) + "return.html", auto_open=False)
+                    
   
         # yvis_list_meta = [np.where(np.array(yi_list)<-1, -1, yi_list) for yi_list in yvis_list_meta]
         ymean_list = []
@@ -111,18 +179,23 @@ def Run(ct, *args):
     
     ymean_mva_list = [pd.Series(ymean_list).rolling(num).mean() for ymean_list in ymean_list_meta]
     ymean_std_list = [pd.Series(ymean_list).rolling(num).std() for ymean_list in ymean_list_meta]
+    
 
     fig = go.Figure()
     for ymean_mva, ymean_std, pref in zip(ymean_mva_list, ymean_std_list, pref_list):
+        # print(pref)
+        # print(ymean_mva)
         fig.add_trace(go.Scatter(
             x=np.linspace(0,n_ep-1,n_ep), y=ymean_mva,
             mode='lines', 
             name=pref,
             error_y=dict(
                     type="data",
-                    symmetric=False,
-                    array=np.zeros(len(ymean_std)),
-                    arrayminus=ymean_std,
+                    # symmetric=False,
+                    # array=np.zeros(len(ymean_std)),
+                    # arrayminus=ymean_std,
+                    symmetric=True,
+                    array=ymean_std,
                     thickness=1.5,
                     width=3,
                 )
@@ -134,6 +207,8 @@ def Run(ct, *args):
     plotly.offline.plot(fig, filename = PICTURE_DIR + "opttest/onpolicy/" + "reward_comp.html", auto_open=False)    
     
     
+    ms_concat = []
+    sds_concat = []
     for ep in [range(0,500), range(100), range(0,200), range(0,300), range(0,500), range(100,200), range(200,300), range(300,400), range(400,500)]:
         fig = go.Figure()
         for (smsz,y), pref in zip(barset, pref_list):
@@ -147,6 +222,8 @@ def Run(ct, *args):
                 idx = [i for i, xtt in enumerate(xt) if xtt == s]
                 ms.append(np.mean(yt[idx]))
                 sds.append(np.std(yt[idx]))
+            ms_concat.append(ms)
+            sds_concat.append(sds)
                 
             fig.add_trace(go.Scatter(x = dm.smsz, y = ms,
                 name=pref,
@@ -163,6 +240,8 @@ def Run(ct, *args):
                     symmetric=False,
                     array=np.zeros(len(sds)),
                     arrayminus=sds,
+                    # symmetric=True,
+                    # array=sds,
                     thickness=3,
                     width=6,
                 ),
@@ -175,6 +254,41 @@ def Run(ct, *args):
             #         width=1,
             #     ),
             # )) 
+        
+        m = np.array(ms_concat[-3])
+        sd = np.array(sds_concat[-3])
+        msd = m - sd
+        am = np.array(ms_concat[-2])
+        asd = np.array(sds_concat[-2])
+        a = am - asd
+        bm = np.array(ms_concat[-1])
+        bsd = np.array(sds_concat[-1])
+        b = bm - bsd
+        c = [max(ta,tb,tm) for ta,tb,tm in zip(a,b,msd)]
+        d = []
+        for ta,tb,tm in zip(a,b,msd):
+            if max(ta,tb,tm)==tm:
+                d.append("rgb(255,0,0)")
+            elif max(ta,tb,tm) == ta:
+                d.append("rgb(0,255,0)")
+            elif max(ta,tb,tm) == tb:
+                d.append("rgb(120,0,255)")
+        fig.add_trace(go.Scatter(x = dm.smsz, y = c,
+                name="Max(GMM6Sig0002_LCB1, GMM6Sig001_LCB1, GMM6Sig003_LCB1)",
+                mode="lines",
+                line = dict(
+                    color = "orange",
+                    width = 3,
+                ),
+            ))
+        fig.add_trace(go.Scatter(x = dm.smsz, y = c,
+            mode="markers",
+            marker = dict(
+                color = d,
+                # width = 3,
+            ),
+            # showlegend = False,
+        ))
 
         fig['layout']['yaxis']['range'] = (-8,0.1)
         fig['layout']['xaxis']['title'] = "size_srcmouth"

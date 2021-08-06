@@ -28,13 +28,22 @@ class Domain2(Domain):
         est_opt_Er = est_nn_Er[idx_est_opt_dtheta2]
         
         return idx_est_opt_dtheta2, est_opt_dtheta2, est_datotal, est_opt_Er, E
+    
+    # @classmethod
+    # def summarize(self, log):
+        
 
 
 class GMM6(GMM5, object):
     def __init__(self, nnmodel, diag_sigma, lam = 0.0, Gerr = 1.0):
         super(GMM6, self).__init__(nnmodel, diag_sigma, lam, Gerr)
         
-    def extract_jps(self, log_r):
+    def extract_jps(self, log_r, predefine = None):
+        if predefine != None:
+            self.jumppoints["X"] = predefine["X"]
+            self.jumppoints["Y"] = predefine["Y"]
+            return
+            
         rmodel = Rmodel("Fdatotal_gentle")
         self.jumppoints = {"X": [], "Y": []}
         self.logr = []
@@ -57,8 +66,9 @@ class GMM6(GMM5, object):
             self.jumppoints["Y"] = [self.jumppoints["Y"][idx] for idx in unique_index]
             self.logr = [self.logr[idx] for idx in unique_index]
                 
-    def train(self, log_r): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
-        self.extract_jps(log_r)
+    def train(self, log_r, recreate = True): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        if recreate:
+            self.extract_jps(log_r)
         self.gc_concat = []
         self.w_concat = []
         Var = np.diag(self.diag_sigma)**2

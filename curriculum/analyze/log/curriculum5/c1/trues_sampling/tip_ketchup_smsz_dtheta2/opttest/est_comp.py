@@ -35,6 +35,7 @@ def Run(ct, *args):
         # ("GMM4Sig003_gnnsd1_ggmm3", "gmm_gnnsd1.0_ggmm3.0~Er", "dm1"),
         # ("GMM4Sig005_gnnsd1_ggmm2", "gmm_gnnsd1.0_ggmm2.0~Er", "dm1"),
         # ("GMM5Sig003_gnnsd1_ggmm1", "gmm_gnnsd1.0_ggmm1.0~Er", "dm1"),
+        ("GMM6Sig0002_LCB1", "GMM6Sig0002_LCB1", "dm2"),
         ("GMM6Sig001_LCB1", "GMM6Sig001_LCB1", "dm2"),
         ("GMM6Sig003_LCB1", "GMM6Sig003_LCB1", "dm2"),
     ]
@@ -72,7 +73,9 @@ def Run(ct, *args):
                 setup_datotal(dm, logdir)
                 reward = setup_reward2(dm, logdir)
                 X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ])
-                gr = dm.gmm.predict(X).reshape(100,100)
+                gmm = dm.gmm
+                gmm.train(dm.log["true_r_at_est_opt_dthtea2"])
+                gr = gmm.predict(X).reshape(100,100)
                 er = reward[Er]
                 sr = reward[Sr]
                 ev = er - 1*(sr + gr)

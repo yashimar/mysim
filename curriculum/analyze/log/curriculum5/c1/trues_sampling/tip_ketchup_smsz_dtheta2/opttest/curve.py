@@ -90,8 +90,8 @@ def Run(ct, *args):
                     z = z, x = dm.smsz, y = dm.dtheta2,
                     cmin = cs[0], cmax = cs[1], colorscale = cs[2],
                     colorbar = dict(
-                        len = 0.2,
-                        # x = 0.5*(i+1), y = 0.5*(j+1),
+                        len = 0.15,
+                        x = 0.5*(i+1), y = 0.12*(5*j+1),
                     ),
                     showlegend = False,
                 ), row=j+1, col=i+1)
