@@ -134,7 +134,7 @@ class Domain3:
             skill  = SHAKE
             idx_est_optparam = np.nan
             est_optparm = np.nan
-            est_datotal = self.nnmodels[SHAKE].model.Predict(x = [smsz], with_var=True)
+            est_datotal = self.nnmodels[SHAKE].model.Predict(x = [smsz], with_var=True).Y[0].item()
             opteval = opteval_SHAKE
         else:
             skill = TIP
@@ -143,12 +143,12 @@ class Domain3:
         
         return skill, idx_est_optparam, est_optparam, est_datotal, opteval
                     
-    def execute_main(self, idx_smsz, smsz, n_rand_sample, n_learn_step):
+    def execute_main(self, idx_smsz, smsz, num_rand_sample, num_learn_step):
         ep = len(self.log["ep"])
         print("ep: {}".format(ep))
             
-        if ep<= n_rand_sample:
-            if ep <= int(n_rand_sample/2):    #Tip用ランダムサンプリング
+        if ep< num_rand_sample:
+            if ep < int(num_rand_sample/2):    #Tip用ランダムサンプリング
                 skill = TIP
                 idx_est_optparam = RandI(len(self.dtheta2))
                 est_optparam = self.dtheta2[idx_est_optparam]
@@ -165,8 +165,8 @@ class Domain3:
         else:               true_datotal = self.datotal[SHAKE][TRUE][idx_smsz]
         true_r_at_est_optparam = rfunc(true_datotal)
         
-        if ep % n_learn_step == 0:  not_learn = False
-        else:                       not_learn = True
+        if ep % num_learn_step == 0:    not_learn = False
+        else:                           not_learn = True
         
         if skill == TIP:    self.nnmodels[TIP].update([est_optparam, smsz], [true_datotal], not_learn = not_learn)
         else:               self.nnmodels[SHAKE].update([smsz], [true_datotal], not_learn = not_learn)
@@ -183,10 +183,10 @@ class Domain3:
             for skill in [TIP, SHAKE]:
                 self.log["est_gmm_JP_{}".format(skill)].append(deepcopy(self.gmms[skill].jumppoints))
         
-    def execute(self, n_rand_sample, n_learn_step):
+    def execute(self, num_rand_sample, num_learn_step):
         idx_smsz = RandI(len(self.smsz))
         smsz = self.smsz[idx_smsz]
-        self.execute_main(idx_smsz, smsz, n_rand_sample, n_learn_step)
+        self.execute_main(idx_smsz, smsz, num_rand_sample, num_learn_step)
             
     @classmethod
     def load(self, path):
@@ -210,47 +210,44 @@ def shake_rfunc_plot():
     plt.scatter(x = np.linspace(0.3,0.8,100), y = r)
 
 
-def execute():
-    pass       
-        
-def test():
-    #Domain用パラメータ
-    base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "test"
-    num_ep = 20
-    n_rand_sample = 10
-    
-    #NN学習用パラメータ
-    n_learn_step = 1
-    
-    #実験イテレーション用パラメータ
-    n_save_ep = num_ep
-    
-    #最適化用パラメータ
-    p = 3
-    gmm_lams = {
-        TIP: lambda nnmodel: GMM7(nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)], Gerr = 1.0),
-        SHAKE: lambda nnmodel: GMM7(nnmodel, diag_sigma=[(0.8-0.3)/(100./p)], Gerr = 1.0)
-    }
-    sd_gain = 1.0
-    LCB_ratio = 0.0
-
-    
-    logdir = base_logdir + "logs/onpolicy2/{}/".format(name)
-    modeldir = logdir + "{}/".format("models")
-    
+def execute(logdir, sd_gain, LCB_ratio, gmm_lams, num_ep, num_rand_sample, num_learn_step, num_save_ep):
     if os.path.exists(logdir+"dm.pickle"):
         dm = Domain.load(logdir+"dm.pickle")
+        # dm = Domain3(logdir, sd_gain, LCB_ratio)
+        # dm.setup(gmm_lams)
     else:
         dm = Domain3(logdir, sd_gain, LCB_ratio)
         dm.setup(gmm_lams)
     
     while len(dm.log["ep"]) < num_ep:
-        dm.execute(n_rand_sample = n_rand_sample, n_learn_step = n_learn_step)
-        if len(dm.log["ep"])%n_save_ep==0:
+        dm.execute(num_rand_sample = num_rand_sample, num_learn_step = num_learn_step)
+        if len(dm.log["ep"])%num_save_ep==0:
             dm.save()
+        
+def test():
+    #Domain用パラメータ
+    base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
+    name = "test"
+    p = 3
+    
+    execute(**dict(
+        num_ep = 25,
+        num_rand_sample = 6,
+        num_learn_step = 1,
+        num_save_ep = 1,
+        
+        sd_gain = 1.0,
+        LCB_ratio = 0.0,
+        gmm_lams = {
+            TIP: lambda nnmodel: GMM7(nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)], Gerr = 1.0),
+            SHAKE: lambda nnmodel: GMM7(nnmodel, diag_sigma=[(0.8-0.3)/(100./p)], Gerr = 1.0)
+        },
+        
+        logdir = base_logdir + "logs/onpolicy2/{}/".format(name),
+    ))
 
         
 def Run(ct, *args):
     test()
+    # shake_rfunc_plot()
     
