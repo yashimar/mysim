@@ -379,8 +379,7 @@ class GMM5(GMM4, object):
         X = np.array([[gc(x).item() for gc in self.gc_concat] for x in self.jumppoints["X"]])
         self.w_concat = np.linalg.inv(X.T.dot(X) + self.lam*np.eye(X.shape[0])).dot(X.T).dot(Y)
         if len(X) == 0:
-            self.w_concat = []
-        
+            self.w_concat = []        
     
     def predict(self, x):
         if len(np.array(x).shape) == 1:

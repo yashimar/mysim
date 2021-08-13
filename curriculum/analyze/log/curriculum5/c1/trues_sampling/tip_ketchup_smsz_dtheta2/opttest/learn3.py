@@ -1,5 +1,10 @@
 #coding: UTF-8
 from .learn2 import *
+from .setup2 import *
+import cma
+from scipy.optimize import fmin_l_bfgs_b
+from scipy import optimize
+import shutil
 
 
 TIP = "tip"
@@ -25,6 +30,217 @@ class GMM7(GMM5, object):
             self.w_concat, rnorm = nnls(X, y)
 
 
+class GMM8(GMM7, object):
+    def __init__(self, nnmodel, diag_sigma, options, lam = 0.0, Gerr = 1.0):
+        super(GMM8, self).__init__(nnmodel, diag_sigma, Gerr)
+        self.options = options
+    
+    def opt_funciton(self, w, X, y, tau, lam):
+        w = np.maximum(0,w) #wの定義域をせいにするため
+        delta = y - X.dot(w)
+        indic = np.array(delta <= 0., dtype=np.float32)
+        rho = (tau - indic)*delta
+        
+        return sum(rho) + lam * w.T.dot(w)
+    
+    def train(self, recreate_jp = True): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        tau = self.options['tau']
+        lam = self.options['lam']
+        maxiter = self.options['maxiter']
+        verbose = self.options['verbose']
+        if recreate_jp:
+            self.extract_jps()
+        self.gc_concat = []
+        self.w_concat = []
+        Var = np.diag(self.diag_sigma)**2
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
+            self.gc_concat.append(
+                lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy
+            )
+        y = np.array(self.jumppoints["Y"]).flatten()
+        X = np.array([[gc(x).item() for gc in self.gc_concat] for x in self.jumppoints["X"]])
+        if len(X) == 0:
+            self.w_concat = []
+        elif len(X) == 1:
+            self.w_concat = [1]
+        else:
+            mean_init = [1.0] * len(y)
+            sd_init = 0.5
+            es = cma.CMAEvolutionStrategy(mean_init, sd_init, {'seed':234, 'maxiter': maxiter})
+            f = lambda w: self.opt_funciton(w, X, y, tau, lam)
+            es.optimize(f, verbose = verbose)
+            self.w_concat = np.maximum(0, es.result[0]) #opt_funcでwにrelu変換を施しているため
+
+
+class GMM9(GMM8, object):
+    def opt_function(self, w, X, y, tau, lam):
+        # y = y.T
+        # w = w.T
+        # print(y.shape, w.shape, X.shape)
+        # w = np.maximum(0, w)
+        # tau = 0.9
+        # lam = 1e-6
+        delta = y - X.dot(w)
+        indic = np.where(delta<=0, 1, 0)
+        rho = (tau - indic)*delta
+        
+        f = sum(rho) + lam*w.T.dot(w)
+        # fprime = (-1./len(y)*X.T.dot(np.abs(tau - indic)*np.sign(delta)) + 2*lam*w)*np.where(w>0, 1, 0)
+        fprime = -1./len(y)*(np.abs(tau - indic)*np.sign(delta)).dot(X) + 2*lam*w
+        # f = delta.T.dot(delta) + lam*w.T.dot(w)
+        # fprime = - X.T.dot(y) + X.T.dot(X).dot(w)
+        
+        return f, fprime
+    
+    def train(self, recreate_jp = True): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+        tau = self.options['tau']
+        lam = self.options['lam']
+        if recreate_jp:
+            self.extract_jps()
+        self.gc_concat = []
+        self.w_concat = []
+        Var = np.diag(self.diag_sigma)**2
+        for jpx, jpy in zip(np.array(self.jumppoints["X"]), np.array(self.jumppoints["Y"])):
+            self.gc_concat.append(
+                lambda x,jpx=jpx,jpy=jpy: multivariate_normal.pdf(x,jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy
+            )
+        y = np.array(self.jumppoints["Y"]).flatten()
+        X = np.array([[gc(x).item() for gc in self.gc_concat] for x in self.jumppoints["X"]])
+        if len(X) == 0:
+            self.w_concat = []
+        else:
+            f = lambda w: self.opt_function(w, X, y, tau, lam)[0]
+            fprime = lambda w: self.opt_function(w, X, y, tau, lam)[1]
+            self.w_concat, fmin, d = fmin_l_bfgs_b(f, np.ones(len(y)), 
+                                                #    fprime = fprime,   #何故か当てはまりが数値微分より悪いので放置
+                                                    pgtol = 1e-8,
+                                                    # bounds = [(0, None)]*len(y),
+                                                    approx_grad = 1,
+                                                    maxiter = 1e5,
+                                                    maxfun = 1e5, 
+                                                    # maxls = 10000
+                                                   )
+            
+    def predict(self, x):
+        if len(np.array(x).shape) == 1:
+            x = [x]
+        pred = np.zeros((len(x)))
+        for gc, w in zip(self.gc_concat, self.w_concat):
+            pred += w*gc(x)
+        pred = np.maximum(0, pred)
+        return pred
+        
+            
+def gmm_test():
+    pref = "onpolicy/Er/"
+    logdir = BASE_DIR + "opttest/logs/{}/t1/".format(pref)
+    dm = Domain2.load(logdir+"dm.pickle")
+    
+    p = 3
+    lam = 1e-5
+    Var = np.diag([(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)])**2
+    # gmm = GMM5(dm.nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)], lam = 0)
+    # gmm = GMM4(dm.nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)])
+    # gmm = GMM8(dm.nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)])
+    gmm = GMM9(dm.nnmodel, diag_sigma=[(1.0-0.1)/(100./3), (0.8-0.3)/(100./3)], options = {"tau": 0.9, "lam": 1e-6})
+    gmm.extract_jps()
+    gmm.jumppoints.update({"X": [[0., x[1]] for x in gmm.jumppoints["X"]]})
+    tx = np.array([x[1] for x in gmm.jumppoints["X"]])
+    uq = np.unique(tx, return_index=True)[1][[0, 3, 7, 10, 15, 17, 19, 20, 21, 22, 23]]
+    tx = np.array([x[1] for x in gmm.jumppoints["X"]])
+    gmm.jumppoints.update({"X": [x for i, x in enumerate(gmm.jumppoints["X"]) if i in uq]})
+    gmm.jumppoints.update({"Y": [y for i, y in enumerate(gmm.jumppoints["Y"]) if i in uq]})
+    gmm.train(recreate_jp = False)
+    
+    x_list = np.linspace(0.3, 0.8, 1000)
+    X = np.array([[0., x] for x in x_list])
+    P = gmm.predict(X)
+    
+    ttx = np.array(gmm.jumppoints["X"])
+    tty = np.array(gmm.jumppoints["Y"])
+    
+    jpmeta = [[(multivariate_normal.pdf([0.,x],jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy).item() for x in x_list] for jpx, jpy in zip(ttx, tty)]
+    # jpx = ttx[0]
+    # jpy = tty[0]
+    # for x in x_list:
+    #     tmp = multivariate_normal.pdf([0., x],jpx,Var)*(1./multivariate_normal.pdf(jpx,jpx,Var))*jpy
+    #     tmp = tmp.item()
+    #     print(x, tmp)
+    # # print(jpmeta[0])
+    # print(jpx)
+    # jpge
+    
+    tttx = [x[1] for x in ttx]
+    fig = plt.figure()
+    for jp in jpmeta:
+        plt.scatter(x_list, jp, c="skyblue")
+    plt.scatter(x_list, P, c="purple")
+    plt.scatter(tttx, tty, c="orange")
+    # plt.scatter(tttx, gmm.predict(ttx))
+    plt.xlim(0.3,0.65)
+    plt.show()
+
+
+def gmm_test2():
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    name = "GMMSig5LCB3/t15"
+    logdir = basedir + "{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/gmm_cma/{}/".format(name)
+    check_or_create_dir(save_img_dir)
+    with open(logdir+"log.yaml", "r") as yml:
+        log = yaml.load(yml)
+    dm = Domain3.load(logdir+"dm.pickle")
+    datotal = setup_datotal(dm, logdir)
+    # gmm = GMM8(dm.nnmodels[TIP], diag_sigma=[(1.0-0.1)/(100./5), (0.8-0.3)/(100./5)], options = {"tau": 0.9, "lam": 1e-4, "maxiter": 1e3, "verbose": 1})
+    gmm = GMM9(dm.nnmodels[TIP], diag_sigma=[(1.0-0.1)/(100./5), (0.8-0.3)/(100./5)], options = {"tau": 0.9, "lam": 1e-6})
+    gmm.train()
+    X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ]).astype(np.float32)
+    gmmpred = gmm.predict(X).reshape(100,100)
+    
+    diffcs = [
+        [0, "rgb(0, 0, 0)"],
+        [0.01, "rgb(255, 255, 200)"],
+        [1, "rgb(255, 0, 0)"],
+    ]
+    jpx_idx = [[idx_of_the_nearest(dm.dtheta2, x[0]), idx_of_the_nearest(dm.smsz, x[1])] for x in np.array(gmm.jumppoints["X"])]
+    jpx_tr = [dm.datotal[TIP][RFUNC][idx[0],idx[1]] for idx in jpx_idx]
+    jpx_gmm = [gmmpred[idx[0],idx[1]] for idx in jpx_idx]
+    jpy = [y[0] for y in gmm.jumppoints["Y"]]
+    linex = [[x,x] for x in np.array(gmm.jumppoints["X"])[:,1]]
+    liney = [[y,y] for y in np.array(gmm.jumppoints["X"])[:,0]]
+    linegmm =[[a,b] for a, b in zip(jpy, jpx_gmm)]
+        
+    fig = go.Figure()
+    fig.add_trace(go.Surface(
+        z = gmmpred, x = dm.smsz, y = dm.dtheta2,
+        cmin = 0, cmax = 0.2, colorscale = diffcs,
+        showlegend = False,
+    ))
+    fig.add_trace(go.Scatter3d(
+        z = jpy, x = np.array(gmm.jumppoints["X"])[:,1], y = np.array(gmm.jumppoints["X"])[:,0],
+        mode = "markers",
+        showlegend = False,
+        marker = dict(
+            color = "red",
+            size = 4,
+        )
+    ))
+    for tz,tx,ty in zip(linegmm, linex, liney):
+        fig.add_trace(go.Scatter3d(
+            z = tz, x = tx, y = ty,
+            mode = "lines",
+            line = dict(
+                color = "red",
+            ),
+            showlegend = False,
+        ))
+    fig['layout']['scene']['xaxis']['title'] = "size_srcmouth" 
+    fig['layout']['scene']['yaxis']['title'] = "dtheta2" 
+    fig['layout']['scene']['zaxis']['title'] = "gmm predict" 
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "curve_tip.html", auto_open=False)
+
+
 class Domain3:
     def __init__(self, logdir, sd_gain = 1.0, LCB_ratio = 0.0):
         self.smsz = np.linspace(0.3,0.8,100)
@@ -47,8 +263,8 @@ class Domain3:
             "est_datotal_at_est_optparam": [],
             "datotal_at_est_optparam": [],
             "r_at_est_optparam": [],
-            # "est_gmm_JP_tip": [],
-            # "est_gmm_JP_shake": [],
+            "est_gmm_JP_tip": [],
+            "est_gmm_JP_shake": [],
         }
         self.logdir = logdir
         self.rmodel = Rmodel("Fdatotal_gentle")
@@ -84,10 +300,6 @@ class Domain3:
             
         if gmm_lams != None:
             self.use_gmm = True
-            self.log.update({
-                "est_gmm_JP_tip": [],
-                "est_gmm_JP_shake": [],
-            })
             for skill in [TIP, SHAKE]:
                 self.gmms[skill] = gmm_lams[skill](self.nnmodels[skill])
                     
@@ -97,7 +309,7 @@ class Domain3:
         ###########################
         est_nn_Er, est_nn_Sr = [], []
         if self.use_gmm:
-            self.gmms[TIP].train()
+            # self.gmms[TIP].train()
             X = np.array([[dtheta2, smsz] for dtheta2 in self.dtheta2])
             SDgmm = self.gmms[TIP].predict(X)
         for idx_dtheta2, dtheta2 in enumerate(self.dtheta2):
@@ -119,7 +331,7 @@ class Domain3:
         ###Shake用最適化
         ###########################
         if self.use_gmm:
-            self.gmms[SHAKE].train()
+            # self.gmms[SHAKE].train()
             X = np.array([[smsz]])
             SDgmm = self.gmms[SHAKE].predict(X)
         est_datotal = self.nnmodels[SHAKE].model.Predict(x = [smsz], with_var=True)
@@ -140,6 +352,10 @@ class Domain3:
             skill = TIP
             est_datotal = self.nnmodels[TIP].model.Predict(x=[est_optparam, smsz], with_var=True).Y[0].item()
             opteval = opteval_TIP
+            
+        if self.use_gmm:
+            self.gmms[TIP].train()
+            self.gmms[SHAKE].train()
         
         return skill, idx_est_optparam, est_optparam, est_datotal, opteval
                     
@@ -212,9 +428,7 @@ def shake_rfunc_plot():
 
 def execute(logdir, sd_gain, LCB_ratio, gmm_lams, num_ep, num_rand_sample, num_learn_step, num_save_ep):
     if os.path.exists(logdir+"dm.pickle"):
-        dm = Domain.load(logdir+"dm.pickle")
-        # dm = Domain3(logdir, sd_gain, LCB_ratio)
-        # dm.setup(gmm_lams)
+        dm = Domain3.load(logdir+"dm.pickle")
     else:
         dm = Domain3(logdir, sd_gain, LCB_ratio)
         dm.setup(gmm_lams)
@@ -223,6 +437,21 @@ def execute(logdir, sd_gain, LCB_ratio, gmm_lams, num_ep, num_rand_sample, num_l
         dm.execute(num_rand_sample = num_rand_sample, num_learn_step = num_learn_step)
         if len(dm.log["ep"])%num_save_ep==0:
             dm.save()
+            
+            
+def execute_update(ref_logdir, new_logdir, gmm_lams, num_ep, num_rand_sample, num_learn_step, num_save_ep):
+    os.mkdir(new_logdir)
+    shutil.copytree(ref_logdir+"models", new_logdir+"models")
+    
+    dm = Domain3.load(ref_logdir+"dm.pickle")
+    dm.logdir = new_logdir
+    dm.setup(gmm_lams)
+    
+    while len(dm.log["ep"]) < num_ep:
+        dm.execute(num_rand_sample = num_rand_sample, num_learn_step = num_learn_step)
+        if len(dm.log["ep"])%num_save_ep==0:
+            dm.save()
+    
         
 def test():
     #Domain用パラメータ
@@ -246,8 +475,537 @@ def test():
         logdir = base_logdir + "logs/onpolicy2/{}/".format(name),
     ))
 
-        
-def Run(ct, *args):
-    test()
-    # shake_rfunc_plot()
+
+def opttest_comp(name, n):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    check_or_create_dir(save_img_dir)
     
+    y_concat = []
+    for i in range(1,n):
+        logdir = basedir + "{}/t{}/".format(name, i)
+        dm = Domain3.load(logdir+"dm.pickle")
+        datotal = setup_datotal(dm, logdir)
+        gmmpred = setup_gmmpred(dm, logdir)
+        evaluation = setup_eval(dm, logdir)
+        true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
+        true_yshake = dm.datotal[SHAKE][RFUNC]
+        est_ytip = np.max(evaluation[TIP], axis=0)
+        est_yshake = evaluation[SHAKE]
+        
+        y = []
+        for idx_smsz in range(len(dm.smsz)):
+            if est_ytip[idx_smsz] > est_yshake[idx_smsz]:
+                y.append(true_ytip[idx_smsz])
+            else:
+                y.append(true_yshake[idx_smsz])
+        y_concat.append(y)
+    ymean = np.mean(y_concat, axis = 0)
+    ysd = np.std(y_concat, axis = 0)
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x = dm.smsz, y = ymean,
+        mode = "markers",
+        error_y=dict(
+            type="data",
+            symmetric=False,
+            array=np.zeros(len(ysd)),
+            arrayminus=ysd,
+            thickness=1.5,
+            width=3,
+        ),
+        text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
+    ))
+    fig['layout']['yaxis']['range'] = (-5,0.1)
+    fig['layout']['xaxis']['title'] = "size_srcmouth"
+    fig['layout']['yaxis']['title'] = "reward"
+    plotly.offline.plot(fig, filename = save_img_dir + "opttest_comp.html", auto_open=False)   
+
+
+def check(name):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    # name = "GMMSig5LCB3/t1"
+    logdir = basedir + "{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    check_or_create_dir(save_img_dir)
+    with open(logdir+"log.yaml", "r") as yml:
+        log = yaml.load(yml)
+    dm = Domain3.load(logdir+"dm.pickle")
+    datotal, gmmpred, evaluation = setup_full(dm, logdir, recreate=False)
+    true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
+    true_yshake = dm.datotal[SHAKE][RFUNC]
+    est_ytip = np.max(evaluation[TIP], axis=0)
+    est_yshake = evaluation[SHAKE]
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x = log["ep"], y = log["r_at_est_optparam"],
+        mode = "markers",
+        text = ["<br />".join(["ep: {}".format(ep), "smsz: {}".format(smsz), "optparam: {}".format(optparam), "opteval: {}".format(opteval), "skill: {}".format(skill)]) for ep, smsz, optparam, opteval, skill in zip(log["ep"], log["smsz"], log["est_optparam"], log["opteval"], log["skill"])],
+    ))
+    fig['layout']['xaxis']['title'] = "episode"
+    fig['layout']['yaxis']['title'] = "reward"
+    plotly.offline.plot(fig, filename = save_img_dir + "hist.html", auto_open=False)
+    
+    for ep in range(50,len(log["ep"])):
+        if log["r_at_est_optparam"][ep] < -1:
+            print(ep, log["smsz"][ep], log["r_at_est_optparam"][ep])
+    
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x = dm.smsz, y = true_ytip,
+        mode = "markers",
+        name = "reward (tip) at est optparam"
+    ))
+    fig.add_trace(go.Scatter(
+        x = dm.smsz, y = true_yshake,
+        mode = "markers",
+        name = "reward (shake) at est optparam"
+    ))
+    fig.add_trace(go.Scatter(
+        x = dm.smsz, y = est_ytip,
+        mode = "markers",
+        name = "evaluatioin (tip) at est optparam"
+    ))
+    fig.add_trace(go.Scatter(
+        x = dm.smsz, y = est_yshake,
+        mode = "markers",
+        name = "evaluation (shake) at est optparam"
+    ))
+    fig['layout']['xaxis']['title'] = "size_srcmouth"
+    fig['layout']['yaxis']['title'] = "reward / evaluation"
+    fig['layout']['yaxis']['range'] = (-5,0.2)
+    plotly.offline.plot(fig, filename = save_img_dir + "comp.html", auto_open=False)
+    
+    rc = dm.datotal[TIP][RFUNC].reshape(100*100)
+    idx = [i for i,r in enumerate(rc) if r<-0.7]
+    rc = rc[idx]
+    smsz = np.array([smsz for smsz in dm.smsz]*100)[idx]
+    dtheta2 = np.array(sum([[dtheta2]*100 for dtheta2 in dm.dtheta2],[]))[idx]
+    
+    n_row = 3
+    clength = 0.2
+    fig = make_subplots(
+        rows=n_row, cols=2, 
+        subplot_titles=["datotal 生データ (100×100)", "報酬 生データ (100×100)", 
+                        "飛び値モデル (真値報酬-0.7以下の地点プロット)", "評価関数 (真値報酬-0.7以下の地点プロット)", 
+                        "飛び値モデル", "評価関数", 
+                        ],
+        horizontal_spacing = 0.1,
+        vertical_spacing = 0.05,
+    )
+    fig.update_layout(
+        height=600*n_row, width=1750, 
+        margin=dict(t=100,b=150),
+        hoverdistance = 2,
+    )
+    diffcs = [
+        [0, "rgb(255, 255, 255)"],
+        [0.01, "rgb(255, 255, 200)"],
+        [1, "rgb(255, 0, 0)"],
+    ]
+    z_rc_pos_scale_cs_scatterz_scatterscale_set = (
+        (datotal[TIP][TRUE], 1, 1, 0.46, 0.94, 0., 0.55, None, None, None, None), (dm.datotal[TIP][RFUNC], 1, 2, 0.46, 0.94, -3, 0., None, None, None, None),
+        # (gmmpred[TIP], 2, 1, 0.46, 0.28, 0., 0.2, diffcs, "badr", -3, 0), (evaluation[TIP], 2, 2, 0.46, 0.94, -3, 0., None, "badr", -3, 0),
+        (gmmpred[TIP], 2, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (evaluation[TIP], 2, 2, 0.46, 0.94, -3, 0., None, "badr", None, None),
+        (gmmpred[TIP], 3, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (evaluation[TIP], 3, 2, 0.46, 0.94, -3, 0., None, None, None, None),
+    )
+    posx_set = [0.46, 1.0075]
+    posy_set = (lambda x: [0.1 + 0.7/(x-1)*i for i in range(x)][::-1])(n_row)
+    for z, row, col, posx, posy, zmin, zmax, cs, scz, sczmin, sczmax in z_rc_pos_scale_cs_scatterz_scatterscale_set:
+        if np.sum(z) != 0:
+            fig.add_trace(go.Heatmap(
+                z = z, x = dm.smsz, y = dm.dtheta2,
+                colorscale = cs if cs != None else "Viridis",
+                zmin = zmin, zmax = zmax,
+                colorbar=dict(
+                    titleside="top", ticks="outside",
+                    x = posx_set[col-1], y = posy_set[row-1],
+                    thickness=23, len = clength,
+                ),
+            ), row, col)
+            if scz != "badr": continue
+            fig.add_trace(go.Scatter(
+                x = smsz, y = dtheta2,
+                mode='markers',
+                showlegend = False,
+                marker = dict(
+                    size = 4,
+                    color = rc,
+                    colorscale = "Viridis",
+                    cmin = sczmin,
+                    cmax = sczmax,
+                    line = dict(
+                        color = "black",
+                        width = 1,
+                    )
+                ),
+            ), row, col)
+        else:
+            if scz == None: continue
+            fig.add_trace(go.Scatter(
+                x = dm.log["smsz"], y=dm.log["est_optparam"],
+                mode='markers',
+                showlegend = False,
+                hoverinfo='text',
+                text = ["zvalue: {}<br />ep: {}<br />smsz: {}<br />dtheta2: {}<br />".format(_scz, _ep, _smsz, _dtheta2) for _ep, _scz, _smsz, _dtheta2 in zip(dm.log["ep"], scz, dm.log["smsz"], dm.log["est_optparam"])],
+                marker = dict(
+                    size = 8,
+                    color = scz,
+                    cmin = sczmin,
+                    cmax = sczmax,
+                    line = dict(
+                        color = "black",
+                        width = 1,
+                    ),
+                    colorscale = cs if cs != None else "Viridis",
+                    colorbar=dict(
+                        titleside="top", ticks="outside",
+                        x = posx_set[col-1], y = posy_set[row-1],
+                        thickness=23, len = clength,
+                    ),
+                ),
+            ), row, col)
+    for i in range(1,len(z_rc_pos_scale_cs_scatterz_scatterscale_set)+1):
+        fig['layout']['xaxis'+str(i)]['title'] = "size_srcmouth"
+        fig['layout']['yaxis'+str(i)]['title'] = "dtheta2"
+    plotly.offline.plot(fig, filename = save_img_dir + "heatmap.html", auto_open=False)
+    
+    
+def evaluation(name):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    logdir = basedir + "{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    check_or_create_dir(save_img_dir)
+    with open(logdir+"log.yaml", "r") as yml:
+        log = yaml.load(yml)
+    dm = Domain3.load(logdir+"dm.pickle")
+    datotal, gmmpred, evaluation = setup_full(dm, logdir)
+    true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
+    true_yshake = dm.datotal[SHAKE][RFUNC]
+    est_ytip = np.max(evaluation[TIP], axis=0)
+    est_yshake = evaluation[SHAKE]
+        
+    trace = defaultdict(list)
+    for smsz_idx, smsz in enumerate(dm.smsz):
+        trace[0].append(go.Scatter(
+            x=dm.dtheta2, y=evaluation[TIP][:,smsz_idx],
+            mode='lines', 
+            name="evaluation",
+            line=dict(color="red"),
+            visible=False,
+        ))
+        trace[1].append(go.Scatter(
+            x=dm.dtheta2, y=evaluation["tip_Er"][:,smsz_idx],
+            mode='lines', 
+            name="E[r] - SD[r]",
+            line=dict(color="orange"),
+            visible=False,
+            error_y=dict(
+                type="data",
+                symmetric=False,
+                array=[0]*len(dm.dtheta2),
+                arrayminus=evaluation["tip_Sr"][:,smsz_idx],
+                color="orange",
+                thickness=1.5,
+                width=3,
+            )
+        ))
+        for i,addv in enumerate(range(0,1)):
+            if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
+                tmp_smsz = dm.smsz[smsz_idx+addv]
+                trace[2+i].append(go.Scatter(
+                    x=dm.dtheta2, y=[rfunc(_datotal) for _datotal in datotal[TIP][TRUE][:,smsz_idx+addv]],
+                    mode='markers', 
+                    name="Unobs {:.3f}".format(tmp_smsz),
+                    marker=dict(
+                                color= "blue" if addv == 0 else "grey", 
+                                size=8,
+                                symbol="x",
+                            ),
+                    visible=False,
+                ))
+            else:
+                trace[2+i].append(go.Scatter(x=[], y=[]))
+        for i,addv in enumerate(range(-4,5)):
+            if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
+                tmp_smsz = dm.smsz[smsz_idx+addv]
+                if tmp_smsz in dm.log["smsz"]:
+                    log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, (log_smsz, skill) in enumerate(zip(dm.log["smsz"], dm.log["skill"])) if (log_smsz == tmp_smsz) and (skill == TIP)]
+                    trace[3+i].append(go.Scatter(
+                            x=np.array(dm.log["est_optparam"])[log_smsz_idx_list], y=[rfunc(_datotal) for _datotal in np.array(dm.log["datotal_at_est_optparam"])[log_smsz_idx_list]],
+                            mode='markers', 
+                            name="Obs {:.3f}".format(tmp_smsz),
+                            marker=dict(
+                                color= "purple" if addv == 0 else "pink", 
+                                size=8,
+                            ),
+                            visible=False,
+                    ))
+                else:
+                    trace[3+i].append(go.Scatter(x=[], y=[]))
+            else:
+                trace[3+i].append(go.Scatter(x=[], y=[]))
+    for i in range(len(trace)):
+        trace[i][0].visible = True 
+    data = sum([trace[i] for i in range(len(trace))], [])   
+    steps = []
+    for smsz_idx, smsz in enumerate(dm.smsz):
+        for j in range(len(trace)):
+            trace["vis{}".format(j)] = [False]*len(dm.smsz)
+            trace["vis{}".format(j)][smsz_idx] = True
+        step = dict(
+            method="update",
+            args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+        )
+        steps.append(step)
+    sliders = [dict(
+        active=10,
+        currentvalue={"prefix": "size_srcmouth: "},
+        pad={"t": 50},
+        steps=steps,
+    )]
+    fig = go.Figure(data=data)
+    fig.update_layout(
+        sliders=sliders
+    )
+    fig['layout']['xaxis']['title'] = "dtheta2"
+    fig['layout']['yaxis']['title'] = "return"
+    fig['layout']['yaxis']['range'] = (-8,0.5)
+    for smsz_idx, smsz in enumerate(dm.smsz):
+        fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "evaluation_tip.html", auto_open=False)
+
+
+def datotal(name):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    logdir = basedir + "{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    check_or_create_dir(save_img_dir)
+    with open(logdir+"log.yaml", "r") as yml:
+        log = yaml.load(yml)
+    dm = Domain3.load(logdir+"dm.pickle")
+    datotal, gmmpred, evaluation = setup_full(dm, logdir)
+    
+    trace = defaultdict(list)
+    for smsz_idx, smsz in enumerate(dm.smsz):
+        trace[0].append(go.Scatter(
+            x=dm.dtheta2, y=datotal[TIP][NNMEAN][:,smsz_idx],
+            mode='lines', 
+            name="NNmean +/- (NNsd + GMM)",
+            line=dict(color="red", dash="dash"),
+            visible=False,
+            error_y=dict(
+                type="data",
+                symmetric=True,
+                array=datotal[TIP][NNSD][:,smsz_idx]+gmmpred[TIP][:,smsz_idx],
+                color="red",
+                thickness=1.5,
+                width=3,
+            )
+        ))
+        trace[1].append(go.Scatter(
+            x=dm.dtheta2, y=datotal[TIP][NNMEAN][:,smsz_idx],
+            mode='lines', 
+            name="NNmean +/- NNerr",
+            line=dict(color="orange", dash="dash"),
+            visible=False,
+            error_y=dict(
+                type="data",
+                symmetric=True,
+                array=datotal[TIP][NNERR][:,smsz_idx],
+                color="orange",
+                thickness=1.5,
+                width=3,
+            )
+        ))
+        # trace[2].append(go.Scatter(
+        #     x=dm.dtheta2, y=datotal[TIP][NNMEAN][:,smsz_idx],
+        #     mode='lines', 
+        #     name="NNmean +/- NNsd",
+        #     line=dict(color="orange", dash="dashdot"),
+        #     visible=False,
+        #     error_y=dict(
+        #         type="data",
+        #         symmetric=True,
+        #         array=datotal[TIP][NNSD][:,smsz_idx],
+        #         color="orange",
+        #         thickness=1.5,
+        #         width=3,
+        #     )
+        # ))
+        trace[2].append(go.Scatter(
+            x=dm.dtheta2, y=datotal[TIP][TRUE][:,smsz_idx],
+            mode='markers', 
+            name="Unobs",
+            marker=dict(color="blue"),
+            visible=False,
+        ))
+        for i,addv in enumerate(range(-5,6)):
+            if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
+                tmp_smsz = dm.smsz[smsz_idx+addv]
+                if tmp_smsz in dm.log["smsz"]:
+                    log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, (log_smsz, skill) in enumerate(zip(dm.log["smsz"], dm.log["skill"])) if (log_smsz == tmp_smsz) and (skill == TIP)]
+                    trace[3+i].append(go.Scatter(
+                        x=np.array(dm.log["est_optparam"])[log_smsz_idx_list], y=np.array(dm.log["datotal_at_est_optparam"])[log_smsz_idx_list],
+                        mode='markers', 
+                        name="Obs {:.3f}".format(tmp_smsz),
+                        marker=dict(
+                            color= "purple" if addv == 0 else "gray", 
+                            size=8,
+                        ),
+                        visible=False,
+                    ))
+                else:
+                    trace[3+i].append(go.Scatter(x=[], y=[]))
+            else:
+                trace[3+i].append(go.Scatter(x=[], y=[]))
+    for i in range(len(trace)):
+        trace[i][0].visible = True 
+    data = sum([trace[i] for i in range(len(trace))], [])   
+    steps = []
+    for smsz_idx, smsz in enumerate(dm.smsz):
+        for j in range(len(trace)):
+            trace["vis{}".format(j)] = [False]*len(dm.smsz)
+            trace["vis{}".format(j)][smsz_idx] = True
+        step = dict(
+                method="update",
+                args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                    {"title": "size_srcmouth: {:.4f}".format(smsz)}],
+        )
+        steps.append(step)
+    sliders = [dict(
+        active=10,
+        currentvalue={"prefix": "size_srcmouth: "},
+        pad={"t": 50},
+        steps=steps,
+    )]
+    fig = go.Figure(data=data)
+    fig.update_layout(
+        sliders=sliders
+    )
+    fig['layout']['xaxis']['title'] = "dtheta2"
+    fig['layout']['yaxis']['title'] = "datotal"
+    fig['layout']['yaxis']['range'] = (-0.05,0.6)
+    for smsz_idx, smsz in enumerate(dm.smsz):
+        fig['layout']['sliders'][0]['steps'][smsz_idx]['label'] = round(smsz,4)
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "datotal_tip.html", auto_open=False)
+ 
+    
+def curve(name):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    logdir = basedir + "{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    check_or_create_dir(save_img_dir)
+    with open(logdir+"log.yaml", "r") as yml:
+        log = yaml.load(yml)
+    dm = Domain3.load(logdir+"dm.pickle")
+    dm.gmms[TIP].train()
+    dm.gmms[SHAKE].train()
+    datotal, gmmpred, evaluation = setup_full(dm, logdir)
+    
+    diffcs = [
+        [0, "rgb(0, 0, 0)"],
+        [0.01, "rgb(255, 255, 200)"],
+        [1, "rgb(255, 0, 0)"],
+    ]
+    jpx_idx = [[idx_of_the_nearest(dm.dtheta2, x[0]), idx_of_the_nearest(dm.smsz, x[1])] for x in np.array(dm.gmms[TIP].jumppoints["X"])]
+    jpx_tr = [dm.datotal[TIP][RFUNC][idx[0],idx[1]] for idx in jpx_idx]
+    jpx_er = [evaluation[TIP][idx[0],idx[1]] for idx in jpx_idx]
+    jpx_gmm = [gmmpred[TIP][idx[0],idx[1]] for idx in jpx_idx]
+    jpy = [y[0] for y in dm.gmms[TIP].jumppoints["Y"]]
+    linex = [[x,x] for x in np.array(dm.gmms[TIP].jumppoints["X"])[:,1]]
+    liney = [[y,y] for y in np.array(dm.gmms[TIP].jumppoints["X"])[:,0]]
+    linetr = [[a,b] for a, b in zip(jpx_tr, jpx_er)]
+    linegmm =[[a,b] for a, b in zip(jpy, jpx_gmm)]
+        
+    fig = make_subplots(
+        rows=2, cols=2, 
+        subplot_titles=["評価関数", "飛び値予測", "評価関数 (z軸反転)", "飛び値予測"],
+        horizontal_spacing = 0.05,
+        specs = [[{"type": "surface"}, {"type": "surface"}],
+                 [{"type": "surface"}, {"type": "surface"}]],
+    )
+    fig.update_layout(
+        height=2200, width=2000, 
+        # margin=dict(t=100,b=150),
+        hoverdistance = 2,
+    )
+    for i, (z, z_name, cs, sz, lz) in enumerate([
+        (evaluation[TIP], "evaluation", (-3, 0, "Viridis"), jpx_tr, linetr), 
+        (gmmpred[TIP], "gmm", (0, 0.2, diffcs), jpy, linegmm)
+    ]):
+        for j in range(0,2):
+            fig.add_trace(go.Surface(
+                z = z, x = dm.smsz, y = dm.dtheta2,
+                cmin = cs[0], cmax = cs[1], colorscale = cs[2],
+                colorbar = dict(
+                    len = 0.15,
+                    x = 0.5*(i+1), y = 0.12*(5*j+1),
+                ),
+                showlegend = False,
+            ), row=j+1, col=i+1)
+            fig.add_trace(go.Scatter3d(
+                z = sz, x = np.array(dm.gmms[TIP].jumppoints["X"])[:,1], y = np.array(dm.gmms[TIP].jumppoints["X"])[:,0],
+                mode = "markers",
+                showlegend = False,
+                marker = dict(
+                    color = "red",
+                    size = 4,
+                )
+            ), j+1, i+1)
+            for tz,tx,ty in zip(lz, linex, liney):
+                fig.add_trace(go.Scatter3d(
+                    z = tz, x = tx, y = ty,
+                    mode = "lines",
+                    line = dict(
+                        color = "red",
+                    ),
+                    showlegend = False,
+                ), j+1, i+1)
+            fig['layout']['scene{}'.format(i+2*j+1)]['xaxis']['title'] = "size_srcmouth" 
+            fig['layout']['scene{}'.format(i+2*j+1)]['yaxis']['title'] = "dtheta2" 
+            fig['layout']['scene{}'.format(i+2*j+1)]['zaxis']['title'] = "evaluation" 
+            if j == 1 and i == 0:
+                fig['layout']['scene{}'.format(i+2*j+1)]['zaxis_autorange'] = 'reversed'
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "curve_tip.html", auto_open=False)
+    
+
+def jpx(name):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    logdir = basedir + "{}/".format(name)
+    dm = Domain3.load(logdir+"dm.pickle")
+    dm.gmms[TIP].train()
+    for x,y in zip(dm.gmms[TIP].jumppoints["X"], dm.gmms[TIP].jumppoints["Y"]):
+        print(x, y)
+        
+        
+def predict():
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    name = "GMMSig5LCB3/t4"
+    logdir = basedir + "{}/".format(name)
+    dm = Domain3.load(logdir+"dm.pickle")
+    x = [0.3545454545, 0.6484848484]
+    print(dm.nnmodels[TIP].model.Predict(x = x, with_var = True).Y)
+    print(math.sqrt(dm.nnmodels[TIP].model.Predict(x = x, with_var = True).Var))
+
+    
+def Run(ct, *args):
+    # test()
+    # shake_rfunc_plot()
+    pref = lambda ep: "GMM9Sig5LCB3/t{}/update1000".format(ep)
+    for ep in range(1,11):
+        check(pref(ep))
+    # evaluation("GMM9Sig5LCB3/t1")
+    # jpx("GMMSig5LCB3/t4")
+    # datotal("GMMSig5LCB3/t21")
+    # opttest_comp("Er", 100)
+    # curve("GMMSig5LCB3/t21")
+    # predict()
+    # gmm_test()
+    # gmm_test2()
