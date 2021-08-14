@@ -12,7 +12,7 @@ SHAKE = "shake"
 
 
 class GMM7(GMM5, object):
-    def train(self, recreate_jp = True): #引数でdiag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
+    def train(self, recreate_jp = True): #引数diag_sigmaの初期値をリストで設定してはいけない(ミュータブル)
         if recreate_jp:
             self.extract_jps()
         self.gc_concat = []
@@ -241,6 +241,65 @@ def gmm_test2():
     plotly.offline.plot(fig, filename = save_img_dir + "curve_tip.html", auto_open=False)
 
 
+def gmm_ep(name, ep):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    logdir = basedir + "{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/{}/".format(name, ep)
+    check_or_create_dir(save_img_dir)
+    with open(logdir+"log.yaml", "r") as yml:
+        log = yaml.load(yml)
+    dm = Domain3.load(logdir+"dm.pickle")
+    datotal = setup_datotal(dm, logdir)
+    gmm = dm.gmms[TIP]
+    gmm.jumppoints = log["est_gmm_JP_tip"][ep]
+    gmm.train(recreate_jp = False)
+    X = np.array([[dtheta2, smsz] for dtheta2 in dm.dtheta2 for smsz in dm.smsz ]).astype(np.float32)
+    gmmpred = gmm.predict(X).reshape(100,100)
+    
+    diffcs = [
+        [0, "rgb(0, 0, 0)"],
+        [0.01, "rgb(255, 255, 200)"],
+        [1, "rgb(255, 0, 0)"],
+    ]
+    jpx_idx = [[idx_of_the_nearest(dm.dtheta2, x[0]), idx_of_the_nearest(dm.smsz, x[1])] for x in np.array(gmm.jumppoints["X"])]
+    jpx_tr = [dm.datotal[TIP][RFUNC][idx[0],idx[1]] for idx in jpx_idx]
+    jpx_gmm = [gmmpred[idx[0],idx[1]] for idx in jpx_idx]
+    jpy = [y[0] for y in gmm.jumppoints["Y"]]
+    linex = [[x,x] for x in np.array(gmm.jumppoints["X"])[:,1]]
+    liney = [[y,y] for y in np.array(gmm.jumppoints["X"])[:,0]]
+    linegmm =[[a,b] for a, b in zip(jpy, jpx_gmm)]
+        
+    fig = go.Figure()
+    fig.add_trace(go.Surface(
+        z = gmmpred, x = dm.smsz, y = dm.dtheta2,
+        cmin = 0, cmax = 0.2, colorscale = diffcs,
+        showlegend = False,
+    ))
+    fig.add_trace(go.Scatter3d(
+        z = jpy, x = np.array(gmm.jumppoints["X"])[:,1], y = np.array(gmm.jumppoints["X"])[:,0],
+        mode = "markers",
+        showlegend = False,
+        marker = dict(
+            color = "red",
+            size = 4,
+        )
+    ))
+    for tz,tx,ty in zip(linegmm, linex, liney):
+        fig.add_trace(go.Scatter3d(
+            z = tz, x = tx, y = ty,
+            mode = "lines",
+            line = dict(
+                color = "red",
+            ),
+            showlegend = False,
+        ))
+    fig['layout']['scene']['xaxis']['title'] = "size_srcmouth" 
+    fig['layout']['scene']['yaxis']['title'] = "dtheta2" 
+    fig['layout']['scene']['zaxis']['title'] = "gmm predict" 
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "gmm_tip.html", auto_open=False)
+
+
 class Domain3:
     def __init__(self, logdir, sd_gain = 1.0, LCB_ratio = 0.0):
         self.smsz = np.linspace(0.3,0.8,100)
@@ -325,7 +384,7 @@ class Domain3:
         evalmatrix = np.array(est_nn_Er) - self.LCB_ratio*np.array(est_nn_Sr)
         idx_est_optparam = np.argmax(evalmatrix)
         est_optparam = self.dtheta2[idx_est_optparam]
-        opteval_TIP = est_nn_Er[idx_est_optparam]
+        opteval_TIP = evalmatrix[idx_est_optparam]
         
         ###########################
         ###Shake用最適化
@@ -439,6 +498,26 @@ def execute(logdir, sd_gain, LCB_ratio, gmm_lams, num_ep, num_rand_sample, num_l
             dm.save()
             
             
+def execute_checkpoint(base_logdir, sd_gain, LCB_ratio, gmm_lams, num_ep, num_rand_sample, num_learn_step, num_checkpoints):
+    ep_checkpoints = [num_ep/num_checkpoints*i for i in range(1,num_checkpoints+1)]
+    os.mkdir(base_logdir)
+    for ep_checkpoint in ep_checkpoints:
+        new_logdir = base_logdir + "ch{}/".format(ep_checkpoint)
+        prev_logdir = base_logdir + "ch{}/".format(ep_checkpoint - num_ep/num_checkpoints)
+        os.mkdir(new_logdir)
+        if os.path.exists(prev_logdir+"dm.pickle"):
+            shutil.copytree(prev_logdir+"models", new_logdir+"models")
+            dm = Domain3.load(prev_logdir+"dm.pickle")
+            dm.logdir = new_logdir
+        else:
+            dm = Domain3(new_logdir, sd_gain, LCB_ratio)
+        dm.setup(gmm_lams)
+        
+        while len(dm.log["ep"]) < ep_checkpoint:
+            dm.execute(num_rand_sample = num_rand_sample, num_learn_step = num_learn_step)
+        dm.save()
+            
+            
 def execute_update(ref_logdir, new_logdir, gmm_lams, num_ep, num_rand_sample, num_learn_step, num_save_ep):
     os.mkdir(new_logdir)
     shutil.copytree(ref_logdir+"models", new_logdir+"models")
@@ -520,7 +599,79 @@ def opttest_comp(name, n):
     fig['layout']['yaxis']['range'] = (-5,0.1)
     fig['layout']['xaxis']['title'] = "size_srcmouth"
     fig['layout']['yaxis']['title'] = "reward"
-    plotly.offline.plot(fig, filename = save_img_dir + "opttest_comp.html", auto_open=False)   
+    plotly.offline.plot(fig, filename = save_img_dir + "opttest_comp.html", auto_open=False)
+    
+    
+def comp_checkpoint():
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    name = "GMM9Sig5LCB3/checkpoints/t2"
+    ep_checkpoints = [1000/50*i for i in range(1,51)]
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    check_or_create_dir(save_img_dir)
+    
+    trace = defaultdict(list)
+    for ep in ep_checkpoints:
+        print(ep)
+        logdir = basedir + "{}/ch{}/".format(name, ep)
+        with open(logdir+"log.yaml", "r") as yml:
+            log = yaml.load(yml)
+        dm = Domain3.load(logdir+"dm.pickle")
+        datotal, gmmpred, evaluation = setup_full(dm, logdir, recreate=False)
+        true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
+        true_yshake = dm.datotal[SHAKE][RFUNC]
+        est_ytip = np.max(evaluation[TIP], axis=0)
+        est_yshake = evaluation[SHAKE]
+        
+        trace[0].append(go.Scatter(
+            x = dm.smsz, y = true_ytip,
+            mode = "markers",
+            name = "reward (tip) at est optparam"
+        ))
+        trace[1].append(go.Scatter(
+            x = dm.smsz, y = true_yshake,
+            mode = "markers",
+            name = "reward (shake) at est optparam"
+        ))
+        trace[2].append(go.Scatter(
+            x = dm.smsz, y = est_ytip,
+            mode = "markers",
+            name = "evaluatioin (tip) at est optparam"
+        ))
+        trace[3].append(go.Scatter(
+            x = dm.smsz, y = est_yshake,
+            mode = "markers",
+            name = "evaluation (shake) at est optparam"
+        ))
+    for i in range(len(trace)):
+        trace[i][0].visible = True 
+    data = sum([trace[i] for i in range(len(trace))], [])   
+    steps = []
+    for ep_idx, ep in enumerate(ep_checkpoints):
+        for j in range(len(trace)):
+            trace["vis{}".format(j)] = [False]*len(ep_checkpoints)
+            trace["vis{}".format(j)][ep_idx] = True
+        step = dict(
+            method="update",
+            args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                {"title": "episode: {:.4f}".format(ep)}],
+        )
+        steps.append(step)
+    sliders = [dict(
+        active=10,
+        currentvalue={"prefix": "episode: "},
+        pad={"t": 50},
+        steps=steps,
+    )]
+    fig = go.Figure(data=data)
+    fig.update_layout(
+        sliders=sliders
+    )
+    fig['layout']['xaxis']['title'] = "size_srcmouth"
+    fig['layout']['yaxis']['title'] = "reward / evaluation"
+    fig['layout']['yaxis']['range'] = (-8,0.5)
+    for ep_idx, ep in enumerate(ep_checkpoints):
+        fig['layout']['sliders'][0]['steps'][ep_idx]['label'] = ep
+    plotly.offline.plot(fig, filename = save_img_dir + "comp.html", auto_open=False)
 
 
 def check(name):
@@ -780,6 +931,115 @@ def evaluation(name):
     plotly.offline.plot(fig, filename = save_img_dir + "evaluation_tip.html", auto_open=False)
 
 
+def evaluation_checkpoint(name, smsz, ep_checkpoints):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/evaluation_tip/".format(name)
+    check_or_create_dir(save_img_dir)
+    smsz_idx = idx_of_the_nearest(np.linspace(0.3,0.8,100), smsz)
+        
+    trace = defaultdict(list)
+    for ep_idx, ep in enumerate(ep_checkpoints):
+        logdir = basedir + "{}/ch{}/".format(name, ep)
+        with open(logdir+"log.yaml", "r") as yml:
+            log = yaml.load(yml)
+        dm = Domain3.load(logdir+"dm.pickle")
+        datotal, gmmpred, evaluation = setup_full(dm, logdir, recreate=False)
+        true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
+        true_yshake = dm.datotal[SHAKE][RFUNC]
+        est_ytip = np.max(evaluation[TIP], axis=0)
+        est_yshake = evaluation[SHAKE]
+        
+        trace[0].append(go.Scatter(
+            x=dm.dtheta2, y=evaluation[TIP][:,smsz_idx],
+            mode='lines', 
+            name="evaluation",
+            line=dict(color="red"),
+            visible=False,
+        ))
+        trace[1].append(go.Scatter(
+            x=dm.dtheta2, y=evaluation["tip_Er"][:,smsz_idx],
+            mode='lines', 
+            name="E[r] - SD[r]",
+            line=dict(color="orange"),
+            visible=False,
+            error_y=dict(
+                type="data",
+                symmetric=False,
+                array=[0]*len(dm.dtheta2),
+                arrayminus=evaluation["tip_Sr"][:,smsz_idx],
+                color="orange",
+                thickness=1.5,
+                width=3,
+            )
+        ))
+        for i,addv in enumerate(range(0,1)):
+            if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
+                tmp_smsz = dm.smsz[smsz_idx+addv]
+                trace[2+i].append(go.Scatter(
+                    x=dm.dtheta2, y=[rfunc(_datotal) for _datotal in datotal[TIP][TRUE][:,smsz_idx+addv]],
+                    mode='markers', 
+                    name="Unobs {:.3f}".format(tmp_smsz),
+                    marker=dict(
+                                color= "pink" if addv == 0 else "grey", 
+                                size=8,
+                                symbol="x",
+                            ),
+                    visible=False,
+                ))
+            else:
+                trace[2+i].append(go.Scatter(x=[], y=[]))
+        for i,addv in enumerate(range(-4,5)):
+            if 0<=(smsz_idx+addv)<=(len(dm.smsz)-1):
+                tmp_smsz = dm.smsz[smsz_idx+addv]
+                if tmp_smsz in dm.log["smsz"]:
+                    log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, (log_smsz, skill) in enumerate(zip(dm.log["smsz"], dm.log["skill"])) if (log_smsz == tmp_smsz) and (skill == TIP)]
+                    trace[3+i].append(go.Scatter(
+                            x=np.array(dm.log["est_optparam"])[log_smsz_idx_list], y=[rfunc(_datotal) for _datotal in np.array(dm.log["datotal_at_est_optparam"])[log_smsz_idx_list]],
+                            mode='markers', 
+                            name="Obs {:.3f}".format(tmp_smsz),
+                            marker=dict(
+                                color= "purple" if addv == 0 else "blue", 
+                                size=12 if addv == 0 else 8,
+                            ),
+                            visible=False,
+                    ))
+                else:
+                    trace[3+i].append(go.Scatter(x=[], y=[]))
+            else:
+                trace[3+i].append(go.Scatter(x=[], y=[]))
+    for i in range(len(trace)):
+        trace[i][0].visible = True 
+    data = sum([trace[i] for i in range(len(trace))], [])   
+    steps = []
+    for ep_idx, ep in enumerate(ep_checkpoints):
+        for j in range(len(trace)):
+            trace["vis{}".format(j)] = [False]*len(ep_checkpoints)
+            trace["vis{}".format(j)][ep_idx] = True
+        step = dict(
+            method="update",
+            args=[{"visible": sum([trace["vis{}".format(k)] for k in range(len(trace))],[])},
+                {"title": "episode: {}".format(ep)}],
+        )
+        steps.append(step)
+    sliders = [dict(
+        active=10,
+        currentvalue={"prefix": "episode: "},
+        pad={"t": 50},
+        steps=steps,
+    )]
+    fig = go.Figure(data=data)
+    fig.update_layout(
+        sliders=sliders
+    )
+    fig['layout']['xaxis']['title'] = "dtheta2"
+    fig['layout']['yaxis']['title'] = "return"
+    fig['layout']['yaxis']['range'] = (-5,0.5)
+    for ep_idx, ep in enumerate(ep_checkpoints):
+        fig['layout']['sliders'][0]['steps'][ep_idx]['label'] = ep
+    check_or_create_dir(save_img_dir)
+    plotly.offline.plot(fig, filename = save_img_dir + "{}.html".format(str(smsz).split('.')[1]), auto_open=False)
+
+
 def datotal(name):
     basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
     logdir = basedir + "{}/".format(name)
@@ -998,14 +1258,18 @@ def predict():
 def Run(ct, *args):
     # test()
     # shake_rfunc_plot()
-    pref = lambda ep: "GMM9Sig5LCB3/t{}/update1000".format(ep)
-    for ep in range(1,11):
-        check(pref(ep))
+    # pref = lambda ep: "GMM9Sig5LCB3/checkpoints/t{}/ch1000".format(ep)
+    # for ep in range(2,3):
+    #     check(pref(ep))
     # evaluation("GMM9Sig5LCB3/t1")
     # jpx("GMMSig5LCB3/t4")
     # datotal("GMMSig5LCB3/t21")
-    # opttest_comp("Er", 100)
+    # opttest_comp("GMM9Sig5LCB3", 100)
     # curve("GMMSig5LCB3/t21")
     # predict()
     # gmm_test()
     # gmm_test2()
+    # gmm_ep("GMM9Sig5LCB3/t1/update1000", 762)
+    # comp_checkpoint()
+    evaluation_checkpoint("GMM9Sig5LCB3/checkpoints/t2", 0.64343, [700, 710, 720, 730, 740, 750, 760, 770, 780, 790])
+    
