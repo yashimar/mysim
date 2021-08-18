@@ -133,7 +133,7 @@ def Run(ct, *args):
         'p_pour_trg': ([SSA(Vec([0.3,0.5]))]*nx_episode*ny_episode)[i],
         'dtheta1': ([SSA([0.014])]*nx_episode*ny_episode)[i],
         # 'dtheta2': (sum([[SSA([y])]*nx_episode for y in np.linspace(0.002*AMP_DTHETA2, 0.02*AMP_DTHETA2, ny_episode)[s_idx:e_idx]], []))[i],
-        'shake_spd': ([SSA([0.8])]*nx_episode*ny_episode)[i],
+        'shake_spd': ([SSA([0.6])]*nx_episode*ny_episode)[i],
         'shake_range': ([SSA([0.08*AMP_SHAKE_RANGE])]*nx_episode*ny_episode)[i],
         'shake_angle': ([SSA([0.0])]*nx_episode*ny_episode)[i],
     }
@@ -143,7 +143,7 @@ def Run(ct, *args):
     # Specify save directory
     ############################################################################
     # suff = "{}/{}_{}".format("shake_ketchup_smsz", s_idx, e_idx)
-    suff = "shake_ketchup_smsz"
+    suff = "shake_ketchup_smsz/spd06"
     l.logdir_base = ROOT_PATH + "curriculum5/c1/trues_sampling/"+suff
     
     ##########################################################
