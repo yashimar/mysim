@@ -7,17 +7,17 @@ def Help():
 
 def Run(ct,*args):
     base_logdir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/"
-    name = "TMMSig8LCB4/checkpoints/t{}".format(args[0])
+    name = "TMMSig8LCB4_without5963/checkpoints/t{}".format(args[0])
     p = 8
-    options = {"tau": 0.9, "lam": 0}
+    options = {"tau": 0.9, "lam": 1e-6}
     
     execute_checkpoint(**dict(
         num_ep = 500,
         num_rand_sample = 10,
         num_learn_step = 1,
-        num_checkpoints= 1,
+        num_checkpoints= 20,
         
-        without_smsz=None,
+        without_smsz = (0.59, 0.63),
         
         sd_gain = 1.0,
         LCB_ratio = 4.,

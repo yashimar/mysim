@@ -7,7 +7,7 @@ def Help():
 
 def Run(ct, *args):
     pass
-    for i in range(1,50):
+    for i in range(83,100):
         print(i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy.Er', i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy.GMM4Sig003_gnnsd1_ggmm1', i)
@@ -37,7 +37,15 @@ def Run(ct, *args):
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.ErLCB4_checkpoint',2*i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.ErLCB4_checkpoint',i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig8LCB4_checkpoint',2*i-1)
-        ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig8LCB4_checkpoint',2*i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig8LCB4_checkpoint',2*i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig8LCB4_without5963_checkpoint',i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.TMMSig8LCB4_without5963_checkpoint',i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.TMMSig8LCB4_checkpoint',2*i-1)
+        ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.TMMSig8LCB4_checkpoint',2*i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig5LCB4_checkpoint',2*i-1)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig5LCB4_checkpoint',2*i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig8LCB4_sort',i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy2.GMM9Sig8LCB4_chop_sort',i)
     # for i in range(11,40):
     #     print(i)
     #     # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy.Er', i)
