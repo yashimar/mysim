@@ -30,16 +30,17 @@ def Run(ct,*args):
     dim_in = 2
     dim_out = 1
     options={
-      'base_dir': modeldir+'p1_model/Fdapour_gentle'+"/",
-      'n_units': [dim_in] + [128] + [dim_out],
+      'base_dir': modeldir+'p1_model/Ftest'+"/",
+      'n_units': [dim_in] + [128, 128, 128] + [dim_out],
       'name': 'FRwd',
       'loss_stddev_stop': 1.0e-6,
       'loss_stddev_init': 2000.0,
       'num_max_update': 10000,
-      "batchsize": 128,
-      'num_check_stop': 2000,
+      "batchsize": 512,
+      'num_check_stop': 100,
+      # 'loss_stddev_stop': 1.0e-7,
       }
-    prefix= modeldir+'p1_model/Fdapour_gentle'
+    prefix= modeldir+'p1_model/Ftest'
     FRwd= TNNRegression()
     FRwd.Load(data={'options':options})
     if os.path.exists(prefix+'.yaml'):
@@ -48,19 +49,21 @@ def Run(ct,*args):
     FRwd.Init()
     Print("len(DataX): ", len(FRwd.DataX))
 
-    for i in range(2000):
-      ex = [0.3, Rand(0.25,0.35)] #Should not contain sdv_x.
+    X = np.linspace(0.28,0.32, 3000)
+    # X = np.linspace(-0.5,1.0, 1000)
+    for x in X:
+      # ex = [0.3, Rand(0.25,0.35)] #Should not contain sdv_x.
       # tmp = Rand(0.299,0.301)
-      # ex = [tmp, tmp+Rand(-0.02,0.02)]
-      R = [-100.0*max(0,ex[0]-ex[1])**2 -20*max(0,ex[1]-ex[0])**2]
-      FRwd.Update(ex, R, not_learn=True)
+      ex = [0.3, x]
+      r = [-100.0*max(0,ex[0]-ex[1])**2 -20*max(0,ex[1]-ex[0])**2]
+      FRwd.Update(ex, r, not_learn=True)
     FRwd.UpdateBatch()
 
     SaveYAML(FRwd.Save(prefix+"/"), prefix+'.yaml')
 
   def Predict():
     FRwd= TNNRegression()
-    prefix= modeldir+'p1_model/Fdapour_gentle'
+    prefix= modeldir+'p1_model/Ftest'
     FRwd.Load(LoadYAML(prefix+'.yaml'), prefix+"/")
     FRwd.Init()
 
@@ -87,6 +90,10 @@ def Run(ct,*args):
     plt.xlabel("E[x]")
     plt.ylabel("Pred E[R(E[x])]")
     plt.show()
+    p = FRwd.Predict(x=[0.3,0.3307], x_var=[0,0.0763**2], with_var=True)
+    print(p.Y.item(), np.sqrt(p.Var.item()))
+    p = FRwd.Predict(x=[0.3,0.4868], x_var=[0,0.0287**2], with_var=True)
+    print(p.Y.item(), np.sqrt(p.Var.item()))
 
 
   LearnReward()

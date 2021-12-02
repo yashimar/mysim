@@ -127,7 +127,7 @@ def Run(ct, *args):
     ##########################################################
     ### Manual skill parameter and setup parameter
     ##########################################################
-    s_idx, e_idx = int(5*5.8), int(5*6)
+    s_idx, e_idx = int(5*2), int(5*3)
     l.manual_skillparam = lambda i: {
         'gh_ratio': ([SSA([0.5])]*nx_episode*ny_episode)[i],
         'p_pour_trg': ([SSA(Vec([0.3,0.5]))]*nx_episode*ny_episode)[i],
@@ -139,7 +139,7 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    suff = "{}/{}_{}".format("tip_nobounce_smsz_dthtea2", s_idx, e_idx)
+    suff = "{}/{}_{}".format("tip_nobounce_smsz_dtheta2", s_idx, e_idx)
     l.logdir_base = ROOT_PATH + "curriculum5/c1/trues_sampling/"+suff
     
     ##########################################################

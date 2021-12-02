@@ -133,7 +133,7 @@ def Run(ct, *args):
         'p_pour_trg': ([SSA(Vec([0.3,0.5]))]*nx_episode*ny_episode)[i],
         'dtheta1': ([SSA([0.014])]*nx_episode*ny_episode)[i],
         # 'dtheta2': (sum([[SSA([y])]*nx_episode for y in np.linspace(0.002*AMP_DTHETA2, 0.02*AMP_DTHETA2, ny_episode)[s_idx:e_idx]], []))[i],
-        'shake_spd': ([SSA([0.6])]*nx_episode*ny_episode)[i],
+        'shake_spd': ([SSA([0.8])]*nx_episode*ny_episode)[i],
         'shake_range': ([SSA([0.08*AMP_SHAKE_RANGE])]*nx_episode*ny_episode)[i],
         'shake_angle': ([SSA([0.0])]*nx_episode*ny_episode)[i],
     }
@@ -142,8 +142,9 @@ def Run(ct, *args):
     ############################################################################
     # Specify save directory
     ############################################################################
-    # suff = "{}/{}_{}".format("shake_ketchup_smsz", s_idx, e_idx)
-    suff = "shake_ketchup_smsz/spd06"
+    # suff = "{}/{}_{}".format("shake_nobounce_smsz", s_idx, e_idx)
+    # suff = "shake_nobounce_smsz/spd06"
+    suff = "shake_nobounce_smsz/smsz0308"
     l.logdir_base = ROOT_PATH + "curriculum5/c1/trues_sampling/"+suff
     
     ##########################################################
@@ -241,8 +242,8 @@ def Run(ct, *args):
     ### Group_id: 0
     ###########################
     ### group_task_id: 0
-    l.tasks.append(Task(name="mtr=ketchup, smsz=(0.03,0.08), Shake", group_id=0, group_task_id=0))
-    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "ordering", ("ketchup",), smsz_ordering)
+    l.tasks.append(Task(name="mtr=nobounce, smsz=(0.03,0.08), Shake", group_id=0, group_task_id=0))
+    l.tasks[-1].config_callback = lambda: custom_config_callback("static",  "ordering", ("nobounce",), smsz_ordering)
     l.tasks[-1].border_return = -100.
     l.tasks[-1].pour_skill = "shake"
     # l.tasks[-1].n_least_episode = nx_episode*(e_idx-s_idx)

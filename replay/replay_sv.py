@@ -3,6 +3,11 @@ from core_tool import *
 SmartImportReload('tsim.dpl_cmn')
 from tsim.dpl_cmn import *
 from matplotlib import pyplot as plt
+
+
+AMP_DTHETA2 = 50.
+AMP_SHAKE_RANGE = 10.
+
 def Help():
   return '''Test of using actions for ODE grasping and pouring simulation (ver.2.1).
     Replaying an episode to check the simulation consistency.
@@ -24,7 +29,9 @@ def LoadActions(database, i_episode=0, i_node=0):
     'gh_ratio','p_pour_trg0','p_pour_trg',
     'dtheta1',
     # 'dtheta2',
-    'shake_spd','shake_range','shake_angle','skill',)
+    'shake_spd','shake_range','shake_angle',
+    'skill',
+  )
   # act_keys= (
   #   'gh_ratio','p_pour_trg0','p_pour_trg',
   #   'dtheta1','dtheta2')
@@ -36,8 +43,8 @@ def LoadActions(database, i_episode=0, i_node=0):
 
 def Run(ct,*args):
   target_dir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/logs/" \
-              + "curriculum5/c1/trues_sampling/shake_ketchup_smszg0"+"/"
-  i_episode_list = [87]
+              + "curriculum5/c1/trues_sampling/shake_ketchup_smsz/g0"+"/"
+  i_episode_list = [80]
   i_node = 0
   n_roop = 1
 
@@ -60,11 +67,11 @@ def Run(ct,*args):
       l.config_callback= TestConfigCallback
       # ct.Run('mysim.setup.setup2', l)
 
-      ct.Run('mysim.curriculum.tasks_domain.detach_datotal.scaling.setup', l)
+      ct.Run('mysim.curriculum.tasks_domain.detach_amp.c1.setup', l)
 
       sim= ct.sim
       l= ct.sim_local
-      l.spilled_stop = 10
+      # l.spilled_stop = 10
 
       obs_keys0= ('ps_rcv','p_pour','p_pour_z','lp_pour','a_trg','size_srcmouth','material2')
       obs_keys_after_grab= obs_keys0+('gh_abs',)
@@ -92,10 +99,11 @@ def Run(ct,*args):
         # XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
         if l.opt_conf['actions']['skill']==0:
-          ct.Run('mysim.act.tip', l.opt_conf['actions'])
+          actions = {'dtheta1': l.opt_conf['actions']["dtheta1"], 'dtheta2': l.opt_conf['actions']["dtheta2"]/AMP_DTHETA2}
+          ct.Run('mysim.act.tip', actions)
         else:
           l.opt_conf['actions']
-          actions = {"dtheta1": l.opt_conf['actions']["dtheta1"], "shake_spd": l.opt_conf['actions']["shake_spd"], "shake_axis2": ToList([l.opt_conf['actions']['shake_range'], l.opt_conf['actions']['shake_angle']])}
+          actions = {"dtheta1": l.opt_conf['actions']["dtheta1"], "shake_spd": l.opt_conf['actions']["shake_spd"], "shake_axis2": ToList([l.opt_conf['actions']['shake_range']/AMP_SHAKE_RANGE, l.opt_conf['actions']['shake_angle']])}
           ct.Run('mysim.act.shake', actions)
         XS.append(ObserveXSSA(l,XS[-1],obs_keys_after_flow))
 
