@@ -10,6 +10,7 @@ from math import pi, sqrt, gamma
 from statsmodels.regression.quantile_regression import QuantReg
 from scipy.stats import gaussian_kde
 from scipy.spatial import distance
+from scipy import interpolate
 
 
 TIP = "tip"
@@ -2450,9 +2451,9 @@ def opttest_baseline():
     plotly.offline.plot(fig, filename = save_img_dir + "opttest_comp.html", auto_open=False)
 
 
-def opttest_comp(name, n, ch = None):
-    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+def opttest_comp(name, n, ch = None, ver = 2):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy{}/".format(ver)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
     check_or_create_dir(save_img_dir)
     
     y_concat = []
@@ -3551,11 +3552,11 @@ def comp_checkpoint(name, ep_checkpoints, no_ch):
     plotly.offline.plot(fig, filename = save_img_dir + "comp.html", auto_open=False)
 
 
-def check(name):
-    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+def check(name, ver = 2):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy{}/".format(ver)
     # name = "GMMSig5LCB3/t1"
     logdir = basedir + "{}/".format(name)
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
     check_or_create_dir(save_img_dir)
     with open(logdir+"log.yaml", "r") as yml:
         log = yaml.load(yml)
@@ -3565,6 +3566,17 @@ def check(name):
     true_yshake = dm.datotal[SHAKE][RFUNC]
     est_ytip = np.max(evaluation[TIP], axis=0)
     est_yshake = evaluation[SHAKE]
+    
+    eval_tip = evaluation[TIP]
+    eval_tip = np.maximum(eval_tip, -3)
+    eval_tip_edge = detect_tip_edge(eval_tip)
+    eval_tip_edge = (eval_tip_edge - eval_tip_edge.min()) / (eval_tip_edge.max() - eval_tip_edge.min())
+    
+    true_tip_r = dm.datotal[TIP][RFUNC]
+    true_tip_r = np.maximum(true_tip_r, -3)
+    true_tip_r_edge = detect_tip_edge(true_tip_r)
+    true_tip_r_edge = (true_tip_r_edge - true_tip_r_edge.min()) / (true_tip_r_edge.max() - true_tip_r_edge.min())
+    
     
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -3611,8 +3623,8 @@ def check(name):
         marker = dict(size = 16, color = color),
     ))
     fig.add_trace(go.Scatter(
-        # x = dm.smsz, y = est_ytip,
-        x = dm.smsz[:79].tolist()+[0.7], y = est_ytip[:79].tolist()+[-4],
+        x = dm.smsz, y = est_ytip,
+        # x = dm.smsz[:79].tolist()+[0.7], y = est_ytip[:79].tolist()+[-4],
         mode = "lines",
         name = "evaluatioin (tip) at est optparam",
         showlegend = False,
@@ -3646,13 +3658,13 @@ def check(name):
     #     textfont = dict(color = "black", size = 30),
     #     showlegend = False,
     # ))
-    fig.add_shape(type="line",
-        x0=0.618, y0=-4, x1=0.618, y1=0.2,
-        line=dict(
-            color="black",
-            # width=3,
-            dash="dash",
-    ))
+    # fig.add_shape(type="line",
+    #     x0=0.618, y0=-4, x1=0.618, y1=0.2,
+    #     line=dict(
+    #         color="black",
+    #         # width=3,
+    #         dash="dash",
+    # ))
     # fig.add_trace(go.Scatter(
     #     x = [0.595], y = [-3],
     #     mode = "text",
@@ -3683,23 +3695,26 @@ def check(name):
     rc = dm.datotal[TIP][RFUNC].reshape(100*100)
     idx = [i for i,r in enumerate(rc) if r<-0.7]
     rc = rc[idx]
-    smsz = np.array([smsz for smsz in dm.smsz]*100)[idx]
-    dtheta2 = np.array(sum([[dtheta2]*100 for dtheta2 in dm.dtheta2],[]))[idx]
+    # smsz = np.array([smsz for smsz in dm.smsz]*100)[idx]
+    # dtheta2 = np.array(sum([[dtheta2]*100 for dtheta2 in dm.dtheta2],[]))[idx]
+    # smsz = np.array([smsz for smsz in dm.smsz]*100)
+    # dtheta2 = np.array(sum([[dtheta2]*100 for dtheta2 in dm.dtheta2],[]))
     
-    n_row = 3
+    n_row = 4
     clength = 0.2
     fig = make_subplots(
         rows=n_row, cols=2, 
         subplot_titles=[
             "datotal 生データ (100×100)", "報酬 生データ (100×100)", 
-            "飛び値モデル (真値報酬-0.7以下の地点プロット)", "評価関数 (真値報酬-0.7以下の地点プロット)",
-                        "飛び値モデル", "評価関数", 
+                        "平均モデル", "誤差モデル", 
+                        '飛び値モデル', '予測報酬',
+                         '予測報酬 エッジ', '予測報酬 エッジ (各列MAX値)'
                         ],
         horizontal_spacing = 0.2,
         vertical_spacing = 0.05,
     )
     fig.update_layout(
-        height=600*n_row, width=2000, 
+        height=600*n_row, width=1800, 
         margin=dict(t=100,b=150),
         hoverdistance = 2,
     )
@@ -3722,12 +3737,13 @@ def check(name):
     ]
     z_rc_pos_scale_cs_scatterz_scatterscale_set = (
         (datotal[TIP][TRUE], 1, 1, 0.46, 0.94, 0., 0.55, datotalcs, None, None, None), (dm.datotal[TIP][RFUNC], 1, 2, 0.46, 0.94, -3, 0., None, None, None, None),
+        (datotal[TIP][NNMEAN], 2, 1, 0.46, 0.28, 0., 0.55, datotalcs, None, None, None), (datotal[TIP][NNSD], 2, 2, 0.46, 0.94, 0, 0.2, None, None, None, None),
         # (gmmpred[TIP], 2, 1, 0.46, 0.28, 0., 0.2, diffcs, "badr", -3, 0), (evaluation[TIP], 2, 2, 0.46, 0.94, -3, 0., None, "badr", -3, 0),
-        (gmmpred[TIP], 2, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (evaluation[TIP], 2, 2, 0.46, 0.94, -3, 0., None, "badr", None, None),
         (gmmpred[TIP], 3, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (evaluation[TIP], 3, 2, 0.46, 0.94, -3, 0., None, None, None, None),
+        (eval_tip_edge, 4, 1, '', '', 0, 1, None, None, None, None), (np.max(eval_tip_edge, axis=0), 4, 2, '', '', 0, 1, None, None, None, None),
     )
     posx_set = [0.4, 1.0075]
-    posy_set = (lambda x: [0.1 + 0.73/(x-1)*i for i in range(x)][::-1])(n_row)
+    posy_set = (lambda x: [0.1 + 0.8/(x-1)*i for i in range(x)][::-1])(n_row)
     sc_dtheta, sc_smsz = [], []
     d = datotal[TIP][TRUE]
     for i in range(1,100):
@@ -3736,9 +3752,12 @@ def check(name):
             if np.abs(a-d[i,j])>0.2:
                 sc_dtheta.append(np.linspace(0.1,1.0,100)[::-1][i])
                 sc_smsz.append(np.linspace(0.3,0.8,100)[j])
-                
+    
+    tip_idx = [i for i,skill in enumerate(log['skill']) if skill == 'tip']
+    scatter_dtheta2 = np.array(log['est_optparam'])[tip_idx]
+    scatter_smsz = np.array(log['smsz'])[tip_idx]
     for z, row, col, posx, posy, zmin, zmax, cs, scz, sczmin, sczmax in z_rc_pos_scale_cs_scatterz_scatterscale_set:
-        if np.sum(z) != 0:
+        if len(z.shape) == 2:
             fig.add_trace(go.Heatmap(
                 z = z, x = dm.smsz, y = dm.dtheta2,
                 colorscale = cs if cs != None else "Viridis",
@@ -3752,18 +3771,42 @@ def check(name):
                 ),
             ), row, col)
             # if scz != "badr": continue
+            # fig.add_trace(go.Scatter(
+            #     y = sc_dtheta, x = sc_smsz,
+            #     mode='markers',
+            #     showlegend = False,
+            #     marker = dict(
+            #         size = 12,
+            #         color = "rgba(0,0,0,0)",
+            #         line = dict(
+            #             color = "black",
+            #             width = 1.5,
+            #         )
+            #     ),
+            # ), row, col)
             fig.add_trace(go.Scatter(
-                y = sc_dtheta, x = sc_smsz,
+                y = scatter_dtheta2, x = scatter_smsz,
                 mode='markers',
                 showlegend = False,
                 marker = dict(
-                    size = 12,
+                    size = 6,
                     color = "rgba(0,0,0,0)",
                     line = dict(
                         color = "black",
                         width = 1.5,
                     )
                 ),
+            ), row, col)
+        elif len(z.shape) == 1:
+            fig.add_trace(go.Scatter(
+                x = dm.smsz, y=interpolate.interp1d(dm.smsz, z, kind='cubic')(dm.smsz),
+                mode='lines',
+                showlegend = False,
+            ), row, col)
+            fig.add_trace(go.Scatter(
+                x = dm.smsz, y=z.tolist(),
+                mode='markers',
+                showlegend = False,
             ), row, col)
         else:
             if scz == None: continue
@@ -3795,10 +3838,10 @@ def check(name):
     for i in range(1,len(z_rc_pos_scale_cs_scatterz_scatterscale_set)+1):
         fig['layout']['xaxis'+str(i)]['title'] = "size"
         fig['layout']['yaxis'+str(i)]['title'] = "dtheta"
-        fig['layout']['yaxis'+str(i)]['dtick'] = 0.2
+        # fig['layout']['yaxis'+str(i)]['dtick'] = 0.2
         fig['layout']['xaxis'+str(i)]['color'] = "black"
         fig['layout']['yaxis'+str(i)]['color'] = "black"
-        fig['layout']['font']['size'] = 42
+        fig['layout']['font']['size'] = 20
     plotly.offline.plot(fig, filename = save_img_dir + "heatmap.html", auto_open=False)
 
 
@@ -4232,10 +4275,10 @@ def evaluation_custom(name):
     plotly.offline.plot(fig, filename = save_img_dir + "evaluation_tip_fixgmm.html", auto_open=False)
 
    
-def evaluation(name):
-    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+def evaluation(name, ver = 2):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy{}/".format(ver)
     logdir = basedir + "{}/".format(name)
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
     check_or_create_dir(save_img_dir)
     with open(logdir+"log.yaml", "r") as yml:
         log = yaml.load(yml)
@@ -4835,10 +4878,10 @@ def evaluation_checkpoint_custom_comp(name, smsz, ep_checkpoints):
     fig.write_image(save_img_dir + "{}_fixgmm_comp.svg".format(str(smsz).split('.')[1]))
 
 
-def datotal(name):
-    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+def datotal(name, ver = 2):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy{}/".format(ver)
     logdir = basedir + "{}/".format(name)
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
     check_or_create_dir(save_img_dir)
     with open(logdir+"log.yaml", "r") as yml:
         log = yaml.load(yml)
@@ -5550,10 +5593,10 @@ def datotal_shake_custom(name):
     plotly.offline.plot(fig, filename = save_img_dir + "datotal_shake_custom.html", auto_open=False)
 
 
-def curve(name):
-    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
+def curve(name, ver = 2):
+    basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy{}/".format(ver)
     logdir = basedir + "{}/".format(name)
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
     check_or_create_dir(save_img_dir)
     with open(logdir+"log.yaml", "r") as yml:
         log = yaml.load(yml)
@@ -5585,7 +5628,7 @@ def curve(name):
                  [{"type": "surface"}, {"type": "surface"}]],
     )
     fig.update_layout(
-        height=2200, width=3000, 
+        height=2200, width=1800, 
         # margin=dict(t=100,b=150),
         hoverdistance = 2,
         
@@ -7116,6 +7159,23 @@ def nobounce_check():
     fig['layout']['font']['size'] = 42
     # fig.show()
     fig.write_image(PICTURE_DIR+"nobounce/shake.svg")
+    
+    
+def detect_tip_edge(eval_tip):
+    # eval_tip = np.maximum(eval_tip, -3)
+    kernel_x = np.array([
+        [0,-1,0],
+        [0,0,0],
+        [0,1,0]
+    ])
+    kernel_y = np.array([
+        [0,0,0],
+        [-1,0,1],
+        [0,0,0]
+    ])
+    eval_tip_edge = np.sqrt(cv2.filter2D(eval_tip, -1, kernel_x)**2 + cv2.filter2D(eval_tip, -1, kernel_y)**2)
+
+    return eval_tip_edge
 
     
 def Run(ct, *args):
@@ -7133,8 +7193,12 @@ def Run(ct, *args):
     # pref = lambda ep: "Er/t{}".format(ep)
     # pref = lambda ep: "GMM9Sig8LCB4/checkpoints/t{}/ch500".format(ep)
     # pref = lambda ep: "TMMSig8LCB4/checkpoints/t{}/ch500".format(ep)
-    # for ep in range(1,99):
-    #     check(pref(ep))
+    pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/ch100".format(ep)
+    for ep in range(1,30):
+        check(pref(ep), ver = 3)
+        # curve(pref(ep), ver = 3)
+        # datotal(pref(ep), ver = 3)
+        # evaluation(pref(ep), ver = 3)
     # pref = lambda ep: "ErLCB4/checkpoints/t{}/ch500".format(ep)
     # pref = lambda ep: "Er/t{}".format(ep)
     # for ep in [27]:
@@ -7174,7 +7238,8 @@ def Run(ct, *args):
     # opttest_comp("GMM9Sig8LCB4_chop/sort", 80, "ch500/")
     # opttest_comp("GMM11Sig8LCB4/checkpoints", 99, "ch500/")
     # opttest_comp("GMM12Sig8LCB4/checkpoints", 99, "ch500/")
-    opttest_comp_concat("", 99, "ch500/")
+    # opttest_comp_concat("", 99, "ch500/")
+    # opttest_comp("GMM12Sig8LCB4/checkpoints", 30, ch='ch100/', ver=3)
     # opttest_comp("GMM12Sig10LCB4/checkpoints", 50, "ch500/")
     # opttest_comp("GMM12Sig12LCB4/checkpoints", 94, "ch500/")
     # for i in range(1,31):
