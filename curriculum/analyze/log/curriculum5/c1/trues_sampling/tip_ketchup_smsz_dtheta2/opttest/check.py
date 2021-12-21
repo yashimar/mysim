@@ -7,9 +7,9 @@ from .setup import *
 
 
 def Run(ct, *args):
-    name = "onpolicy/GMM5Sig003_gnnsd1_ggmm1/t1"
+    # name = "onpolicy/GMM5Sig003_gnnsd1_ggmm1/t1"
     # name = "onpolicy/GMM3Sig003_gnnsd1.0_ggmm0.5_LCB2/t1"
-    # name = "t0.1/500/t1"
+    name = "t0.1/500/t1"
     if len(args) == 1: name = args[0]
     # save_img_dir = PICTURE_DIR + "opttest/{}/".format(name.replace("/","_"))
     save_img_dir = PICTURE_DIR + "opttest/{}/".format(name)
@@ -24,6 +24,7 @@ def Run(ct, *args):
     c_reward_opt = False
     
     logdir = BASE_DIR + "opttest/logs/{}/".format(name)
+    print(logdir)
     dm = Domain.load(logdir+"dm.pickle")
     observations = np.array([
         dm.log["est_opt_dtheta2"],
