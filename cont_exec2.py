@@ -7,7 +7,7 @@ def Help():
 
 def Run(ct, *args):
     pass
-    for i in range(1,30):
+    for i in range(20,30):
         print(i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy.Er', i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy.GMM4Sig003_gnnsd1_ggmm1', i)
@@ -70,7 +70,9 @@ def Run(ct, *args):
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.learn3_nobounce',3*i-1)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.learn3_nobounce',3*i)
         # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy3.GMM12Sig8LCB4_checkpoint',i)
-        ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy3.Er',i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy3.Er',i)
+        # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy4.GMM12Sig8LCB4_checkpoint',i)
+        ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy4.GMM12Sig8LCB4_def_checkpoint',i)
     # for i in range(11,40):
     #     print(i)
     #     # ct.Run('mysim.curriculum.analyze.log.curriculum5.c1.trues_sampling.tip_ketchup_smsz_dtheta2.opttest.onpolicy.Er', i)

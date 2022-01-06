@@ -1,5 +1,5 @@
 #coding: UTF-8
-from .learn import *
+from learn import *
 from .setup import *
 from scipy.optimize import nnls
 

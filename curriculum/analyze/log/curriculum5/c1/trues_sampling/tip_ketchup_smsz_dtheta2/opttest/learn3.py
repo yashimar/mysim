@@ -1,5 +1,5 @@
 #coding: UTF-8
-from .learn2 import *
+from learn2 import *
 from .setup2 import *
 import cma
 from scipy.optimize import fmin_l_bfgs_b
@@ -2453,7 +2453,7 @@ def opttest_baseline():
 
 def opttest_comp(name, n, ch = None, ver = 2):
     basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy{}/".format(ver)
-    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
+    save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/opttest_comp/{}/".format(ver, name, ch)
     check_or_create_dir(save_img_dir)
     
     y_concat = []
@@ -2492,40 +2492,46 @@ def opttest_comp(name, n, ch = None, ver = 2):
     for skill in [TIP, SHAKE]:
         yestmean[skill] = np.mean(yest_concat[skill], axis = 0)
         yestsd[skill] = np.std(yest_concat[skill], axis = 0)
-    for p in [0,2,5,10,50,90,95,98,100]:
+    for p in [0,2,5,10,50,90,95,98,100,25,75]:
         yp[p] = np.percentile(y_concat, p, axis = 0)
+        
+        # if p in [5,10,50,90,95]:
+        #     Print('{}percentile:'.format(p))
+        #     for i in range(5):    
+        #         Print('smsz_idx {}~{}:'.format(20*i,20*(i+1)), np.mean(yp[p][20*i:20*(i+1)]))
+        
         for skill in[TIP, SHAKE]:
             yestp[skill][p] = np.percentile(np.array(yest_concat[skill]), p, axis = 0)
     
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x = dm.smsz, y = yp[50],
-        mode = "markers",
-        name = "reward at opt param (0%, 100%)",
-        error_y=dict(
-            type="data",
-            symmetric=False,
-            array=yp[100]-yp[50],
-            arrayminus=yp[50]-yp[0],
-            thickness=0.8,
-            width=3,
-        ),
-        text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
-    ))
-    fig.add_trace(go.Scatter(
-        x = dm.smsz, y = yp[50],
-        mode = "markers",
-        name = "reward at opt param (2%, 98%)",
-        error_y=dict(
-            type="data",
-            symmetric=False,
-            array=yp[98]-yp[50],
-            arrayminus=yp[50]-yp[2],
-            thickness=1.5,
-            width=3,
-        ),
-        text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
-    ))
+    # fig.add_trace(go.Scatter(
+    #     x = dm.smsz, y = yp[50],
+    #     mode = "markers",
+    #     name = "reward at opt param (0%, 100%)",
+    #     error_y=dict(
+    #         type="data",
+    #         symmetric=False,
+    #         array=yp[100]-yp[50],
+    #         arrayminus=yp[50]-yp[0],
+    #         thickness=0.8,
+    #         width=3,
+    #     ),
+    #     text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
+    # ))
+    # fig.add_trace(go.Scatter(
+    #     x = dm.smsz, y = yp[50],
+    #     mode = "markers",
+    #     name = "reward at opt param (2%, 98%)",
+    #     error_y=dict(
+    #         type="data",
+    #         symmetric=False,
+    #         array=yp[98]-yp[50],
+    #         arrayminus=yp[50]-yp[2],
+    #         thickness=1.5,
+    #         width=3,
+    #     ),
+    #     text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
+    # ))
     fig.add_trace(go.Scatter(
         x = dm.smsz, y = yp[50],
         mode = "markers",
@@ -2663,6 +2669,75 @@ def opttest_comp(name, n, ch = None, ver = 2):
     plotly.offline.plot(fig, filename = save_img_dir + "opttest_comp.html", auto_open=False)
     
     
+    fig = go.Figure()
+    fig.update_layout(
+        height = 600,
+    )
+    # for n_i, name in enumerate(names[::-1]):
+    #     y_concat = y_concat_concat[name]
+    #     ymean = ymean_concat[name]
+    #     ysd = ysd_concat[name]
+    #     yestmean = yestmean_concat[name]
+    #     yestsd = yestsd_concat[name]
+    #     yp = yp_concat[name]
+    #     yestp = yestp_concat[name]
+    for i in range(5):
+        s_idx, e_idx = 20*i, 20*(i+1)
+        fig.add_trace(go.Box(
+                # y0 = np.array(dm.smsz)[j] 
+                # y0 = n_i,
+                # y0 = vis_names[::-1][n_i],
+                y0 = '{:.1f}~{:.1f}'.format(dm.smsz[s_idx], dm.smsz[e_idx-1]),
+                upperfence = [np.mean(yp[95][s_idx:e_idx])],
+                q3 = [np.mean(yp[90][s_idx:e_idx])],
+                median = [np.mean(yp[50][s_idx:e_idx])],
+                q1 = [np.mean(yp[10][s_idx:e_idx])],
+                lowerfence = [np.mean(yp[5][s_idx:e_idx])],            
+                # fillcolor = "white",
+                marker = dict(color = 'skyblue'),
+                # marker = dict(color = colors[::-1][n_i], line = dict(outliercolor = colors[::-1][n_i])),
+                line = dict(width = 4),
+                width = 0.4,
+                # whiskerwidth = 1,
+                showlegend = False,
+        ))
+        fig.add_trace(go.Box(
+                # y0 = np.array(dm.smsz)[j] 
+                # y0 = n_i,
+                # y0 = vis_names[::-1][n_i],
+                y0 = '{:.1f}~{:.1f}'.format(dm.smsz[s_idx], dm.smsz[e_idx-1]),
+                upperfence = [np.mean(yp[95][s_idx:e_idx])],
+                q3 = [np.mean(yp[75][s_idx:e_idx])],
+                median = [np.mean(yp[50][s_idx:e_idx])],
+                q1 = [np.mean(yp[25][s_idx:e_idx])],
+                lowerfence = [np.mean(yp[5][s_idx:e_idx])],            
+                fillcolor = "white",
+                marker = dict(color = 'blue'),
+                # marker = dict(color = colors[::-1][n_i], line = dict(outliercolor = colors[::-1][n_i])),
+                line = dict(width = 12),
+                width = 0.8,
+                # whiskerwidth = 1,
+                showlegend = False,
+        ))
+    # fig['layout']['xaxis']['range'] = (0.295,0.83)
+    # fig['layout']['yaxis']['range'] = (-5,0.5)
+    # fig['layout']['xaxis']['title'] = "size_srcmouth"
+    # fig['layout']['xaxis']['title'] = "s"
+    # # fig['layout']['yaxis']['title'] = "Evaluation / Reward"
+    # fig['layout']['yaxis']['title'] = "r"
+    fig['layout']['xaxis']['range'] = (-2.8,0)
+    fig['layout']['xaxis']['title'] = "reward"
+    fig['layout']['xaxis']['color'] = "black"
+    fig['layout']['yaxis']['color'] = "black"
+    fig['layout']['font']['size'] = 42
+    fig.update_layout(
+        plot_bgcolor = "white",
+        xaxis = dict(linecolor = "black"),
+        yaxis = dict(linecolor = "black"),
+    )
+    plotly.offline.plot(fig, filename = save_img_dir + "bar.html", auto_open=False)
+    
+    
 def opttest_comp_concat(names, n, ch = None):
     basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/"
     # basedir = "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/offpolicy/"
@@ -2672,10 +2747,10 @@ def opttest_comp_concat(names, n, ch = None):
     
     names = [
         "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/Er",
-        "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/ErLCB4/checkpoints",
+        # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/ErLCB4/checkpoints",
         # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/GMM12Sig12LCB4/checkpoints",
         # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/GMM12Sig10LCB4/checkpoints",
-        "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/GMM12Sig8LCB4/checkpoints",
+        # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/GMM12Sig8LCB4/checkpoints",
         # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/GMM12Sig6LCB4/checkpoints",
         # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/onpolicy2/GMM12Sig4LCB4/checkpoints",
         # "/home/yashima/ros_ws/ay_tools/ay_skill_extra/mysim/curriculum/analyze/log/curriculum5/c1/trues_sampling/tip_ketchup_smsz_dtheta2/opttest/logs/offpolicy/Er",
@@ -2684,29 +2759,29 @@ def opttest_comp_concat(names, n, ch = None):
     ]
     vis_names = [
         "E[r]",
-        "LCB without JPM",
-        "LCB with JPM",
+        # "LCB without JPM",
+        # "LCB with JPM",
     ]
     chs = [
         "",
-        "ch500/",
-        "ch500/",
-        "ch500/",
-        "ch500/",
-        "ch500/",
-        "ch500/",
+        # "ch500/",
+        # "ch500/",
+        # "ch500/",
+        # "ch500/",
+        # "ch500/",
+        # "ch500/",
         # "ch420/",
         # "ch420/",
         # "ch420/",
     ]
     colors = [
         "green",
-        "blue",
-        "red",
-        "red",
-        "green",
-        "blue",
-        "red",
+        # "blue",
+        # "red",
+        # "red",
+        # "green",
+        # "blue",
+        # "red",
     ]
     
     y_concat_concat = dict()
@@ -2827,7 +2902,7 @@ def opttest_comp_concat(names, n, ch = None):
         #     showlegend = False,
         #     text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
         # ))
-        for j in range(50,100):
+        for j in range(0,100):
             fig.add_trace(go.Box(
                 x0 = np.array(dm.smsz)[j]+0.0012*n_i, 
                 # x0 = (np.array(dm.smsz)[j]+0.003*len(names))*2.5+0.003*n_i, 
@@ -2853,7 +2928,7 @@ def opttest_comp_concat(names, n, ch = None):
             #     showlegend = False,
             # ))
         # fig.add_trace(go.Scatter(
-        #     x = np.array(dm.smsz)+0.0015*n_i, y = yp[5],
+        #     x = np.array(dm.smsz)+0.0015*n_i, y = yp[50],
         #     mode = 'lines',
         #     line = dict(color = colors[n_i],),
         # ))
@@ -2982,7 +3057,7 @@ def opttest_comp_concat(names, n, ch = None):
     #     textfont = dict(color = "black", size = 30),
     #     showlegend = False,
     # ))
-    rng = (0.55,0.805)
+    rng = (0.295,0.805)
     fig['layout']['xaxis']['range'] = rng
     # fig['layout']['xaxis']['range'] = (0.55,0.805)
     # fig['layout']['xaxis']['range'] = (0.295,0.805)
@@ -3271,16 +3346,16 @@ def opttest_comp_custom(name, n, ch = None):
         print(logdir)
         dm = Domain3.load(logdir+"dm.pickle")
         p = 8
-        options = {"tau": 0.9, "lam": 1e-6}
+        options = {"tau": 0.9, "lam": 1e-3, 'maxiter': 1e2, 'popsize': 10, 'tol': 1e-3, 'verbose': 0}
         dm.setup({
-            TIP: lambda nnmodel: GMM9(nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)], options = options, Gerr = 1.0),
-            SHAKE: lambda nnmodel: GMM9(nnmodel, diag_sigma=[(0.8-0.3)/(100./p)], options = options, Gerr = 1.0)
+            TIP: lambda nnmodel: GMM12(nnmodel, diag_sigma=[(1.0-0.1)/(100./p), (0.8-0.3)/(100./p)], w_positive = True, options = options, Gerr = 1.0),
+            SHAKE: lambda nnmodel: GMM12(nnmodel, diag_sigma=[(0.8-0.3)/(100./p)], w_positive = True, options = options, Gerr = 1.0)
         })
+        dm.sd_gain = 1.0
+        dm.LCB_ratio = 4.0
         new_logdir = logdir + "custom/"
         check_or_create_dir(new_logdir)
-        datotal = setup_datotal(dm, new_logdir)
-        gmmpred = setup_gmmpred(dm, new_logdir)
-        evaluation = setup_eval(dm, new_logdir)
+        datotal, gmmpred, evaluation = setup_full(dm, new_logdir, recreate=False)
         true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
         true_yshake = dm.datotal[SHAKE][RFUNC]
         est_ytip = np.max(evaluation[TIP], axis=0)
@@ -3314,37 +3389,22 @@ def opttest_comp_custom(name, n, ch = None):
     
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x = dm.smsz, y = yp[50],
-        mode = "markers",
-        name = "reward at opt param (0%, 100%)",
-        error_y=dict(
-            type="data",
-            symmetric=False,
-            array=yp[100]-yp[50],
-            arrayminus=yp[50]-yp[0],
-            thickness=0.8,
-            width=3,
-        ),
-        text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
+        x = dm.smsz, y = np.max(dm.datotal[TIP][RFUNC], axis = 0),
+        mode = "lines",
+        name = "reward (TIP)",
+        line = dict(width = 2, color = "blue"),
     ))
     fig.add_trace(go.Scatter(
-        x = dm.smsz, y = yp[50],
-        mode = "markers",
-        name = "reward at opt param (2%, 98%)",
-        error_y=dict(
-            type="data",
-            symmetric=False,
-            array=yp[98]-yp[50],
-            arrayminus=yp[50]-yp[2],
-            thickness=1.5,
-            width=3,
-        ),
-        text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
+        x = dm.smsz, y = dm.datotal[SHAKE][RFUNC],
+        mode = "lines",
+        name = "reward (SHAKE)",
+        line = dict(width = 2, color = "red"),
     ))
     fig.add_trace(go.Scatter(
         x = dm.smsz, y = yp[50],
         mode = "markers",
         name = "reward at opt param (5%, 50%, 95%)",
+        marker = dict(color = 'black'),
         error_y=dict(
             type="data",
             symmetric=False,
@@ -3352,8 +3412,15 @@ def opttest_comp_custom(name, n, ch = None):
             arrayminus=yp[50]-yp[5],
             thickness=1.5,
             width=3,
+            color = 'black',
         ),
         text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
+    ))
+    fig.add_trace(go.Scatter(
+        x = dm.smsz, y = ymean,
+        mode = "lines",
+        name = "reward at opt param (mean)",
+        line = dict(width = 3, color = "black"),
     ))
     badr = [len([yi for yi in y if yi < true_yshake[idx_smsz]]) for idx_smsz, y in enumerate(np.array(y_concat).T)]
     fig.add_trace(go.Scatter(
@@ -3416,20 +3483,6 @@ def opttest_comp_custom(name, n, ch = None):
         ),
         text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
     ))
-    # fig.add_trace(go.Scatter(
-    #     x = dm.smsz, y = yestp[TIP][50],
-    #     mode = "markers",
-    #     name = "evaluation (TIP) at opt param (10%, 90%)",
-    #     error_y=dict(
-    #         type="data",
-    #         symmetric=False,
-    #         array=yestp[TIP][90]-yestp[TIP][50],
-    #         arrayminus=yestp[TIP][50]-yestp[TIP][10],
-    #         thickness=0.8,
-    #         width=3,
-    #     ),
-    #     text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
-    # ))
     fig.add_trace(go.Scatter(
         x = dm.smsz, y = yestp[TIP][50],
         mode = "markers",
@@ -3472,10 +3525,10 @@ def opttest_comp_custom(name, n, ch = None):
         ),
         text = ["<br />".join(["t{}: {}".format(i+1, yi) for i, yi in enumerate(y) if yi < -1.0]) for y in np.array(y_concat).T],
     ))
-    fig['layout']['xaxis']['range'] = (0.58,0.82)
-    fig['layout']['yaxis']['range'] = (-8,0.5)
+    fig['layout']['yaxis']['range'] = (-5,0.5)
     fig['layout']['xaxis']['title'] = "size_srcmouth"
     fig['layout']['yaxis']['title'] = "Evaluation / Reward"
+    fig['layout']['font']['size'] = 18
     plotly.offline.plot(fig, filename = save_img_dir + "opttest_comp_custom.html", auto_open=False)
     
     
@@ -3558,8 +3611,9 @@ def check(name, ver = 2):
     logdir = basedir + "{}/".format(name)
     save_img_dir = PICTURE_DIR + "opttest/onpolicy{}/{}/".format(ver, name)
     check_or_create_dir(save_img_dir)
-    with open(logdir+"log.yaml", "r") as yml:
-        log = yaml.load(yml)
+    print(logdir)
+    # with open(logdir+"log.yaml", "r") as yml:
+    #     log = yaml.load(yml)
     dm = Domain3.load(logdir+"dm.pickle")
     datotal, gmmpred, evaluation = setup_full(dm, logdir, recreate=False)
     true_ytip = [smsz_r[opt_idx] for i, (smsz_r, opt_idx) in enumerate(zip(dm.datotal[TIP][RFUNC].T, np.argmax(evaluation[TIP], axis = 0)))]
@@ -3567,30 +3621,32 @@ def check(name, ver = 2):
     est_ytip = np.max(evaluation[TIP], axis=0)
     est_yshake = evaluation[SHAKE]
     
+    eval_min_thr = -5
+    
     eval_tip = evaluation[TIP]
-    eval_tip = np.maximum(eval_tip, -3)
+    eval_tip = np.maximum(eval_tip, eval_min_thr)
     eval_tip_edge = detect_tip_edge(eval_tip)
     eval_tip_edge = (eval_tip_edge - eval_tip_edge.min()) / (eval_tip_edge.max() - eval_tip_edge.min())
     
     true_tip_r = dm.datotal[TIP][RFUNC]
-    true_tip_r = np.maximum(true_tip_r, -3)
+    true_tip_r = np.maximum(true_tip_r, eval_min_thr)
     true_tip_r_edge = detect_tip_edge(true_tip_r)
     true_tip_r_edge = (true_tip_r_edge - true_tip_r_edge.min()) / (true_tip_r_edge.max() - true_tip_r_edge.min())
     
     
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x = log["ep"], y = log["r_at_est_optparam"],
-        mode = "markers",
-        text = ["<br />".join(["ep: {}".format(ep), "smsz: {}".format(smsz), "optparam: {}".format(optparam), "opteval: {}".format(opteval), "skill: {}".format(skill)]) for ep, smsz, optparam, opteval, skill in zip(log["ep"], log["smsz"], log["est_optparam"], log["opteval"], log["skill"])],
-    ))
-    fig['layout']['xaxis']['title'] = "episode"
-    fig['layout']['yaxis']['title'] = "reward"
-    plotly.offline.plot(fig, filename = save_img_dir + "hist.html", auto_open=False)
+    # fig = go.Figure()
+    # fig.add_trace(go.Scatter(
+    #     x = log["ep"], y = log["r_at_est_optparam"],
+    #     mode = "markers",
+    #     text = ["<br />".join(["ep: {}".format(ep), "smsz: {}".format(smsz), "optparam: {}".format(optparam), "opteval: {}".format(opteval), "skill: {}".format(skill)]) for ep, smsz, optparam, opteval, skill in zip(log["ep"], log["smsz"], log["est_optparam"], log["opteval"], log["skill"])],
+    # ))
+    # fig['layout']['xaxis']['title'] = "episode"
+    # fig['layout']['yaxis']['title'] = "reward"
+    # plotly.offline.plot(fig, filename = save_img_dir + "hist.html", auto_open=False)
     
-    for ep in range(50,len(log["ep"])):
-        if log["r_at_est_optparam"][ep] < -1:
-            print(ep, log["smsz"][ep], log["r_at_est_optparam"][ep])
+    # for ep in range(50,len(log["ep"])):
+    #     if log["r_at_est_optparam"][ep] < -1:
+    #         print(ep, log["smsz"][ep], log["r_at_est_optparam"][ep])
             
     optr = [true_ytip[i] if yt > ys else true_yshake[i] for i, (yt, ys) in enumerate(zip(est_ytip, est_yshake))]
     color = ["red" if yt > ys else "purple" for yt, ys in zip(est_ytip, est_yshake)]
@@ -3623,8 +3679,8 @@ def check(name, ver = 2):
         marker = dict(size = 16, color = color),
     ))
     fig.add_trace(go.Scatter(
-        x = dm.smsz, y = est_ytip,
-        # x = dm.smsz[:79].tolist()+[0.7], y = est_ytip[:79].tolist()+[-4],
+        # x = dm.smsz, y = est_ytip,
+        x = dm.smsz[:79].tolist()+[0.7], y = est_ytip[:79].tolist()+[-4],
         mode = "lines",
         name = "evaluatioin (tip) at est optparam",
         showlegend = False,
@@ -3658,13 +3714,13 @@ def check(name, ver = 2):
     #     textfont = dict(color = "black", size = 30),
     #     showlegend = False,
     # ))
-    # fig.add_shape(type="line",
-    #     x0=0.618, y0=-4, x1=0.618, y1=0.2,
-    #     line=dict(
-    #         color="black",
-    #         # width=3,
-    #         dash="dash",
-    # ))
+    fig.add_shape(type="line",
+        x0=0.618, y0=-4, x1=0.618, y1=0.2,
+        line=dict(
+            color="black",
+            # width=3,
+            dash="dash",
+    ))
     # fig.add_trace(go.Scatter(
     #     x = [0.595], y = [-3],
     #     mode = "text",
@@ -3687,7 +3743,7 @@ def check(name, ver = 2):
         xaxis = dict(linecolor = "black"),
         yaxis = dict(linecolor = "black"),
         width = 1600,
-        height = 600,
+        height = 800,
     )
     plotly.offline.plot(fig, filename = save_img_dir + "comp.html", auto_open=False)
     fig.write_image(save_img_dir + "comp.svg")
@@ -3736,10 +3792,10 @@ def check(name, ver = 2):
         [1, "rgb(255, 0, 0)"],
     ]
     z_rc_pos_scale_cs_scatterz_scatterscale_set = (
-        (datotal[TIP][TRUE], 1, 1, 0.46, 0.94, 0., 0.55, datotalcs, None, None, None), (dm.datotal[TIP][RFUNC], 1, 2, 0.46, 0.94, -3, 0., None, None, None, None),
+        (datotal[TIP][TRUE], 1, 1, 0.46, 0.94, 0., 0.55, datotalcs, None, None, None), (dm.datotal[TIP][RFUNC], 1, 2, 0.46, 0.94, eval_min_thr, 0., None, None, None, None),
         (datotal[TIP][NNMEAN], 2, 1, 0.46, 0.28, 0., 0.55, datotalcs, None, None, None), (datotal[TIP][NNSD], 2, 2, 0.46, 0.94, 0, 0.2, None, None, None, None),
         # (gmmpred[TIP], 2, 1, 0.46, 0.28, 0., 0.2, diffcs, "badr", -3, 0), (evaluation[TIP], 2, 2, 0.46, 0.94, -3, 0., None, "badr", -3, 0),
-        (gmmpred[TIP], 3, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (evaluation[TIP], 3, 2, 0.46, 0.94, -3, 0., None, None, None, None),
+        (gmmpred[TIP], 3, 1, 0.46, 0.28, 0., 0.2, diffcs, None, None, None), (evaluation[TIP], 3, 2, 0.46, 0.94, eval_min_thr, 0., None, None, None, None),
         (eval_tip_edge, 4, 1, '', '', 0, 1, None, None, None, None), (np.max(eval_tip_edge, axis=0), 4, 2, '', '', 0, 1, None, None, None, None),
     )
     posx_set = [0.4, 1.0075]
@@ -3756,6 +3812,8 @@ def check(name, ver = 2):
     tip_idx = [i for i,skill in enumerate(log['skill']) if skill == 'tip']
     scatter_dtheta2 = np.array(log['est_optparam'])[tip_idx]
     scatter_smsz = np.array(log['smsz'])[tip_idx]
+    scatter_dtheta2_a100 = np.array(log['est_optparam'])[[idx for idx in tip_idx if idx>=100]]
+    scatter_smsz_a100 = np.array(log['smsz'])[[idx for idx in tip_idx if idx>=100]]
     for z, row, col, posx, posy, zmin, zmax, cs, scz, sczmin, sczmax in z_rc_pos_scale_cs_scatterz_scatterscale_set:
         if len(z.shape) == 2:
             fig.add_trace(go.Heatmap(
@@ -3794,6 +3852,19 @@ def check(name, ver = 2):
                     line = dict(
                         color = "black",
                         width = 1.5,
+                    )
+                ),
+            ), row, col)
+            fig.add_trace(go.Scatter(
+                y = scatter_dtheta2_a100, x = scatter_smsz_a100,
+                mode='markers',
+                showlegend = False,
+                marker = dict(
+                    size = 6,
+                    color = "rgba(0,0,0,0)",
+                    line = dict(
+                        color = "white",
+                        width = 2.,
                     )
                 ),
             ), row, col)
@@ -4032,8 +4103,8 @@ def comp_custom(name):
     logdir = basedir + "{}/".format(name)
     save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
     check_or_create_dir(save_img_dir)
-    with open(logdir+"log.yaml", "r") as yml:
-        log = yaml.load(yml)
+    # with open(logdir+"log.yaml", "r") as yml:
+    #     log = yaml.load(yml)
     dm = Domain3.load(logdir+"dm.pickle")
     p = 8
     options = {"tau": 0.9, "lam": 1e-6}
@@ -4071,7 +4142,7 @@ def comp_custom(name):
     fig.add_trace(go.Scatter(
         x = dm.smsz, y = optr,
         mode = "markers",
-        name = "reward (shake) at est optparam",
+        name = "reward at est optparam",
         showlegend = False,
         marker = dict(size = 16, color = color),
     ))
@@ -4123,7 +4194,7 @@ def comp_custom(name):
         yaxis = dict(linecolor = "black"),
         showlegend = False,
         width = 1600,
-        height = 600,
+        height = 800,
         # margin = dict(t=20,b=10,r=5),
     )
     plotly.offline.plot(fig, filename = save_img_dir + "comp_custom.html", auto_open=False)
@@ -5468,8 +5539,8 @@ def datotal_shake(name):
     logdir = basedir + "{}/".format(name)
     save_img_dir = PICTURE_DIR + "opttest/onpolicy2/{}/".format(name)
     check_or_create_dir(save_img_dir)
-    with open(logdir+"log.yaml", "r") as yml:
-        log = yaml.load(yml)
+    # with open(logdir+"log.yaml", "r") as yml:
+    #     log = yaml.load(yml)
     dm = Domain3.load(logdir+"dm.pickle")
     datotal, gmmpred, evaluation = setup_full(dm, logdir)
     log_smsz_idx_list = [log_smsz_idx for log_smsz_idx, skill in enumerate(dm.log["skill"]) if skill == SHAKE]
@@ -6788,8 +6859,8 @@ def ketchup_curve():
 
     size_concat = [
         # 0.4, 
-        # 0.6,
-        0.625
+        0.63,
+        # 0.625
     ]
     dtheta2_concat = [
         # 0.8, 
@@ -6823,12 +6894,12 @@ def ketchup_curve():
                 ],
             )
         ))
-    fig.add_shape(
-        type = "rect",
-        x0 = 0.37, x1 = 0.53, y0 = -0.05, y1 = 0.56,
-        line = dict(color="rgba(0,0,0,0.0)"),
-        fillcolor ="rgba(0,0,0,0.08)",
-    )
+    # fig.add_shape(
+    #     type = "rect",
+    #     x0 = 0.37, x1 = 0.53, y0 = -0.05, y1 = 0.56,
+    #     line = dict(color="rgba(0,0,0,0.0)"),
+    #     fillcolor ="rgba(0,0,0,0.08)",
+    # )
     fig['layout']['xaxis']['title'] = "dtheta"
     fig['layout']['yaxis']['title']['text'] = "y<sub>amount</sub>"
     fig['layout']['yaxis']['range'] = (-0.05,0.56)
@@ -6841,11 +6912,11 @@ def ketchup_curve():
         yaxis = dict(linecolor = "black"),
         # width = 900,
         # width = 1500,
-        width = 800,
+        width = 1600,
         height = 800,
     )
     # fig.show()
-    fig.write_image(PICTURE_DIR+"ketchup/outputs1.svg")
+    fig.write_image(PICTURE_DIR+"ketchup/outputs5.svg")
 
     
     fig = go.Figure()
@@ -6884,11 +6955,11 @@ def ketchup_curve():
         yaxis = dict(linecolor = "black"),
         # width = 900,
         # width = 1500,
-        width = 800,
+        width = 1600,
         height = 800,
     )
     # fig.show()
-    fig.write_image(PICTURE_DIR+"ketchup/outputs2.svg")
+    fig.write_image(PICTURE_DIR+"ketchup/outputs4.svg")
     
 
 def ketchup_kde():
@@ -7193,15 +7264,21 @@ def Run(ct, *args):
     # pref = lambda ep: "Er/t{}".format(ep)
     # pref = lambda ep: "GMM9Sig8LCB4/checkpoints/t{}/ch500".format(ep)
     # pref = lambda ep: "TMMSig8LCB4/checkpoints/t{}/ch500".format(ep)
-    pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/ch100".format(ep)
-    for ep in range(1,30):
-        check(pref(ep), ver = 3)
+    # pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/ch100".format(ep)
+    # pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/u1add25".format(ep)
+    # pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/u2add25".format(ep)
+    # pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/u3add50".format(ep)
+    # pref = lambda ep: "GMM12Sig8LCB4_def/checkpoints/t{}/u1add50".format(ep)
+    # pref = lambda ep: "GMM12Sig8LCB4_def/checkpoints/t{}/u2add50".format(ep)
+    # for ep in range(1,30):
+    #     check(pref(ep), ver = 4)
         # curve(pref(ep), ver = 3)
         # datotal(pref(ep), ver = 3)
         # evaluation(pref(ep), ver = 3)
     # pref = lambda ep: "ErLCB4/checkpoints/t{}/ch500".format(ep)
+    # pref = lambda ep: "GMM12Sig8LCB4/checkpoints/t{}/ch500".format(ep)
     # pref = lambda ep: "Er/t{}".format(ep)
-    # for ep in [27]:
+    # for ep in range(1,100):
     #     check(pref(ep))
         # curve(pref(ep))
         # evaluation(pref(ep))
@@ -7242,6 +7319,9 @@ def Run(ct, *args):
     # opttest_comp("GMM12Sig8LCB4/checkpoints", 30, ch='ch100/', ver=3)
     # opttest_comp("GMM12Sig10LCB4/checkpoints", 50, "ch500/")
     # opttest_comp("GMM12Sig12LCB4/checkpoints", 94, "ch500/")
+    # opttest_comp("GMM12Sig8LCB4/checkpoints", 30, ch='ch100/', ver=4)
+    # opttest_comp("GMM12Sig8LCB4/checkpoints", 30, ch='u3add50/', ver=4)
+    # opttest_comp("GMM12Sig8LCB4_def/checkpoints", 30, ch='u2add50/', ver=4)
     # for i in range(1,31):
     #     curve("withOptBug/GMMSig5LCB3/t{}".format(i))
     # curve("GMM12Sig8LCB4/checkpoints/t4/ch500")
@@ -7295,7 +7375,7 @@ def Run(ct, *args):
     # name_func = lambda i: "Er/t{}".format(i)
     # name_func = lambda i: "ErLCB4/checkpoints/t{}".format(i)
     # for i in [54]:
-    # #     print(i)
+    #     print(i)
         # name = name_func(i)
         # check(name+"/ch500")
         # comp_custom(name+"/ch500")
@@ -7311,3 +7391,4 @@ def Run(ct, *args):
     # curve_custom()
     # hist_concat(None)
     # hist_concat2(None)
+    opttest_comp_custom("ErLCB4/checkpoints", 99, "ch500/")
